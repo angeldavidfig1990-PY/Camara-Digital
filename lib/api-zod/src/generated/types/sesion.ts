@@ -16,4 +16,5 @@ export interface Sesion {
   periodo: string;
   descripcion?: string | null;
   orden_del_dia?: string[];
+  appURL?: string | null;
 }

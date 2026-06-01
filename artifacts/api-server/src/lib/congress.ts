@@ -39,16 +39,23 @@ interface CacheEntry {
 interface Freshness {
   fetchedAt: number | null;
   ok: boolean;
+  recordsUpdated: number;
 }
 
 const cache = new Map<string, CacheEntry>();
 const freshness = new Map<Recurso, Freshness>();
 
-function markFreshness(recurso: Recurso, ok: boolean, at: number | null): void {
+function markFreshness(
+  recurso: Recurso,
+  ok: boolean,
+  at: number | null,
+  records?: number,
+): void {
   const prev = freshness.get(recurso);
   freshness.set(recurso, {
     ok,
     fetchedAt: at ?? prev?.fetchedAt ?? null,
+    recordsUpdated: ok && records != null ? records : (prev?.recordsUpdated ?? 0),
   });
 }
 
@@ -72,7 +79,8 @@ export async function cached<T>(
   try {
     const value = await loader();
     cache.set(key, { value, fetchedAt: now });
-    markFreshness(recurso, true, now);
+    const records = Array.isArray(value) ? value.length : value == null ? 0 : 1;
+    markFreshness(recurso, true, now, records);
     return value;
   } catch (err) {
     if (hit) {
@@ -85,29 +93,65 @@ export async function cached<T>(
   }
 }
 
+export interface RecursoFreshness {
+  recurso: string;
+  lastSync: string | null;
+  recordsUpdated: number;
+  dataFreshness: string;
+  status: string;
+}
+
+/** Classify how fresh a resource's cache is relative to its TTL. */
+function classifyFreshness(recurso: Recurso, f: Freshness): { dataFreshness: string; status: string } {
+  if (!f.fetchedAt) {
+    return { dataFreshness: "empty", status: "error" };
+  }
+  const age = Date.now() - f.fetchedAt;
+  const dataFreshness = age < TTL[recurso] ? "fresh" : "stale";
+  // status reflects connectivity of the last fetch; dataFreshness reflects TTL.
+  const status = f.ok ? (dataFreshness === "fresh" ? "ok" : "stale") : "error";
+  return { dataFreshness, status };
+}
+
 export function getFreshnessSnapshot(): {
-  recursos: { recurso: string; ultimaActualizacion: string | null; estado: string }[];
-  ultimaActualizacion: string | null;
-  online: boolean;
+  recursos: RecursoFreshness[];
+  lastSync: string | null;
+  recordsUpdated: number;
+  dataFreshness: string;
+  status: string;
 } {
-  const recursos: { recurso: string; ultimaActualizacion: string | null; estado: string }[] = [];
+  const recursos: RecursoFreshness[] = [];
   let newest = 0;
+  let totalRecords = 0;
   let anyOk = false;
+  let anyError = false;
+  let anyStale = false;
 
   for (const [recurso, f] of freshness.entries()) {
-    if (f.ok) anyOk = true;
+    const { dataFreshness, status } = classifyFreshness(recurso, f);
+    if (status === "ok") anyOk = true;
+    if (status === "error") anyError = true;
+    if (status === "stale") anyStale = true;
     if (f.fetchedAt && f.fetchedAt > newest) newest = f.fetchedAt;
+    totalRecords += f.recordsUpdated;
     recursos.push({
       recurso,
-      ultimaActualizacion: f.fetchedAt ? new Date(f.fetchedAt).toISOString() : null,
-      estado: f.ok ? "ok" : f.fetchedAt ? "stale" : "error",
+      lastSync: f.fetchedAt ? new Date(f.fetchedAt).toISOString() : null,
+      recordsUpdated: f.recordsUpdated,
+      dataFreshness,
+      status,
     });
   }
 
+  const overallStatus = anyError && !anyOk ? "offline" : anyError || anyStale ? "degraded" : "ok";
+  const overallFreshness = anyStale || anyError ? "stale" : anyOk ? "fresh" : "empty";
+
   return {
     recursos,
-    ultimaActualizacion: newest > 0 ? new Date(newest).toISOString() : null,
-    online: anyOk,
+    lastSync: newest > 0 ? new Date(newest).toISOString() : null,
+    recordsUpdated: totalRecords,
+    dataFreshness: overallFreshness,
+    status: overallStatus,
   };
 }
 
@@ -351,6 +395,7 @@ export interface Sesion {
   periodo: string;
   descripcion: string | null;
   orden_del_dia: string[];
+  appURL: string | null;
 }
 
 export interface Votacion {
@@ -486,6 +531,7 @@ function mapSesion(s: RealSesion, withDetail = false): Sesion {
     periodo: s.periodoParlamentarioDTO?.periodoParlamentario || "",
     descripcion: s.numeroSesion ? `Sesión N° ${s.numeroSesion}` : null,
     orden_del_dia: orden,
+    appURL: s.appURL || null,
   };
 }
 
@@ -769,26 +815,39 @@ export async function getDashboard(): Promise<DashboardData> {
 }
 
 export interface SystemStatus {
-  online: boolean;
-  ultimaActualizacion: string | null;
-  fuente: string;
-  recursos: { recurso: string; ultimaActualizacion: string | null; estado: string }[];
+  lastSync: string | null;
+  source: string;
+  recordsUpdated: number;
+  lastSessionDetected: string | null;
+  dataFreshness: string;
+  status: string;
+  recursos: RecursoFreshness[];
 }
 
+const SOURCE_NAME = "API Datos Abiertos Legislativos v2.0 — Congreso Nacional del Paraguay";
+
 export async function getSystemStatus(): Promise<SystemStatus> {
-  // Live connectivity probe (cheap, short TTL) to keep the freshness honest.
+  // Live connectivity probe (cheap, short TTL) to keep the freshness honest, and
+  // surface the most recent session date the official source reports.
   let probeOk = true;
+  let lastSessionDetected: string | null = null;
   try {
-    await getProyectosTotal();
+    const [, sesionesRes] = await Promise.all([getProyectosTotal(), getSesiones()]);
+    const fechas = sesionesRes.data.map((s) => s.fecha).filter(Boolean);
+    lastSessionDetected = fechas.length ? fechas.sort((a, b) => b.localeCompare(a))[0] : null;
   } catch {
     probeOk = false;
   }
 
   const snap = getFreshnessSnapshot();
+  const status = !probeOk && snap.status === "offline" ? "offline" : snap.status;
   return {
-    online: probeOk || snap.online,
-    ultimaActualizacion: snap.ultimaActualizacion,
-    fuente: "API Datos Abiertos Legislativos v2.0 — Congreso Nacional del Paraguay",
+    lastSync: snap.lastSync,
+    source: SOURCE_NAME,
+    recordsUpdated: snap.recordsUpdated,
+    lastSessionDetected,
+    dataFreshness: snap.dataFreshness,
+    status,
     recursos: snap.recursos,
   };
 }

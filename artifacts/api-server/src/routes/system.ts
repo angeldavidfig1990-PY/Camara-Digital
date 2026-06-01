@@ -9,9 +9,12 @@ router.get("/system/status", async (req, res): Promise<void> => {
   } catch (err) {
     req.log.error({ err }, "system status failed");
     res.status(502).json({
-      online: false,
-      ultimaActualizacion: null,
-      fuente: "API Datos Abiertos Legislativos v2.0 — Congreso Nacional del Paraguay",
+      lastSync: null,
+      source: "API Datos Abiertos Legislativos v2.0 — Congreso Nacional del Paraguay",
+      recordsUpdated: 0,
+      lastSessionDetected: null,
+      dataFreshness: "empty",
+      status: "offline",
       recursos: [],
     });
   }

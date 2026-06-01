@@ -8,6 +8,8 @@
 
 export type SystemStatusRecursosItem = {
   recurso: string;
-  ultimaActualizacion?: string | null;
-  estado: string;
+  lastSync?: string | null;
+  recordsUpdated: number;
+  dataFreshness: string;
+  status: string;
 };

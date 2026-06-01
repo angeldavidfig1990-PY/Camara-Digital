@@ -61,6 +61,7 @@ export interface Sesion {
   periodo: string;
   descripcion?: string | null;
   orden_del_dia?: string[];
+  appURL?: string | null;
 }
 
 export interface SesionesResponse {
@@ -153,14 +154,19 @@ export interface VotacionesResponse {
 
 export type SystemStatusRecursosItem = {
   recurso: string;
-  ultimaActualizacion?: string | null;
-  estado: string;
+  lastSync?: string | null;
+  recordsUpdated: number;
+  dataFreshness: string;
+  status: string;
 };
 
 export interface SystemStatus {
-  online: boolean;
-  ultimaActualizacion?: string | null;
-  fuente: string;
+  lastSync?: string | null;
+  source: string;
+  recordsUpdated: number;
+  lastSessionDetected?: string | null;
+  dataFreshness: string;
+  status: string;
   recursos: SystemStatusRecursosItem[];
 }
 

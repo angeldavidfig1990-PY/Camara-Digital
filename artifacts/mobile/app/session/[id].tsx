@@ -27,7 +27,7 @@ export default function SessionDetailScreen() {
   });
 
   const topPad = Platform.OS === "web" ? 67 : insets.top;
-  const isLive = data?.estado === "en-vivo";
+  const isLive = data?.estado === "en vivo";
   const isProgramada = data?.estado === "programada";
 
   return (
@@ -147,14 +147,20 @@ export default function SessionDetailScreen() {
             </View>
           )}
 
-          {/* Diario de Sesiones */}
+          {/* Enlace oficial de la sesión (appURL) o Diario de Sesiones */}
           <TouchableOpacity
             style={[styles.diarioBtn, { backgroundColor: colors.secondary, borderColor: colors.border }]}
-            onPress={() => Linking.openURL("https://www.diputados.gov.py/sesiones/diario-sesiones-comision-permanente")}
+            onPress={() =>
+              Linking.openURL(
+                data.appURL ?? "https://www.diputados.gov.py/sesiones/diario-sesiones-comision-permanente",
+              )
+            }
             activeOpacity={0.8}
           >
             <Ionicons name="newspaper-outline" size={18} color={colors.primary} />
-            <Text style={[styles.diarioBtnText, { color: colors.primary }]}>Ver Diario de Sesiones</Text>
+            <Text style={[styles.diarioBtnText, { color: colors.primary }]}>
+              {data.appURL ? "Ver ficha oficial de la sesión" : "Ver Diario de Sesiones"}
+            </Text>
             <Ionicons name="open-outline" size={14} color={colors.primary} />
           </TouchableOpacity>
         </ScrollView>

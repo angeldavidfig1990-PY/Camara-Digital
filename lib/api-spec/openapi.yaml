@@ -508,6 +508,9 @@ components:
           type: array
           items:
             type: string
+        appURL:
+          type: string
+          nullable: true
       required:
         - id
         - fecha
@@ -755,12 +758,19 @@ components:
     SystemStatus:
       type: object
       properties:
-        online:
-          type: boolean
-        ultimaActualizacion:
+        lastSync:
           type: string
           nullable: true
-        fuente:
+        source:
+          type: string
+        recordsUpdated:
+          type: integer
+        lastSessionDetected:
+          type: string
+          nullable: true
+        dataFreshness:
+          type: string
+        status:
           type: string
         recursos:
           type: array
@@ -769,17 +779,25 @@ components:
             properties:
               recurso:
                 type: string
-              ultimaActualizacion:
+              lastSync:
                 type: string
                 nullable: true
-              estado:
+              recordsUpdated:
+                type: integer
+              dataFreshness:
+                type: string
+              status:
                 type: string
             required:
               - recurso
-              - estado
+              - recordsUpdated
+              - dataFreshness
+              - status
       required:
-        - online
-        - fuente
+        - source
+        - recordsUpdated
+        - dataFreshness
+        - status
         - recursos
 
     AIConsultRequest:

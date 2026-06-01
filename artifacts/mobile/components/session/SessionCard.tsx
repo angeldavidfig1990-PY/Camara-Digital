@@ -17,9 +17,13 @@ function formatDate(dateStr: string): string {
   } catch { return dateStr; }
 }
 
+function isEnVivo(estado: string): boolean {
+  return estado === "en vivo" || estado === "en-vivo";
+}
+
 function getEstadoBadge(estado: string): { label: string; variant: "live" | "success" | "warning" | "muted" } {
+  if (isEnVivo(estado)) return { label: "EN VIVO", variant: "live" };
   switch (estado) {
-    case "en-vivo": return { label: "EN VIVO", variant: "live" };
     case "programada": return { label: "Programada", variant: "warning" };
     case "completada": return { label: "Finalizada", variant: "success" };
     default: return { label: estado, variant: "muted" };
@@ -38,7 +42,7 @@ export function SessionCard({ session, onPress }: SessionCardProps) {
     >
       <View style={styles.topRow}>
         <View style={[styles.iconWrap, { backgroundColor: colors.primary + "15" }]}>
-          <Ionicons name={session.estado === "en-vivo" ? "radio" : "calendar"} size={20} color={colors.primary} />
+          <Ionicons name={isEnVivo(session.estado) ? "radio" : "calendar"} size={20} color={colors.primary} />
         </View>
         <Badge label={label} variant={variant} size="sm" />
       </View>

@@ -36,7 +36,8 @@ export const GetDashboardResponse = zod.object({
   "estado": zod.string(),
   "periodo": zod.string(),
   "descripcion": zod.string().nullish(),
-  "orden_del_dia": zod.array(zod.string()).optional()
+  "orden_del_dia": zod.array(zod.string()).optional(),
+  "appURL": zod.string().nullish()
 }).nullish(),
   "proximasSesiones": zod.array(zod.object({
   "id": zod.string(),
@@ -47,7 +48,8 @@ export const GetDashboardResponse = zod.object({
   "estado": zod.string(),
   "periodo": zod.string(),
   "descripcion": zod.string().nullish(),
-  "orden_del_dia": zod.array(zod.string()).optional()
+  "orden_del_dia": zod.array(zod.string()).optional(),
+  "appURL": zod.string().nullish()
 })),
   "ultimosProyectos": zod.array(zod.object({
   "id": zod.string(),
@@ -192,7 +194,8 @@ export const GetSesionesResponse = zod.object({
   "estado": zod.string(),
   "periodo": zod.string(),
   "descripcion": zod.string().nullish(),
-  "orden_del_dia": zod.array(zod.string()).optional()
+  "orden_del_dia": zod.array(zod.string()).optional(),
+  "appURL": zod.string().nullish()
 })),
   "total": zod.number(),
   "sesionEnVivo": zod.object({
@@ -204,7 +207,8 @@ export const GetSesionesResponse = zod.object({
   "estado": zod.string(),
   "periodo": zod.string(),
   "descripcion": zod.string().nullish(),
-  "orden_del_dia": zod.array(zod.string()).optional()
+  "orden_del_dia": zod.array(zod.string()).optional(),
+  "appURL": zod.string().nullish()
 }).nullish()
 })
 
@@ -225,7 +229,8 @@ export const GetSesionByIdResponse = zod.object({
   "estado": zod.string(),
   "periodo": zod.string(),
   "descripcion": zod.string().nullish(),
-  "orden_del_dia": zod.array(zod.string()).optional()
+  "orden_del_dia": zod.array(zod.string()).optional(),
+  "appURL": zod.string().nullish()
 })
 
 
@@ -384,13 +389,18 @@ export const GetVotacionByIdResponse = zod.object({
  * @summary Get data freshness / sync status
  */
 export const GetSystemStatusResponse = zod.object({
-  "online": zod.boolean(),
-  "ultimaActualizacion": zod.string().nullish(),
-  "fuente": zod.string(),
+  "lastSync": zod.string().nullish(),
+  "source": zod.string(),
+  "recordsUpdated": zod.number(),
+  "lastSessionDetected": zod.string().nullish(),
+  "dataFreshness": zod.string(),
+  "status": zod.string(),
   "recursos": zod.array(zod.object({
   "recurso": zod.string(),
-  "ultimaActualizacion": zod.string().nullish(),
-  "estado": zod.string()
+  "lastSync": zod.string().nullish(),
+  "recordsUpdated": zod.number(),
+  "dataFreshness": zod.string(),
+  "status": zod.string()
 }))
 })
 

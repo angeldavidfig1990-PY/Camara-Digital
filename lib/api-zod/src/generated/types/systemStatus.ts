@@ -8,8 +8,11 @@
 import type { SystemStatusRecursosItem } from './systemStatusRecursosItem';
 
 export interface SystemStatus {
-  online: boolean;
-  ultimaActualizacion?: string | null;
-  fuente: string;
+  lastSync?: string | null;
+  source: string;
+  recordsUpdated: number;
+  lastSessionDetected?: string | null;
+  dataFreshness: string;
+  status: string;
   recursos: SystemStatusRecursosItem[];
 }

@@ -49,7 +49,8 @@ export default function DashboardScreen() {
     setRefreshing(false);
   }, [refetch, refetchStatus]);
 
-  const lastSync = formatRelative(status?.ultimaActualizacion);
+  const lastSync = formatRelative(status?.lastSync);
+  const online = status ? status.status !== "offline" : true;
 
   const topPad = Platform.OS === "web" ? 67 : insets.top;
 
@@ -74,9 +75,9 @@ export default function DashboardScreen() {
             <Text style={styles.heroSub}>Honorable Congreso Nacional</Text>
             {lastSync && (
               <View style={styles.syncRow}>
-                <View style={[styles.syncDot, { backgroundColor: status?.online ? "#34D399" : "#F87171" }]} />
+                <View style={[styles.syncDot, { backgroundColor: online ? "#34D399" : "#F87171" }]} />
                 <Text style={styles.syncText}>
-                  {status?.online ? `Datos oficiales · Actualizado ${lastSync}` : "Sin conexión con fuentes oficiales"}
+                  {online ? `Datos oficiales · Actualizado ${lastSync}` : "Sin conexión con fuentes oficiales"}
                 </Text>
               </View>
             )}
