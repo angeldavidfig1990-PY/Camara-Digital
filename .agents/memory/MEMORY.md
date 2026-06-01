@@ -1,1 +1,1 @@
-- [Expo SDK54 icon fonts → SVG](expo-sdk54-icon-fonts.md) — icon fonts tofu on Android (New Arch, issue #351); fix is lucide SVG via Icon.tsx wrapper, not fonts.
+- [Congress API quirks](congress-api-quirks.md) — datosv2.congreso.gov.py envelope, period-filtering for the sitting chamber, and HTTP 404 = empty (not outage).

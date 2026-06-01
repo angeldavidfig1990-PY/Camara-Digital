@@ -30,6 +30,7 @@ import type {
   GetLeyesParams,
   GetProyectosParams,
   GetSesionesParams,
+  GetVotacionesParams,
   HealthStatus,
   Legislador,
   LegisladoresResponse,
@@ -37,7 +38,10 @@ import type {
   Proyecto,
   ProyectosResponse,
   Sesion,
-  SesionesResponse
+  SesionesResponse,
+  SystemStatus,
+  Votacion,
+  VotacionesResponse
 } from './api.schemas';
 
 import { customFetch } from '../custom-fetch';
@@ -917,6 +921,245 @@ export function useGetLeyes<TData = Awaited<ReturnType<typeof getLeyes>>, TError
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getGetLeyesQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getGetVotacionesUrl = (params?: GetVotacionesParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/legislative/votaciones?${stringifiedParams}` : `/api/legislative/votaciones`
+}
+
+/**
+ * @summary Get list of recent votes
+ */
+export const getVotaciones = async (params?: GetVotacionesParams, options?: RequestInit): Promise<VotacionesResponse> => {
+
+  return customFetch<VotacionesResponse>(getGetVotacionesUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetVotacionesQueryKey = (params?: GetVotacionesParams,) => {
+    return [
+    `/api/legislative/votaciones`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetVotacionesQueryOptions = <TData = Awaited<ReturnType<typeof getVotaciones>>, TError = ErrorType<unknown>>(params?: GetVotacionesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getVotaciones>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetVotacionesQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getVotaciones>>> = ({ signal }) => getVotaciones(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getVotaciones>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetVotacionesQueryResult = NonNullable<Awaited<ReturnType<typeof getVotaciones>>>
+export type GetVotacionesQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get list of recent votes
+ */
+
+export function useGetVotaciones<TData = Awaited<ReturnType<typeof getVotaciones>>, TError = ErrorType<unknown>>(
+ params?: GetVotacionesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getVotaciones>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetVotacionesQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getGetVotacionByIdUrl = (id: string,) => {
+
+
+
+
+  return `/api/legislative/votaciones/${id}`
+}
+
+/**
+ * @summary Get vote by ID
+ */
+export const getVotacionById = async (id: string, options?: RequestInit): Promise<Votacion> => {
+
+  return customFetch<Votacion>(getGetVotacionByIdUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetVotacionByIdQueryKey = (id: string,) => {
+    return [
+    `/api/legislative/votaciones/${id}`
+    ] as const;
+    }
+
+
+export const getGetVotacionByIdQueryOptions = <TData = Awaited<ReturnType<typeof getVotacionById>>, TError = ErrorType<ErrorResponse>>(id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getVotacionById>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetVotacionByIdQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getVotacionById>>> = ({ signal }) => getVotacionById(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(id), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getVotacionById>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetVotacionByIdQueryResult = NonNullable<Awaited<ReturnType<typeof getVotacionById>>>
+export type GetVotacionByIdQueryError = ErrorType<ErrorResponse>
+
+
+/**
+ * @summary Get vote by ID
+ */
+
+export function useGetVotacionById<TData = Awaited<ReturnType<typeof getVotacionById>>, TError = ErrorType<ErrorResponse>>(
+ id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getVotacionById>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetVotacionByIdQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getGetSystemStatusUrl = () => {
+
+
+
+
+  return `/api/system/status`
+}
+
+/**
+ * Returns connectivity and last-sync freshness of official data sources
+ * @summary Get data freshness / sync status
+ */
+export const getSystemStatus = async ( options?: RequestInit): Promise<SystemStatus> => {
+
+  return customFetch<SystemStatus>(getGetSystemStatusUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetSystemStatusQueryKey = () => {
+    return [
+    `/api/system/status`
+    ] as const;
+    }
+
+
+export const getGetSystemStatusQueryOptions = <TData = Awaited<ReturnType<typeof getSystemStatus>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSystemStatus>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetSystemStatusQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getSystemStatus>>> = ({ signal }) => getSystemStatus({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getSystemStatus>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetSystemStatusQueryResult = NonNullable<Awaited<ReturnType<typeof getSystemStatus>>>
+export type GetSystemStatusQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get data freshness / sync status
+ */
+
+export function useGetSystemStatus<TData = Awaited<ReturnType<typeof getSystemStatus>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSystemStatus>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetSystemStatusQueryOptions(options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

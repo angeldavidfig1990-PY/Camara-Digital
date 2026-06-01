@@ -123,6 +123,47 @@ export interface DashboardData {
   ultimasLeyes: Ley[];
 }
 
+export type VotacionVotosItem = {
+  legislador: string;
+  partido: string;
+  sentido: string;
+};
+
+export interface Votacion {
+  id: string;
+  titulo: string;
+  descripcion: string;
+  fecha: string;
+  tipo: string;
+  camara: string;
+  favor: number;
+  contra: number;
+  abstenciones: number;
+  ausentes: number;
+  resultado: string;
+  appURL?: string | null;
+  proyectoId?: string | null;
+  votos?: VotacionVotosItem[];
+}
+
+export interface VotacionesResponse {
+  data: Votacion[];
+  total: number;
+}
+
+export type SystemStatusRecursosItem = {
+  recurso: string;
+  ultimaActualizacion?: string | null;
+  estado: string;
+};
+
+export interface SystemStatus {
+  online: boolean;
+  ultimaActualizacion?: string | null;
+  fuente: string;
+  recursos: SystemStatusRecursosItem[];
+}
+
 export type AIConsultRequestHistorialItem = {
   role: string;
   content: string;
@@ -166,5 +207,9 @@ export type GetLeyesParams = {
 anio?: number;
 search?: string;
 page?: number;
+};
+
+export type GetVotacionesParams = {
+search?: string;
 };
 

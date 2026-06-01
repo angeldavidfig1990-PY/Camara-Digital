@@ -7,7 +7,7 @@ import { useRouter } from "expo-router";
 import { Ionicons } from "@/components/Icon";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
-import { useGetDashboard } from "@workspace/api-client-react";
+import { useGetDashboard, useGetSystemStatus } from "@workspace/api-client-react";
 import { useColors } from "@/hooks/useColors";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { SkeletonList } from "@/components/ui/SkeletonCard";
@@ -15,6 +15,20 @@ import { SessionCard } from "@/components/session/SessionCard";
 import { ProjectCard } from "@/components/project/ProjectCard";
 import { StatsRow } from "@/components/dashboard/StatsRow";
 import { Badge } from "@/components/ui/Badge";
+
+function formatRelative(iso?: string | null): string | null {
+  if (!iso) return null;
+  const then = new Date(iso).getTime();
+  if (Number.isNaN(then)) return null;
+  const diffMs = Date.now() - then;
+  const min = Math.floor(diffMs / 60000);
+  if (min < 1) return "hace instantes";
+  if (min < 60) return `hace ${min} min`;
+  const hrs = Math.floor(min / 60);
+  if (hrs < 24) return `hace ${hrs} h`;
+  const days = Math.floor(hrs / 24);
+  return `hace ${days} d`;
+}
 
 export default function DashboardScreen() {
   const colors = useColors();
@@ -25,12 +39,17 @@ export default function DashboardScreen() {
   const { data, isLoading, error, refetch } = useGetDashboard({
     query: { queryKey: ["dashboard"] },
   });
+  const { data: status, refetch: refetchStatus } = useGetSystemStatus({
+    query: { queryKey: ["system-status"] },
+  });
 
   const onRefresh = React.useCallback(async () => {
     setRefreshing(true);
-    await refetch();
+    await Promise.all([refetch(), refetchStatus()]);
     setRefreshing(false);
-  }, [refetch]);
+  }, [refetch, refetchStatus]);
+
+  const lastSync = formatRelative(status?.ultimaActualizacion);
 
   const topPad = Platform.OS === "web" ? 67 : insets.top;
 
@@ -53,6 +72,14 @@ export default function DashboardScreen() {
             <Text style={styles.heroEyebrow}>REPÚBLICA DEL PARAGUAY</Text>
             <Text style={styles.heroTitle}>Cámara de{"\n"}Diputados</Text>
             <Text style={styles.heroSub}>Honorable Congreso Nacional</Text>
+            {lastSync && (
+              <View style={styles.syncRow}>
+                <View style={[styles.syncDot, { backgroundColor: status?.online ? "#34D399" : "#F87171" }]} />
+                <Text style={styles.syncText}>
+                  {status?.online ? `Datos oficiales · Actualizado ${lastSync}` : "Sin conexión con fuentes oficiales"}
+                </Text>
+              </View>
+            )}
           </View>
           <View style={styles.heroLogoWrap}>
             <Image
@@ -212,6 +239,9 @@ const styles = StyleSheet.create({
   heroEyebrow: { color: "rgba(255,255,255,0.7)", fontSize: 10, fontWeight: "700" as const, letterSpacing: 1.5, fontFamily: "Inter_700Bold" },
   heroTitle: { color: "#FFFFFF", fontSize: 28, fontWeight: "700" as const, fontFamily: "Inter_700Bold", lineHeight: 34, marginTop: 4 },
   heroSub: { color: "rgba(255,255,255,0.8)", fontSize: 13, marginTop: 4, fontFamily: "Inter_400Regular" },
+  syncRow: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 10 },
+  syncDot: { width: 7, height: 7, borderRadius: 4 },
+  syncText: { color: "rgba(255,255,255,0.85)", fontSize: 11, fontFamily: "Inter_500Medium", fontWeight: "500" as const },
   heroShield: { width: 64, height: 64, borderRadius: 20, alignItems: "center", justifyContent: "center" },
   heroLogoWrap: { width: 72, height: 72, borderRadius: 36, overflow: "hidden" as const },
   heroLogo: { width: 168, height: 168, marginLeft: -48, marginTop: -3 },

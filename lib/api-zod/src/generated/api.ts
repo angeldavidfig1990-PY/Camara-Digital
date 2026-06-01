@@ -319,6 +319,83 @@ export const GetLeyesResponse = zod.object({
 
 
 /**
+ * @summary Get list of recent votes
+ */
+export const GetVotacionesQueryParams = zod.object({
+  "search": zod.coerce.string().optional()
+})
+
+export const GetVotacionesResponse = zod.object({
+  "data": zod.array(zod.object({
+  "id": zod.string(),
+  "titulo": zod.string(),
+  "descripcion": zod.string(),
+  "fecha": zod.string(),
+  "tipo": zod.string(),
+  "camara": zod.string(),
+  "favor": zod.number(),
+  "contra": zod.number(),
+  "abstenciones": zod.number(),
+  "ausentes": zod.number(),
+  "resultado": zod.string(),
+  "appURL": zod.string().nullish(),
+  "proyectoId": zod.string().nullish(),
+  "votos": zod.array(zod.object({
+  "legislador": zod.string(),
+  "partido": zod.string(),
+  "sentido": zod.string()
+})).optional()
+})),
+  "total": zod.number()
+})
+
+
+/**
+ * @summary Get vote by ID
+ */
+export const GetVotacionByIdParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const GetVotacionByIdResponse = zod.object({
+  "id": zod.string(),
+  "titulo": zod.string(),
+  "descripcion": zod.string(),
+  "fecha": zod.string(),
+  "tipo": zod.string(),
+  "camara": zod.string(),
+  "favor": zod.number(),
+  "contra": zod.number(),
+  "abstenciones": zod.number(),
+  "ausentes": zod.number(),
+  "resultado": zod.string(),
+  "appURL": zod.string().nullish(),
+  "proyectoId": zod.string().nullish(),
+  "votos": zod.array(zod.object({
+  "legislador": zod.string(),
+  "partido": zod.string(),
+  "sentido": zod.string()
+})).optional()
+})
+
+
+/**
+ * Returns connectivity and last-sync freshness of official data sources
+ * @summary Get data freshness / sync status
+ */
+export const GetSystemStatusResponse = zod.object({
+  "online": zod.boolean(),
+  "ultimaActualizacion": zod.string().nullish(),
+  "fuente": zod.string(),
+  "recursos": zod.array(zod.object({
+  "recurso": zod.string(),
+  "ultimaActualizacion": zod.string().nullish(),
+  "estado": zod.string()
+}))
+})
+
+
+/**
  * @summary AI legislative assistant query
  */
 export const AiConsultBody = zod.object({

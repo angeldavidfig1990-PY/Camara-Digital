@@ -1,50 +1,26 @@
 import React from "react";
-import { Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@/components/Icon";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useGetVotaciones } from "@workspace/api-client-react";
+import type { Votacion } from "@workspace/api-client-react";
 import { useColors } from "@/hooks/useColors";
+import { EmptyState } from "@/components/ui/EmptyState";
 
-const MOCK_VOTACIONES = [
-  {
-    id: "1", proyecto: "Ley N° 7847 - Protección de Datos Personales",
-    fecha: "2025-05-28", tipo: "Final",
-    favor: 52, contra: 18, abstenciones: 4, ausentes: 6,
-    resultado: "Aprobado",
-  },
-  {
-    id: "2", proyecto: "Ley N° 7846 - Economía Social y Solidaria",
-    fecha: "2025-05-28", tipo: "Final",
-    favor: 48, contra: 22, abstenciones: 6, ausentes: 4,
-    resultado: "Aprobado",
-  },
-  {
-    id: "3", proyecto: "Reforma al Código Laboral",
-    fecha: "2025-05-21", tipo: "Primera Lectura",
-    favor: 38, contra: 32, abstenciones: 3, ausentes: 7,
-    resultado: "Aprobado",
-  },
-  {
-    id: "4", proyecto: "Ley de Inversiones Extranjeras",
-    fecha: "2025-05-14", tipo: "Comisión",
-    favor: 25, contra: 40, abstenciones: 8, ausentes: 7,
-    resultado: "Rechazado",
-  },
-];
-
-function VotacionCard({ v }: { v: typeof MOCK_VOTACIONES[0] }) {
+function VotacionCard({ v }: { v: Votacion }) {
   const colors = useColors();
   const total = v.favor + v.contra + v.abstenciones + v.ausentes;
-  const pctFavor = Math.round((v.favor / total) * 100);
-  const pctContra = Math.round((v.contra / total) * 100);
+  const pctFavor = total > 0 ? Math.round((v.favor / total) * 100) : 0;
+  const pctContra = total > 0 ? Math.round((v.contra / total) * 100) : 0;
   const isApproved = v.resultado === "Aprobado";
 
   return (
     <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
       <View style={styles.cardHeader}>
         <View style={{ flex: 1 }}>
-          <Text style={[styles.cardTitle, { color: colors.foreground }]} numberOfLines={2}>{v.proyecto}</Text>
-          <Text style={[styles.cardDate, { color: colors.mutedForeground }]}>{v.fecha} · {v.tipo}</Text>
+          <Text style={[styles.cardTitle, { color: colors.foreground }]} numberOfLines={3}>{v.titulo}</Text>
+          <Text style={[styles.cardDate, { color: colors.mutedForeground }]}>{v.fecha || "—"} · {v.tipo}</Text>
         </View>
         <View style={[styles.resultBadge, { backgroundColor: isApproved ? colors.success + "18" : colors.destructive + "18" }]}>
           <Ionicons name={isApproved ? "checkmark-circle" : "close-circle"} size={14} color={isApproved ? colors.success : colors.destructive} />
@@ -84,6 +60,14 @@ export default function VotacionesScreen() {
   const router = useRouter();
   const topPad = Platform.OS === "web" ? 67 : insets.top;
 
+  const { data, isLoading, error } = useGetVotaciones(undefined, {
+    query: { queryKey: ["votaciones"] },
+  });
+
+  const votaciones = data?.data ?? [];
+  const aprobadas = votaciones.filter((v) => v.resultado === "Aprobado").length;
+  const rechazadas = votaciones.filter((v) => v.resultado === "Rechazado").length;
+
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={[styles.header, { paddingTop: topPad + 8, backgroundColor: colors.background, borderBottomColor: colors.border }]}>
@@ -96,20 +80,40 @@ export default function VotacionesScreen() {
         </View>
       </View>
       <ScrollView contentContainerStyle={[styles.content, { paddingBottom: Platform.OS === "web" ? 100 : 80 }]} showsVerticalScrollIndicator={false}>
-        {/* Summary */}
-        <View style={[styles.summaryCard, { backgroundColor: colors.primary + "12", borderColor: colors.primary + "30" }]}>
-          <Ionicons name="stats-chart" size={22} color={colors.primary} />
-          <View>
-            <Text style={[styles.summaryTitle, { color: colors.foreground }]}>Resumen 2025</Text>
-            <Text style={[styles.summarySub, { color: colors.mutedForeground }]}>{MOCK_VOTACIONES.length} votaciones registradas</Text>
+        {isLoading ? (
+          <View style={styles.centered}>
+            <ActivityIndicator color={colors.primary} />
           </View>
-          <View style={styles.summaryStats}>
-            <Text style={[styles.summaryValue, { color: colors.success }]}>{MOCK_VOTACIONES.filter(v => v.resultado === "Aprobado").length} apr.</Text>
-            <Text style={[styles.summaryValue, { color: colors.destructive }]}>{MOCK_VOTACIONES.filter(v => v.resultado === "Rechazado").length} rech.</Text>
-          </View>
-        </View>
+        ) : error ? (
+          <EmptyState
+            icon="alert-circle-outline"
+            title="No se pudieron cargar las votaciones"
+            subtitle="No existen datos disponibles en las fuentes oficiales sincronizadas."
+          />
+        ) : votaciones.length === 0 ? (
+          <EmptyState
+            icon="stats-chart-outline"
+            title="Sin votaciones"
+            subtitle="No existen datos disponibles en las fuentes oficiales sincronizadas."
+          />
+        ) : (
+          <>
+            {/* Summary */}
+            <View style={[styles.summaryCard, { backgroundColor: colors.primary + "12", borderColor: colors.primary + "30" }]}>
+              <Ionicons name="stats-chart" size={22} color={colors.primary} />
+              <View>
+                <Text style={[styles.summaryTitle, { color: colors.foreground }]}>Resumen</Text>
+                <Text style={[styles.summarySub, { color: colors.mutedForeground }]}>{votaciones.length} votaciones registradas</Text>
+              </View>
+              <View style={styles.summaryStats}>
+                <Text style={[styles.summaryValue, { color: colors.success }]}>{aprobadas} apr.</Text>
+                <Text style={[styles.summaryValue, { color: colors.destructive }]}>{rechazadas} rech.</Text>
+              </View>
+            </View>
 
-        {MOCK_VOTACIONES.map(v => <VotacionCard key={v.id} v={v} />)}
+            {votaciones.map((v) => <VotacionCard key={v.id} v={v} />)}
+          </>
+        )}
       </ScrollView>
     </View>
   );
@@ -121,6 +125,7 @@ const styles = StyleSheet.create({
   headerRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   headerTitle: { fontSize: 22, fontWeight: "700" as const, fontFamily: "Inter_700Bold" },
   content: { padding: 16, gap: 10 },
+  centered: { paddingVertical: 60, alignItems: "center" },
   summaryCard: { flexDirection: "row", alignItems: "center", gap: 12, padding: 16, borderRadius: 14, borderWidth: 1, marginBottom: 4 },
   summaryTitle: { fontSize: 15, fontWeight: "600" as const, fontFamily: "Inter_600SemiBold" },
   summarySub: { fontSize: 13, fontFamily: "Inter_400Regular" },
