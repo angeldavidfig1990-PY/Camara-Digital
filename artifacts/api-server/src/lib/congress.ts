@@ -775,7 +775,7 @@ export interface DashboardData {
   totalLegisladores: number;
   totalComisiones: number;
   sesionesEsteMes: number;
-  proyectosPendientes: number;
+  proyectosHistoricos: number;
   leyesAprobadas: number;
   sesionEnVivo: Sesion | null;
   proximasSesiones: Sesion[];
@@ -805,7 +805,7 @@ export async function getDashboard(): Promise<DashboardData> {
     totalLegisladores: legisladores.length,
     totalComisiones: comisiones.length,
     sesionesEsteMes,
-    proyectosPendientes: totalProyectos,
+    proyectosHistoricos: totalProyectos,
     leyesAprobadas: leyes.length,
     sesionEnVivo: sesionesRes.sesionEnVivo,
     proximasSesiones,

@@ -115,7 +115,7 @@ export default function DashboardScreen() {
           <StatsRow stats={[
             { icon: "people", value: data.totalLegisladores, label: "Diputados", color: colors.primary },
             { icon: "briefcase", value: data.totalComisiones, label: "Comisiones", color: "#7C3AED" },
-            { icon: "document-text", value: data.proyectosPendientes, label: "Proyectos", color: colors.warning },
+            { icon: "document-text", value: data.proyectosHistoricos.toLocaleString("es-PY"), label: "Proyectos históricos", color: colors.warning },
             { icon: "ribbon", value: data.leyesAprobadas, label: "Leyes 2025", color: colors.success },
           ]} />
         </View>

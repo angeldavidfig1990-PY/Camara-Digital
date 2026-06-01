@@ -138,7 +138,7 @@ function fmtDashboard(d: DashboardData): string {
   r += `• Total de diputados: **${d.totalLegisladores}**\n`;
   r += `• Comisiones permanentes: **${d.totalComisiones}**\n`;
   r += `• Sesiones este mes: **${d.sesionesEsteMes}**\n`;
-  r += `• Proyectos registrados: **${d.proyectosPendientes}**\n`;
+  r += `• Proyectos presentados (histórico acumulado): **${d.proyectosHistoricos}**\n`;
   r += `• Leyes del período: **${d.leyesAprobadas}**\n`;
   if (d.sesionEnVivo) r += `\n🔴 **SESIÓN EN VIVO**: ${d.sesionEnVivo.tipo}\n`;
   if (d.proximasSesiones.length > 0) {

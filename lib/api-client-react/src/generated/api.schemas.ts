@@ -116,7 +116,7 @@ export interface DashboardData {
   totalLegisladores: number;
   totalComisiones: number;
   sesionesEsteMes: number;
-  proyectosPendientes: number;
+  proyectosHistoricos: number;
   leyesAprobadas: number;
   sesionEnVivo?: Sesion | null;
   proximasSesiones: Sesion[];

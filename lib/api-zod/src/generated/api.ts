@@ -25,7 +25,7 @@ export const GetDashboardResponse = zod.object({
   "totalLegisladores": zod.number(),
   "totalComisiones": zod.number(),
   "sesionesEsteMes": zod.number(),
-  "proyectosPendientes": zod.number(),
+  "proyectosHistoricos": zod.number(),
   "leyesAprobadas": zod.number(),
   "sesionEnVivo": zod.object({
   "id": zod.string(),

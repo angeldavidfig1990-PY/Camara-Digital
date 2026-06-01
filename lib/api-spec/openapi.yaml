@@ -653,7 +653,7 @@ components:
           type: integer
         sesionesEsteMes:
           type: integer
-        proyectosPendientes:
+        proyectosHistoricos:
           type: integer
         leyesAprobadas:
           type: integer
@@ -677,7 +677,7 @@ components:
         - totalLegisladores
         - totalComisiones
         - sesionesEsteMes
-        - proyectosPendientes
+        - proyectosHistoricos
         - leyesAprobadas
         - proximasSesiones
         - ultimosProyectos
