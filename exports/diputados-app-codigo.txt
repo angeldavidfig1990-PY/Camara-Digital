@@ -1,0 +1,4475 @@
+================================================================================
+ DIPUTADOS PARAGUAY — Código fuente de la app móvil (Expo / React Native)
+ Generado: 2026-06-01 22:35
+================================================================================
+
+Archivos incluidos: configuración + app/ + components/ + constants/ + hooks/ + contexts/
+
+
+================================================================================
+FILE: artifacts/mobile/package.json
+================================================================================
+{
+  "name": "@workspace/mobile",
+  "version": "0.0.0",
+  "private": true,
+  "main": "expo-router/entry",
+  "scripts": {
+    "dev": "EXPO_PACKAGER_PROXY_URL=https://$REPLIT_EXPO_DEV_DOMAIN EXPO_PUBLIC_DOMAIN=$REPLIT_DEV_DOMAIN EXPO_PUBLIC_REPL_ID=$REPL_ID REACT_NATIVE_PACKAGER_HOSTNAME=$REPLIT_DEV_DOMAIN pnpm exec expo start --localhost --port $PORT",
+    "build": "node scripts/build.js",
+    "serve": "node server/serve.js",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.25.2",
+    "@expo-google-fonts/inter": "^0.4.0",
+    "@expo/cli": "54.0.23",
+    "@expo/ngrok": "^4.1.0",
+    "@expo/vector-icons": "^15.0.3",
+    "@react-native-async-storage/async-storage": "2.2.0",
+    "@stardazed/streams-text-encoding": "^1.0.2",
+    "@tanstack/react-query": "catalog:",
+    "@types/react": "~19.1.10",
+    "@types/react-dom": "~19.1.7",
+    "@ungap/structured-clone": "^1.3.0",
+    "@workspace/api-client-react": "workspace:*",
+    "babel-plugin-react-compiler": "^19.0.0-beta-e993439-20250117",
+    "expo": "~54.0.27",
+    "expo-blur": "~15.0.8",
+    "expo-constants": "~18.0.11",
+    "expo-font": "~14.0.10",
+    "expo-glass-effect": "~0.1.4",
+    "expo-haptics": "~15.0.8",
+    "expo-image": "~3.0.11",
+    "expo-image-picker": "~17.0.9",
+    "expo-linear-gradient": "~15.0.8",
+    "expo-linking": "~8.0.10",
+    "expo-location": "~19.0.8",
+    "expo-router": "~6.0.17",
+    "expo-splash-screen": "~31.0.12",
+    "expo-status-bar": "~3.0.9",
+    "expo-symbols": "~1.0.8",
+    "expo-system-ui": "~6.0.9",
+    "expo-web-browser": "~15.0.10",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "react-native": "0.81.5",
+    "react-native-gesture-handler": "~2.28.0",
+    "react-native-keyboard-controller": "1.18.5",
+    "react-native-reanimated": "~4.1.1",
+    "react-native-safe-area-context": "~5.6.0",
+    "react-native-screens": "~4.16.0",
+    "react-native-svg": "15.12.1",
+    "react-native-web": "^0.21.0",
+    "react-native-worklets": "0.5.1",
+    "typescript": "~5.9.2",
+    "zod": "catalog:",
+    "zod-validation-error": "^3.4.0"
+  },
+  "dependencies": {
+    "lucide-react-native": "^1.17.0"
+  }
+}
+
+
+================================================================================
+FILE: artifacts/mobile/app.json
+================================================================================
+{
+  "expo": {
+    "name": "Diputados Paraguay",
+    "slug": "mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "scheme": "mobile",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/images/icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#002B7F"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "infoPlist": {
+        "NSCameraUsageDescription": "No se requiere cámara.",
+        "NSLocationWhenInUseUsageDescription": "No se requiere ubicación.",
+        "NSMicrophoneUsageDescription": "No se requiere micrófono."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/icon.png",
+        "backgroundColor": "#002B7F"
+      }
+    },
+    "web": {
+      "favicon": "./assets/images/icon.png",
+      "bundler": "metro"
+    },
+    "plugins": [
+      [
+        "expo-router",
+        {
+          "origin": "https://replit.com/"
+        }
+      ],
+      "expo-web-browser"
+    ],
+    "experiments": {
+      "typedRoutes": true,
+      "reactCompiler": true
+    }
+  }
+}
+
+
+================================================================================
+FILE: artifacts/mobile/tsconfig.json
+================================================================================
+{
+  "extends": "expo/tsconfig.base",
+  "compilerOptions": {
+    "incremental": true,
+    "tsBuildInfoFile": ".tsbuildinfo",
+    "baseUrl": ".",
+    "strict": true,
+    "paths": {
+      "@/*": [
+        "./*"
+      ]
+    }
+  },
+  "include": [
+    "**/*.ts",
+    "**/*.tsx",
+    ".expo/types/**/*.ts",
+    "expo-env.d.ts"
+  ],
+  "references": [
+    {
+      "path": "../../lib/api-client-react"
+    }
+  ]
+}
+
+
+================================================================================
+FILE: artifacts/mobile/babel.config.js
+================================================================================
+module.exports = function (api) {
+  api.cache(true);
+  return {
+    presets: [["babel-preset-expo", { unstable_transformImportMeta: true }]],
+  };
+};
+
+
+================================================================================
+FILE: artifacts/mobile/metro.config.js
+================================================================================
+const { getDefaultConfig } = require("expo/metro-config");
+
+module.exports = getDefaultConfig(__dirname);
+
+
+================================================================================
+FILE: artifacts/mobile/app/ai-assistant.tsx
+================================================================================
+import React, { useState, useRef } from "react";
+import {
+  FlatList, KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput,
+  TouchableOpacity, View, ActivityIndicator,
+} from "react-native";
+import { useRouter } from "expo-router";
+import { Ionicons } from "@/components/Icon";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useAiConsult } from "@workspace/api-client-react";
+import { useColors } from "@/hooks/useColors";
+import * as Haptics from "expo-haptics";
+
+interface Message {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+  timestamp: Date;
+}
+
+const SUGGESTIONS = [
+  "¿Quién integra la Comisión de Salud?",
+  "¿Qué proyectos están en tratamiento?",
+  "¿Qué leyes fueron aprobadas en 2025?",
+  "¿Cuántos diputados hay por partido?",
+  "¿Cuáles son las próximas sesiones?",
+  "Información sobre el proyecto 128/2025",
+];
+
+function MessageBubble({ message }: { message: Message }) {
+  const colors = useColors();
+  const isUser = message.role === "user";
+
+  return (
+    <View style={[styles.bubbleWrap, isUser && styles.bubbleWrapUser]}>
+      {!isUser && (
+        <View style={[styles.aiAvatar, { backgroundColor: colors.accent + "18" }]}>
+          <Ionicons name="sparkles" size={14} color={colors.accent} />
+        </View>
+      )}
+      <View style={[
+        styles.bubble,
+        {
+          backgroundColor: isUser ? colors.primary : colors.card,
+          borderColor: isUser ? colors.primary : colors.border,
+        }
+      ]}>
+        <Text style={[
+          styles.bubbleText,
+          { color: isUser ? colors.primaryForeground : colors.foreground }
+        ]}>
+          {message.content}
+        </Text>
+        <Text style={[
+          styles.bubbleTime,
+          { color: isUser ? "rgba(255,255,255,0.6)" : colors.mutedForeground }
+        ]}>
+          {message.timestamp.toLocaleTimeString("es-PY", { hour: "2-digit", minute: "2-digit" })}
+        </Text>
+      </View>
+    </View>
+  );
+}
+
+export default function AIAssistantScreen() {
+  const colors = useColors();
+  const insets = useSafeAreaInsets();
+  const router = useRouter();
+  const [messages, setMessages] = useState<Message[]>([
+    {
+      id: "welcome",
+      role: "assistant",
+      content: "Hola, soy el Asistente Legislativo de la Cámara de Diputados del Paraguay.\n\nPuedo responder consultas sobre diputados, comisiones, proyectos de ley, sesiones y leyes utilizando datos oficiales del Congreso Nacional.\n\n¿En qué puedo ayudarte?",
+      timestamp: new Date(),
+    }
+  ]);
+  const [input, setInput] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const listRef = useRef<FlatList>(null);
+  const topPad = Platform.OS === "web" ? 67 : insets.top;
+  const botPad = Platform.OS === "web" ? 34 : insets.bottom;
+
+  const { mutateAsync: consult } = useAiConsult();
+
+  const sendMessage = async (text: string) => {
+    const question = text.trim();
+    if (!question || isLoading) return;
+
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
+    const userMsg: Message = {
+      id: Date.now().toString(),
+      role: "user",
+      content: question,
+      timestamp: new Date(),
+    };
+    setMessages(prev => [...prev, userMsg]);
+    setInput("");
+    setIsLoading(true);
+
+    try {
+      const res = await consult({ data: { pregunta: question } });
+      const aiMsg: Message = {
+        id: (Date.now() + 1).toString(),
+        role: "assistant",
+        content: res.respuesta,
+        timestamp: new Date(),
+      };
+      setMessages(prev => [...prev, aiMsg]);
+    } catch {
+      const errMsg: Message = {
+        id: (Date.now() + 1).toString(),
+        role: "assistant",
+        content: "Lo siento, no pude procesar tu consulta en este momento. Por favor, intenta nuevamente.",
+        timestamp: new Date(),
+      };
+      setMessages(prev => [...prev, errMsg]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <KeyboardAvoidingView
+      style={[styles.container, { backgroundColor: colors.background }]}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={0}
+    >
+      {/* Header */}
+      <View style={[styles.header, { paddingTop: topPad + 8, backgroundColor: colors.card, borderBottomColor: colors.border }]}>
+        <TouchableOpacity onPress={() => router.back()} activeOpacity={0.7} style={styles.backBtn}>
+          <Ionicons name="chevron-back" size={24} color={colors.foreground} />
+        </TouchableOpacity>
+        <View style={styles.headerCenter}>
+          <View style={[styles.headerIcon, { backgroundColor: colors.accent + "18" }]}>
+            <Ionicons name="sparkles" size={16} color={colors.accent} />
+          </View>
+          <View>
+            <Text style={[styles.headerTitle, { color: colors.foreground }]}>Asistente Legislativo</Text>
+            <Text style={[styles.headerSub, { color: colors.success }]}>Con datos oficiales del Congreso</Text>
+          </View>
+        </View>
+        <View style={{ width: 40 }} />
+      </View>
+
+      {/* Messages */}
+      <FlatList
+        ref={listRef}
+        data={messages}
+        keyExtractor={item => item.id}
+        renderItem={({ item }) => <MessageBubble message={item} />}
+        contentContainerStyle={styles.messageList}
+        showsVerticalScrollIndicator={false}
+        onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: true })}
+        ListFooterComponent={
+          isLoading ? (
+            <View style={styles.loadingBubble}>
+              <View style={[styles.aiAvatar, { backgroundColor: colors.accent + "18" }]}>
+                <Ionicons name="sparkles" size={14} color={colors.accent} />
+              </View>
+              <View style={[styles.bubble, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                <ActivityIndicator size="small" color={colors.accent} />
+              </View>
+            </View>
+          ) : null
+        }
+      />
+
+      {/* Suggestions */}
+      {messages.length <= 1 && (
+        <View style={[styles.suggestions, { backgroundColor: colors.background }]}>
+          <Text style={[styles.suggestTitle, { color: colors.mutedForeground }]}>Consultas frecuentes</Text>
+          <FlatList
+            data={SUGGESTIONS}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            keyExtractor={i => i}
+            renderItem={({ item }) => (
+              <TouchableOpacity
+                style={[styles.suggestion, { backgroundColor: colors.card, borderColor: colors.border }]}
+                onPress={() => sendMessage(item)}
+                activeOpacity={0.8}
+              >
+                <Text style={[styles.suggestionText, { color: colors.foreground }]}>{item}</Text>
+              </TouchableOpacity>
+            )}
+            contentContainerStyle={{ gap: 8, paddingHorizontal: 16, paddingVertical: 8 }}
+          />
+        </View>
+      )}
+
+      {/* Input */}
+      <View style={[styles.inputRow, {
+        backgroundColor: colors.card,
+        borderTopColor: colors.border,
+        paddingBottom: botPad + 8,
+      }]}>
+        <TextInput
+          style={[styles.input, { backgroundColor: colors.background, borderColor: colors.border, color: colors.foreground }]}
+          value={input}
+          onChangeText={setInput}
+          placeholder="Escribe tu consulta legislativa..."
+          placeholderTextColor={colors.mutedForeground}
+          multiline
+          maxLength={500}
+          onSubmitEditing={() => sendMessage(input)}
+        />
+        <TouchableOpacity
+          style={[styles.sendBtn, {
+            backgroundColor: input.trim() && !isLoading ? colors.accent : colors.muted,
+          }]}
+          onPress={() => sendMessage(input)}
+          disabled={!input.trim() || isLoading}
+          activeOpacity={0.85}
+        >
+          <Ionicons name="send" size={18} color={input.trim() && !isLoading ? "#FFF" : colors.mutedForeground} />
+        </TouchableOpacity>
+      </View>
+    </KeyboardAvoidingView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1 },
+  header: {
+    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
+    paddingHorizontal: 16, paddingBottom: 12, borderBottomWidth: 1, gap: 12,
+  },
+  backBtn: { width: 40, height: 40, alignItems: "center", justifyContent: "center" },
+  headerCenter: { flexDirection: "row", alignItems: "center", gap: 10, flex: 1 },
+  headerIcon: { width: 36, height: 36, borderRadius: 10, alignItems: "center", justifyContent: "center" },
+  headerTitle: { fontSize: 15, fontWeight: "700" as const, fontFamily: "Inter_700Bold" },
+  headerSub: { fontSize: 12, fontFamily: "Inter_400Regular" },
+  messageList: { paddingHorizontal: 16, paddingVertical: 16, gap: 12, flexGrow: 1 },
+  bubbleWrap: { flexDirection: "row", alignItems: "flex-end", gap: 8 },
+  bubbleWrapUser: { flexDirection: "row-reverse" },
+  aiAvatar: { width: 28, height: 28, borderRadius: 10, alignItems: "center", justifyContent: "center", marginBottom: 2 },
+  bubble: { maxWidth: "80%", borderRadius: 16, borderWidth: 1, padding: 12, gap: 4 },
+  bubbleText: { fontSize: 14, fontFamily: "Inter_400Regular", lineHeight: 21 },
+  bubbleTime: { fontSize: 11, fontFamily: "Inter_400Regular", alignSelf: "flex-end" },
+  loadingBubble: { flexDirection: "row", alignItems: "flex-end", gap: 8, marginTop: 4 },
+  suggestions: { paddingTop: 8 },
+  suggestTitle: { fontSize: 12, fontFamily: "Inter_500Medium", fontWeight: "500" as const, paddingHorizontal: 16, marginBottom: 2 },
+  suggestion: {
+    paddingHorizontal: 14, paddingVertical: 10, borderRadius: 20, borderWidth: 1,
+    maxWidth: 240,
+  },
+  suggestionText: { fontSize: 13, fontFamily: "Inter_400Regular" },
+  inputRow: {
+    flexDirection: "row", alignItems: "flex-end", gap: 10,
+    paddingHorizontal: 16, paddingTop: 12, borderTopWidth: 1,
+  },
+  input: {
+    flex: 1, borderRadius: 16, borderWidth: 1,
+    paddingHorizontal: 14, paddingVertical: 10, fontSize: 14,
+    maxHeight: 100, minHeight: 44,
+  },
+  sendBtn: { width: 44, height: 44, borderRadius: 14, alignItems: "center", justifyContent: "center" },
+});
+
+
+================================================================================
+FILE: artifacts/mobile/app/comisiones.tsx
+================================================================================
+import React, { useState } from "react";
+import {
+  FlatList, Platform, StyleSheet, Text, TouchableOpacity, View,
+} from "react-native";
+import { useRouter } from "expo-router";
+import { Ionicons } from "@/components/Icon";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useGetComisiones } from "@workspace/api-client-react";
+import { useColors } from "@/hooks/useColors";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { SkeletonList } from "@/components/ui/SkeletonCard";
+import { SearchBar } from "@/components/ui/SearchBar";
+
+export default function ComisionesScreen() {
+  const colors = useColors();
+  const insets = useSafeAreaInsets();
+  const router = useRouter();
+  const [search, setSearch] = useState("");
+  const topPad = Platform.OS === "web" ? 67 : insets.top;
+
+  const { data, isLoading, error, refetch } = useGetComisiones({
+    query: { queryKey: ["comisiones"] },
+  });
+
+  const filtered = React.useMemo(() => {
+    if (!search) return data?.data ?? [];
+    const q = search.toLowerCase();
+    return (data?.data ?? []).filter(c =>
+      c.nombre.toLowerCase().includes(q) ||
+      c.presidente?.toLowerCase().includes(q) ||
+      c.miembros.some(m => m.toLowerCase().includes(q))
+    );
+  }, [data, search]);
+
+  return (
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <View style={[styles.header, { paddingTop: topPad + 12, backgroundColor: colors.background, borderBottomColor: colors.border }]}>
+        <View style={styles.headerRow}>
+          <TouchableOpacity onPress={() => router.back()} activeOpacity={0.7}>
+            <Ionicons name="chevron-back" size={24} color={colors.foreground} />
+          </TouchableOpacity>
+          <Text style={[styles.headerTitle, { color: colors.foreground }]}>Comisiones</Text>
+          <View style={{ width: 24 }} />
+        </View>
+        <SearchBar value={search} onChangeText={setSearch} placeholder="Buscar comisión..." />
+        {data && (
+          <Text style={[styles.count, { color: colors.mutedForeground }]}>
+            {filtered.length} comisión{filtered.length !== 1 ? "es" : ""} permanente{filtered.length !== 1 ? "s" : ""}
+          </Text>
+        )}
+      </View>
+
+      {isLoading ? (
+        <View style={styles.listContent}><SkeletonList count={6} /></View>
+      ) : error ? (
+        <EmptyState icon="briefcase-outline" title="Error al cargar" subtitle="No se pudieron obtener las comisiones." actionLabel="Reintentar" onAction={refetch} />
+      ) : (
+        <FlatList
+          data={filtered}
+          keyExtractor={item => item.id}
+          renderItem={({ item }) => (
+            <TouchableOpacity
+              style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}
+              onPress={() => router.push(`/comision/${item.id}`)}
+              activeOpacity={0.75}
+            >
+              <View style={[styles.iconWrap, { backgroundColor: "#7C3AED18" }]}>
+                <Ionicons name="briefcase-outline" size={20} color="#7C3AED" />
+              </View>
+              <View style={styles.info}>
+                <Text style={[styles.name, { color: colors.foreground }]}>{item.nombre}</Text>
+                <Text style={[styles.type, { color: colors.mutedForeground }]}>{item.tipo}</Text>
+                {item.presidente && (
+                  <View style={styles.presRow}>
+                    <Ionicons name="person-outline" size={12} color={colors.mutedForeground} />
+                    <Text style={[styles.pres, { color: colors.mutedForeground }]} numberOfLines={1}>
+                      Pdte: {item.presidente}
+                    </Text>
+                  </View>
+                )}
+                <Text style={[styles.members, { color: colors.mutedForeground }]}>
+                  {item.miembros.length} miembro{item.miembros.length !== 1 ? "s" : ""}
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color={colors.mutedForeground} />
+            </TouchableOpacity>
+          )}
+          contentContainerStyle={styles.listContent}
+          showsVerticalScrollIndicator={false}
+          scrollEnabled={!!filtered.length}
+          onRefresh={refetch}
+          refreshing={false}
+          ListEmptyComponent={
+            <EmptyState icon="briefcase-outline" title="Sin resultados" subtitle="No se encontraron comisiones con esa búsqueda." />
+          }
+        />
+      )}
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1 },
+  header: {
+    paddingHorizontal: 16, paddingBottom: 12, borderBottomWidth: 1, gap: 10,
+  },
+  headerRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  headerTitle: { fontSize: 22, fontWeight: "700" as const, fontFamily: "Inter_700Bold" },
+  count: { fontSize: 13, fontFamily: "Inter_400Regular" },
+  listContent: { padding: 16, paddingBottom: 100 },
+  card: {
+    flexDirection: "row", alignItems: "center", padding: 14,
+    borderRadius: 14, borderWidth: 1, marginBottom: 8, gap: 12,
+  },
+  iconWrap: { width: 44, height: 44, borderRadius: 12, alignItems: "center", justifyContent: "center" },
+  info: { flex: 1, gap: 3 },
+  name: { fontSize: 15, fontWeight: "600" as const, fontFamily: "Inter_600SemiBold" },
+  type: { fontSize: 12, fontFamily: "Inter_400Regular" },
+  presRow: { flexDirection: "row", alignItems: "center", gap: 4 },
+  pres: { fontSize: 12, fontFamily: "Inter_400Regular" },
+  members: { fontSize: 12, fontFamily: "Inter_400Regular" },
+});
+
+
+================================================================================
+FILE: artifacts/mobile/app/comision/[id].tsx
+================================================================================
+import React from "react";
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View, Platform, Linking } from "react-native";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { Ionicons } from "@/components/Icon";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useGetComisionById } from "@workspace/api-client-react";
+import { useColors } from "@/hooks/useColors";
+import { SkeletonList } from "@/components/ui/SkeletonCard";
+import { EmptyState } from "@/components/ui/EmptyState";
+
+export default function ComisionDetailScreen() {
+  const colors = useColors();
+  const insets = useSafeAreaInsets();
+  const router = useRouter();
+  const { id } = useLocalSearchParams<{ id: string }>();
+  const topPad = Platform.OS === "web" ? 67 : insets.top;
+
+  const { data, isLoading, error } = useGetComisionById(id ?? "", {
+    query: { queryKey: ["comision", id], enabled: !!id },
+  });
+
+  return (
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <TouchableOpacity
+        style={[styles.backBtn, { top: topPad + 8, backgroundColor: colors.card + "EE", borderColor: colors.border }]}
+        onPress={() => router.back()}
+        activeOpacity={0.8}
+      >
+        <Ionicons name="chevron-back" size={20} color={colors.foreground} />
+      </TouchableOpacity>
+
+      {isLoading ? (
+        <ScrollView contentContainerStyle={[styles.content, { paddingTop: topPad + 56 }]}>
+          <SkeletonList count={3} />
+        </ScrollView>
+      ) : error || !data ? (
+        <EmptyState icon="briefcase-outline" title="Comisión no encontrada" actionLabel="Volver" onAction={() => router.back()} />
+      ) : (
+        <ScrollView
+          contentContainerStyle={[styles.content, { paddingTop: topPad + 56, paddingBottom: Platform.OS === "web" ? 100 : 60 }]}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Header */}
+          <View style={[styles.headerCard, { backgroundColor: "#7C3AED12", borderColor: "#7C3AED30" }]}>
+            <View style={[styles.headerIcon, { backgroundColor: "#7C3AED18" }]}>
+              <Ionicons name="briefcase" size={28} color="#7C3AED" />
+            </View>
+            <Text style={[styles.comisionName, { color: colors.foreground }]}>{data.nombre}</Text>
+            <Text style={[styles.comisionType, { color: colors.mutedForeground }]}>{data.tipo} · {data.camara}</Text>
+          </View>
+
+          {/* Authorities */}
+          <View style={[styles.section, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Autoridades</Text>
+            {data.presidente && (
+              <View style={styles.authorityRow}>
+                <View style={[styles.authorityBadge, { backgroundColor: colors.primary + "15" }]}>
+                  <Text style={[styles.authorityTitle, { color: colors.primary }]}>Presidente</Text>
+                </View>
+                <Text style={[styles.authorityName, { color: colors.foreground }]}>{data.presidente}</Text>
+              </View>
+            )}
+            {data.vicepresidente && (
+              <View style={[styles.authorityRow, { borderTopWidth: 1, borderTopColor: colors.border }]}>
+                <View style={[styles.authorityBadge, { backgroundColor: colors.muted }]}>
+                  <Text style={[styles.authorityTitle, { color: colors.mutedForeground }]}>Vicepresidente</Text>
+                </View>
+                <Text style={[styles.authorityName, { color: colors.foreground }]}>{data.vicepresidente}</Text>
+              </View>
+            )}
+          </View>
+
+          {/* Members */}
+          <View style={[styles.section, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <View style={styles.sectionHeader}>
+              <Ionicons name="people-outline" size={18} color={colors.primary} />
+              <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
+                Miembros ({data.miembros.length})
+              </Text>
+            </View>
+            {data.miembros.map((member, i) => (
+              <View key={i} style={[styles.memberRow, { borderTopColor: i > 0 ? colors.border : "transparent" }]}>
+                <View style={[styles.memberAvatar, { backgroundColor: "#7C3AED18" }]}>
+                  <Text style={[styles.memberInitial, { color: "#7C3AED" }]}>{member.charAt(0)}</Text>
+                </View>
+                <Text style={[styles.memberName, { color: colors.foreground }]}>{member}</Text>
+              </View>
+            ))}
+          </View>
+
+          {/* Contact */}
+          {data.email && (
+            <View style={[styles.section, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Contacto Institucional</Text>
+              <TouchableOpacity
+                style={[styles.contactBtn, { backgroundColor: colors.primary + "12" }]}
+                onPress={() => Linking.openURL(`mailto:${data.email}`)}
+                activeOpacity={0.8}
+              >
+                <Ionicons name="mail-outline" size={18} color={colors.primary} />
+                <Text style={[styles.contactText, { color: colors.primary }]}>{data.email}</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {/* Full Commission List Link */}
+          <TouchableOpacity
+            style={[styles.linkBtn, { backgroundColor: colors.secondary, borderColor: colors.border }]}
+            onPress={() => Linking.openURL("https://www.diputados.gov.py/comisiones/comisiones-permanentes")}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="globe-outline" size={16} color={colors.primary} />
+            <Text style={[styles.linkBtnText, { color: colors.primary }]}>Ver todas las comisiones oficiales</Text>
+            <Ionicons name="open-outline" size={14} color={colors.primary} />
+          </TouchableOpacity>
+        </ScrollView>
+      )}
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1 },
+  backBtn: {
+    position: "absolute", left: 16, zIndex: 10,
+    width: 40, height: 40, borderRadius: 12,
+    alignItems: "center", justifyContent: "center", borderWidth: 1,
+  },
+  content: { padding: 16, gap: 12 },
+  headerCard: { borderRadius: 20, borderWidth: 1, padding: 20, alignItems: "center", gap: 10 },
+  headerIcon: { width: 64, height: 64, borderRadius: 20, alignItems: "center", justifyContent: "center" },
+  comisionName: { fontSize: 20, fontWeight: "700" as const, fontFamily: "Inter_700Bold", textAlign: "center" },
+  comisionType: { fontSize: 14, fontFamily: "Inter_400Regular" },
+  section: { borderRadius: 16, borderWidth: 1, padding: 16, gap: 10 },
+  sectionHeader: { flexDirection: "row", alignItems: "center", gap: 8 },
+  sectionTitle: { fontSize: 16, fontWeight: "700" as const, fontFamily: "Inter_700Bold" },
+  authorityRow: { flexDirection: "row", alignItems: "center", gap: 12, paddingTop: 8 },
+  authorityBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
+  authorityTitle: { fontSize: 11, fontWeight: "700" as const, fontFamily: "Inter_700Bold" },
+  authorityName: { flex: 1, fontSize: 14, fontFamily: "Inter_500Medium", fontWeight: "500" as const },
+  memberRow: { flexDirection: "row", alignItems: "center", gap: 12, paddingTop: 10, borderTopWidth: 1 },
+  memberAvatar: { width: 36, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center" },
+  memberInitial: { fontSize: 14, fontWeight: "700" as const, fontFamily: "Inter_700Bold" },
+  memberName: { flex: 1, fontSize: 14, fontFamily: "Inter_400Regular" },
+  contactBtn: { flexDirection: "row", alignItems: "center", gap: 10, padding: 12, borderRadius: 10 },
+  contactText: { fontSize: 14, fontFamily: "Inter_500Medium", fontWeight: "500" as const },
+  linkBtn: {
+    flexDirection: "row", alignItems: "center", justifyContent: "center",
+    gap: 8, padding: 14, borderRadius: 14, borderWidth: 1,
+  },
+  linkBtnText: { fontSize: 14, fontWeight: "500" as const, fontFamily: "Inter_500Medium" },
+});
+
+
+================================================================================
+FILE: artifacts/mobile/app/configuracion.tsx
+================================================================================
+import React from "react";
+import {
+  Linking,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { useRouter } from "expo-router";
+import { Ionicons } from "@/components/Icon";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useColors } from "@/hooks/useColors";
+import { useSettings, type FontSizeOption } from "@/contexts/SettingsContext";
+
+const FONT_SIZE_LABELS: Record<FontSizeOption, string> = {
+  small: "Pequeño",
+  medium: "Mediano",
+  large: "Grande",
+};
+
+const OFFICIAL_LINKS = [
+  {
+    icon: "globe-outline" as const,
+    label: "Sitio Oficial",
+    subtitle: "diputados.gov.py",
+    color: "#002B7F",
+    url: "https://www.diputados.gov.py",
+  },
+  {
+    icon: "cloud-download-outline" as const,
+    label: "Portal Datos Abiertos",
+    subtitle: "datos.congreso.gov.py",
+    color: "#0D9488",
+    url: "https://datos.congreso.gov.py/opendata/",
+  },
+  {
+    icon: "desktop-outline" as const,
+    label: "Portal Legislativo V2",
+    subtitle: "datosv2.congreso.gov.py",
+    color: "#7C3AED",
+    url: "https://datosv2.congreso.gov.py/web/",
+  },
+  {
+    icon: "grid-outline" as const,
+    label: "Datasets Legislativos",
+    subtitle: "Conjuntos de datos abiertos",
+    color: "#0891B2",
+    url: "https://datosv2.congreso.gov.py/web/pages/datos.xhtml",
+  },
+  {
+    icon: "videocam-outline" as const,
+    label: "Sesión Digital",
+    subtitle: "Transmisión en vivo",
+    color: "#EF4444",
+    url: "https://www.diputados.gov.py/sesiones/sesion-digital-comision-permanente",
+  },
+  {
+    icon: "newspaper-outline" as const,
+    label: "Diario de Sesiones",
+    subtitle: "Actas y registros oficiales",
+    color: "#6366F1",
+    url: "https://www.diputados.gov.py/sesiones/diario-sesiones-comision-permanente",
+  },
+];
+
+export default function ConfiguracionScreen() {
+  const colors = useColors();
+  const insets = useSafeAreaInsets();
+  const router = useRouter();
+  const { fontSize, setFontSize, fontScale } = useSettings();
+
+  const topPad = Platform.OS === "web" ? 0 : insets.top;
+
+  return (
+    <View style={[styles.root, { backgroundColor: colors.background }]}>
+      {/* Header */}
+      <View
+        style={[
+          styles.header,
+          {
+            paddingTop: topPad + 12,
+            backgroundColor: colors.background,
+            borderBottomColor: colors.border,
+          },
+        ]}
+      >
+        <TouchableOpacity style={styles.backBtn} onPress={() => router.back()} activeOpacity={0.7}>
+          <Ionicons name="chevron-back" size={24} color={colors.primary} />
+        </TouchableOpacity>
+        <Text style={[styles.headerTitle, { color: colors.foreground }]}>Configuración</Text>
+        <View style={{ width: 40 }} />
+      </View>
+
+      <ScrollView
+        contentContainerStyle={[styles.content, { paddingBottom: 60 }]}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Accessibility */}
+        <Text style={[styles.sectionLabel, { color: colors.mutedForeground }]}>ACCESIBILIDAD</Text>
+        <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <View style={styles.cardRow}>
+            <View style={[styles.iconBox, { backgroundColor: colors.primary + "15" }]}>
+              <Ionicons name="text-outline" size={20} color={colors.primary} />
+            </View>
+            <View style={styles.cardText}>
+              <Text style={[styles.cardLabel, { color: colors.foreground, fontSize: 15 * fontScale }]}>
+                Tamaño de texto
+              </Text>
+              <Text style={[styles.cardSub, { color: colors.mutedForeground, fontSize: 13 * fontScale }]}>
+                {FONT_SIZE_LABELS[fontSize]}
+              </Text>
+            </View>
+          </View>
+          <View style={[styles.divider, { backgroundColor: colors.border }]} />
+          <View style={styles.fontSizeRow}>
+            {(["small", "medium", "large"] as FontSizeOption[]).map((opt) => (
+              <TouchableOpacity
+                key={opt}
+                style={[
+                  styles.fontSizeBtn,
+                  {
+                    backgroundColor:
+                      fontSize === opt ? colors.primary : colors.background,
+                    borderColor:
+                      fontSize === opt ? colors.primary : colors.border,
+                  },
+                ]}
+                onPress={() => setFontSize(opt)}
+                activeOpacity={0.7}
+              >
+                <Text
+                  style={[
+                    styles.fontSizeBtnLabel,
+                    {
+                      color: fontSize === opt ? "#FFF" : colors.foreground,
+                      fontSize:
+                        opt === "small" ? 12 : opt === "medium" ? 14 : 17,
+                    },
+                  ]}
+                >
+                  A
+                </Text>
+                <Text
+                  style={[
+                    styles.fontSizeBtnSub,
+                    {
+                      color:
+                        fontSize === opt ? "#FFF" : colors.mutedForeground,
+                    },
+                  ]}
+                >
+                  {FONT_SIZE_LABELS[opt]}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+
+        {/* Language */}
+        <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border, marginTop: 8 }]}>
+          <View style={styles.cardRow}>
+            <View style={[styles.iconBox, { backgroundColor: "#0891B215" }]}>
+              <Ionicons name="language-outline" size={20} color="#0891B2" />
+            </View>
+            <View style={styles.cardText}>
+              <Text style={[styles.cardLabel, { color: colors.foreground, fontSize: 15 * fontScale }]}>
+                Idioma
+              </Text>
+              <Text style={[styles.cardSub, { color: colors.mutedForeground, fontSize: 13 * fontScale }]}>
+                Español (Paraguay)
+              </Text>
+            </View>
+            <View style={[styles.langBadge, { backgroundColor: colors.primary + "15" }]}>
+              <Text style={[styles.langBadgeText, { color: colors.primary }]}>ES</Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Official Portals */}
+        <Text style={[styles.sectionLabel, { color: colors.mutedForeground, marginTop: 20 }]}>
+          PORTALES OFICIALES
+        </Text>
+        <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          {OFFICIAL_LINKS.map((link, i) => (
+            <View key={link.url}>
+              {i > 0 && <View style={[styles.divider, { backgroundColor: colors.border }]} />}
+              <TouchableOpacity
+                style={styles.linkRow}
+                onPress={() => Linking.openURL(link.url)}
+                activeOpacity={0.7}
+              >
+                <View style={[styles.iconBox, { backgroundColor: link.color + "15" }]}>
+                  <Ionicons name={link.icon} size={20} color={link.color} />
+                </View>
+                <View style={styles.cardText}>
+                  <Text style={[styles.cardLabel, { color: colors.foreground, fontSize: 15 * fontScale }]}>
+                    {link.label}
+                  </Text>
+                  <Text style={[styles.cardSub, { color: colors.mutedForeground, fontSize: 13 * fontScale }]}>
+                    {link.subtitle}
+                  </Text>
+                </View>
+                <Ionicons name="open-outline" size={16} color={colors.mutedForeground} />
+              </TouchableOpacity>
+            </View>
+          ))}
+        </View>
+
+        {/* About */}
+        <Text style={[styles.sectionLabel, { color: colors.mutedForeground, marginTop: 20 }]}>
+          ACERCA DE
+        </Text>
+        <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <View style={styles.aboutBox}>
+            <View style={[styles.aboutIcon, { backgroundColor: colors.primary }]}>
+              <Ionicons name="business" size={28} color="#FFF" />
+            </View>
+            <Text style={[styles.aboutTitle, { color: colors.foreground, fontSize: 17 * fontScale }]}>
+              Diputados Paraguay
+            </Text>
+            <Text style={[styles.aboutSub, { color: colors.mutedForeground, fontSize: 13 * fontScale }]}>
+              App institucional de la{"\n"}Honorable Cámara de Diputados{"\n"}República del Paraguay
+            </Text>
+            <View style={[styles.versionRow, { borderColor: colors.border }]}>
+              <Text style={[styles.versionText, { color: colors.mutedForeground, fontSize: 12 * fontScale }]}>
+                Versión 1.0.0
+              </Text>
+              <View style={[styles.dot, { backgroundColor: colors.border }]} />
+              <Text style={[styles.versionText, { color: colors.mutedForeground, fontSize: 12 * fontScale }]}>
+                2025
+              </Text>
+            </View>
+          </View>
+        </View>
+      </ScrollView>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  root: { flex: 1 },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+  },
+  backBtn: { width: 40, height: 40, alignItems: "center", justifyContent: "center" },
+  headerTitle: { fontSize: 17, fontWeight: "600" as const, fontFamily: "Inter_600SemiBold" },
+  content: { padding: 16, gap: 0 },
+  sectionLabel: {
+    fontSize: 12,
+    fontWeight: "600" as const,
+    fontFamily: "Inter_600SemiBold",
+    letterSpacing: 1,
+    marginBottom: 8,
+  },
+  card: { borderRadius: 16, borderWidth: 1, overflow: "hidden" },
+  cardRow: { flexDirection: "row", alignItems: "center", gap: 14, padding: 16 },
+  linkRow: { flexDirection: "row", alignItems: "center", gap: 14, padding: 16 },
+  iconBox: { width: 40, height: 40, borderRadius: 12, alignItems: "center", justifyContent: "center" },
+  cardText: { flex: 1 },
+  cardLabel: { fontWeight: "500" as const, fontFamily: "Inter_500Medium" },
+  cardSub: { fontFamily: "Inter_400Regular", marginTop: 2 },
+  divider: { height: 1, marginHorizontal: 16 },
+  fontSizeRow: { flexDirection: "row", gap: 10, padding: 16, paddingTop: 12 },
+  fontSizeBtn: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 12,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    gap: 4,
+  },
+  fontSizeBtnLabel: { fontWeight: "700" as const, fontFamily: "Inter_700Bold" },
+  fontSizeBtnSub: { fontSize: 11, fontFamily: "Inter_400Regular" },
+  langBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
+  langBadgeText: { fontSize: 12, fontWeight: "700" as const, fontFamily: "Inter_700Bold" },
+  aboutBox: { alignItems: "center", gap: 10, padding: 24 },
+  aboutIcon: { width: 60, height: 60, borderRadius: 18, alignItems: "center", justifyContent: "center" },
+  aboutTitle: { fontWeight: "700" as const, fontFamily: "Inter_700Bold" },
+  aboutSub: { fontFamily: "Inter_400Regular", textAlign: "center", lineHeight: 20 },
+  versionRow: { flexDirection: "row", alignItems: "center", gap: 8, paddingTop: 8, borderTopWidth: 1, marginTop: 4 },
+  dot: { width: 3, height: 3, borderRadius: 2 },
+  versionText: { fontFamily: "Inter_400Regular" },
+});
+
+
+================================================================================
+FILE: artifacts/mobile/app/deputy/[id].tsx
+================================================================================
+import React from "react";
+import {
+  ScrollView, StyleSheet, Text, TouchableOpacity, View,
+  Platform, Linking,
+} from "react-native";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { Ionicons } from "@/components/Icon";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useGetLegisladorById } from "@workspace/api-client-react";
+import { useColors } from "@/hooks/useColors";
+import { Badge } from "@/components/ui/Badge";
+import { SkeletonList } from "@/components/ui/SkeletonCard";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { getPartyColor } from "@/components/deputy/DeputyCard";
+
+function getInitials(nombre: string, apellido: string): string {
+  return `${nombre.charAt(0)}${apellido.charAt(0)}`.toUpperCase();
+}
+
+export default function DeputyDetailScreen() {
+  const colors = useColors();
+  const insets = useSafeAreaInsets();
+  const router = useRouter();
+  const { id } = useLocalSearchParams<{ id: string }>();
+
+  const { data, isLoading, error } = useGetLegisladorById(id ?? "", {
+    query: { queryKey: ["legislador", id], enabled: !!id },
+  });
+
+  const topPad = Platform.OS === "web" ? 67 : insets.top;
+  const partyColor = data ? getPartyColor(data.partido) : colors.primary;
+
+  return (
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      {/* Back button */}
+      <TouchableOpacity
+        style={[styles.backBtn, { top: topPad + 8, backgroundColor: colors.card + "EE", borderColor: colors.border }]}
+        onPress={() => router.back()}
+        activeOpacity={0.8}
+      >
+        <Ionicons name="chevron-back" size={20} color={colors.foreground} />
+      </TouchableOpacity>
+
+      {isLoading ? (
+        <ScrollView contentContainerStyle={[styles.content, { paddingTop: topPad + 56 }]}>
+          <SkeletonList count={4} />
+        </ScrollView>
+      ) : error || !data ? (
+        <EmptyState icon="person-outline" title="Diputado no encontrado" subtitle="No se pudo cargar la información." actionLabel="Volver" onAction={() => router.back()} />
+      ) : (
+        <ScrollView
+          contentContainerStyle={[styles.content, { paddingTop: topPad + 56, paddingBottom: Platform.OS === "web" ? 100 : 60 }]}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Profile Header */}
+          <View style={[styles.profileCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <View style={[styles.avatar, { backgroundColor: partyColor + "20" }]}>
+              <Text style={[styles.initials, { color: partyColor }]}>
+                {getInitials(data.nombre, data.apellido)}
+              </Text>
+            </View>
+            <Text style={[styles.name, { color: colors.foreground }]}>
+              {data.cargo} {data.nombre} {data.apellido}
+            </Text>
+            <View style={styles.badges}>
+              <Badge label={data.partido} variant="default" />
+              <Badge label={data.departamento} variant="muted" />
+            </View>
+            <Text style={[styles.periodo, { color: colors.mutedForeground }]}>
+              Período {data.periodo}
+            </Text>
+          </View>
+
+          {/* Info Grid */}
+          <View style={styles.infoGrid}>
+            {[
+              { icon: "people-outline", label: "Bancada", value: data.bancada },
+              { icon: "location-outline", label: "Departamento", value: data.departamento },
+              { icon: "briefcase-outline", label: "Cargo", value: data.cargo },
+              { icon: "calendar-outline", label: "Período", value: data.periodo },
+            ].map((item, i) => (
+              <View key={i} style={[styles.infoItem, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                <Ionicons name={item.icon as any} size={18} color={colors.primary} />
+                <Text style={[styles.infoLabel, { color: colors.mutedForeground }]}>{item.label}</Text>
+                <Text style={[styles.infoValue, { color: colors.foreground }]}>{item.value}</Text>
+              </View>
+            ))}
+          </View>
+
+          {/* Bio */}
+          {data.bio && (
+            <View style={[styles.section, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Biografía</Text>
+              <Text style={[styles.bioText, { color: colors.mutedForeground }]}>{data.bio}</Text>
+            </View>
+          )}
+
+          {/* Comisiones */}
+          {data.comisiones && data.comisiones.length > 0 && (
+            <View style={[styles.section, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Comisiones</Text>
+              {data.comisiones.map((com, i) => (
+                <View key={i} style={[styles.comisionRow, { borderTopColor: i > 0 ? colors.border : "transparent" }]}>
+                  <View style={[styles.comisionDot, { backgroundColor: partyColor }]} />
+                  <Text style={[styles.comisionText, { color: colors.foreground }]}>{com}</Text>
+                </View>
+              ))}
+            </View>
+          )}
+
+          {/* Contact */}
+          {data.email && (
+            <View style={[styles.section, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Contacto</Text>
+              <TouchableOpacity
+                style={[styles.contactRow, { backgroundColor: colors.primary + "12" }]}
+                onPress={() => Linking.openURL(`mailto:${data.email}`)}
+                activeOpacity={0.8}
+              >
+                <Ionicons name="mail-outline" size={18} color={colors.primary} />
+                <Text style={[styles.contactText, { color: colors.primary }]}>{data.email}</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {/* Party Stats */}
+          <View style={[styles.section, { backgroundColor: partyColor + "10", borderColor: partyColor + "30" }]}>
+            <View style={styles.partyHeader}>
+              <View style={[styles.partyDot, { backgroundColor: partyColor }]} />
+              <Text style={[styles.sectionTitle, { color: partyColor }]}>{data.partido}</Text>
+            </View>
+            <Text style={[styles.bancadaText, { color: colors.mutedForeground }]}>
+              Bancada: {data.bancada}
+            </Text>
+          </View>
+        </ScrollView>
+      )}
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1 },
+  backBtn: {
+    position: "absolute", left: 16, zIndex: 10,
+    width: 40, height: 40, borderRadius: 12,
+    alignItems: "center", justifyContent: "center",
+    borderWidth: 1,
+  },
+  content: { padding: 16, gap: 12 },
+  profileCard: {
+    borderRadius: 20, borderWidth: 1, padding: 24,
+    alignItems: "center", gap: 8,
+  },
+  avatar: {
+    width: 80, height: 80, borderRadius: 40,
+    alignItems: "center", justifyContent: "center",
+    marginBottom: 4,
+  },
+  initials: { fontSize: 28, fontWeight: "700" as const, fontFamily: "Inter_700Bold" },
+  name: { fontSize: 20, fontWeight: "700" as const, fontFamily: "Inter_700Bold", textAlign: "center" },
+  badges: { flexDirection: "row", gap: 8, flexWrap: "wrap", justifyContent: "center" },
+  periodo: { fontSize: 13, fontFamily: "Inter_400Regular" },
+  infoGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
+  infoItem: {
+    width: "47%", flexGrow: 1,
+    borderRadius: 14, borderWidth: 1, padding: 14, gap: 6,
+  },
+  infoLabel: { fontSize: 11, fontFamily: "Inter_400Regular", letterSpacing: 0.3 },
+  infoValue: { fontSize: 14, fontWeight: "600" as const, fontFamily: "Inter_600SemiBold" },
+  section: { borderRadius: 16, borderWidth: 1, padding: 16, gap: 10 },
+  sectionTitle: { fontSize: 16, fontWeight: "700" as const, fontFamily: "Inter_700Bold" },
+  bioText: { fontSize: 14, fontFamily: "Inter_400Regular", lineHeight: 22 },
+  comisionRow: {
+    flexDirection: "row", alignItems: "center",
+    gap: 10, paddingTop: 10, borderTopWidth: 1,
+  },
+  comisionDot: { width: 8, height: 8, borderRadius: 4 },
+  comisionText: { fontSize: 14, fontFamily: "Inter_400Regular", flex: 1 },
+  contactRow: {
+    flexDirection: "row", alignItems: "center",
+    gap: 10, padding: 12, borderRadius: 10,
+  },
+  contactText: { fontSize: 14, fontFamily: "Inter_500Medium", fontWeight: "500" as const },
+  partyHeader: { flexDirection: "row", alignItems: "center", gap: 8 },
+  partyDot: { width: 12, height: 12, borderRadius: 6 },
+  bancadaText: { fontSize: 14, fontFamily: "Inter_400Regular" },
+});
+
+
+================================================================================
+FILE: artifacts/mobile/app/_layout.tsx
+================================================================================
+import {
+  Inter_400Regular,
+  Inter_500Medium,
+  Inter_600SemiBold,
+  Inter_700Bold,
+  useFonts,
+} from "@expo-google-fonts/inter";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { Stack } from "expo-router";
+import * as SplashScreen from "expo-splash-screen";
+import React, { useEffect } from "react";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { KeyboardProvider } from "react-native-keyboard-controller";
+import { SafeAreaProvider } from "react-native-safe-area-context";
+
+import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { SettingsProvider } from "@/contexts/SettingsContext";
+import { setBaseUrl } from "@workspace/api-client-react";
+
+// Point the generated API client to our backend proxy
+const REPL_DOMAIN =
+  typeof process !== "undefined" ? process.env.EXPO_PUBLIC_DOMAIN : undefined;
+setBaseUrl(REPL_DOMAIN ? `https://${REPL_DOMAIN}` : "");
+
+// Prevent the splash screen from auto-hiding before asset loading is complete.
+SplashScreen.preventAutoHideAsync();
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 2 * 60 * 1000,
+      gcTime: 10 * 60 * 1000,
+      retry: 2,
+    },
+  },
+});
+
+function RootLayoutNav() {
+  return (
+    <Stack screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      <Stack.Screen
+        name="deputy/[id]"
+        options={{ headerShown: false, presentation: "card" }}
+      />
+      <Stack.Screen
+        name="project/[id]"
+        options={{ headerShown: false, presentation: "card" }}
+      />
+      <Stack.Screen
+        name="session/[id]"
+        options={{ headerShown: false, presentation: "card" }}
+      />
+      <Stack.Screen
+        name="comisiones"
+        options={{ headerShown: false, presentation: "card" }}
+      />
+      <Stack.Screen
+        name="comision/[id]"
+        options={{ headerShown: false, presentation: "card" }}
+      />
+      <Stack.Screen
+        name="ai-assistant"
+        options={{ headerShown: false, presentation: "modal" }}
+      />
+      <Stack.Screen
+        name="votaciones"
+        options={{ headerShown: false, presentation: "card" }}
+      />
+      <Stack.Screen
+        name="configuracion"
+        options={{ headerShown: false, presentation: "card" }}
+      />
+    </Stack>
+  );
+}
+
+export default function RootLayout() {
+  const [fontsLoaded, fontError] = useFonts({
+    Inter_400Regular,
+    Inter_500Medium,
+    Inter_600SemiBold,
+    Inter_700Bold,
+  });
+
+  useEffect(() => {
+    if (fontsLoaded || fontError) {
+      SplashScreen.hideAsync();
+    }
+  }, [fontsLoaded, fontError]);
+
+  if (!fontsLoaded && !fontError) return null;
+
+  return (
+    <SafeAreaProvider>
+      <ErrorBoundary>
+        <SettingsProvider>
+          <QueryClientProvider client={queryClient}>
+            <GestureHandlerRootView style={{ flex: 1 }}>
+              <KeyboardProvider>
+                <RootLayoutNav />
+              </KeyboardProvider>
+            </GestureHandlerRootView>
+          </QueryClientProvider>
+        </SettingsProvider>
+      </ErrorBoundary>
+    </SafeAreaProvider>
+  );
+}
+
+
+================================================================================
+FILE: artifacts/mobile/app/+not-found.tsx
+================================================================================
+import { Link, Stack } from "expo-router";
+import { StyleSheet, Text, View } from "react-native";
+
+import { useColors } from "@/hooks/useColors";
+
+export default function NotFoundScreen() {
+  const colors = useColors();
+
+  return (
+    <>
+      <Stack.Screen options={{ title: "Oops!" }} />
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <Text style={[styles.title, { color: colors.foreground }]}>
+          This screen doesn&apos;t exist.
+        </Text>
+
+        <Link href="/" style={styles.link}>
+          <Text style={[styles.linkText, { color: colors.primary }]}>
+            Go to home screen!
+          </Text>
+        </Link>
+      </View>
+    </>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 20,
+  },
+  title: {
+    fontSize: 20,
+    fontWeight: "bold",
+  },
+  link: {
+    marginTop: 15,
+    paddingVertical: 15,
+  },
+  linkText: {
+    fontSize: 14,
+  },
+});
+
+
+================================================================================
+FILE: artifacts/mobile/app/project/[id].tsx
+================================================================================
+import React from "react";
+import {
+  ScrollView, StyleSheet, Text, TouchableOpacity, View, Platform,
+} from "react-native";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { Ionicons } from "@/components/Icon";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useGetProyectoById } from "@workspace/api-client-react";
+import { useColors } from "@/hooks/useColors";
+import { Badge } from "@/components/ui/Badge";
+import { SkeletonList } from "@/components/ui/SkeletonCard";
+import { EmptyState } from "@/components/ui/EmptyState";
+
+function getEstadoVariant(estado: string): "default" | "success" | "warning" | "destructive" | "muted" {
+  const e = estado.toLowerCase();
+  if (e.includes("aprobado") || e.includes("promulgado")) return "success";
+  if (e.includes("tratamiento") || e.includes("comisi")) return "warning";
+  if (e.includes("rechazado")) return "destructive";
+  if (e.includes("pendiente")) return "muted";
+  return "default";
+}
+
+function formatDate(dateStr: string): string {
+  try {
+    const d = new Date(dateStr + "T00:00:00");
+    return d.toLocaleDateString("es-PY", { day: "numeric", month: "long", year: "numeric" });
+  } catch { return dateStr; }
+}
+
+export default function ProjectDetailScreen() {
+  const colors = useColors();
+  const insets = useSafeAreaInsets();
+  const router = useRouter();
+  const { id } = useLocalSearchParams<{ id: string }>();
+
+  const { data, isLoading, error } = useGetProyectoById(id ?? "", {
+    query: { queryKey: ["proyecto", id], enabled: !!id },
+  });
+
+  const topPad = Platform.OS === "web" ? 67 : insets.top;
+
+  return (
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <TouchableOpacity
+        style={[styles.backBtn, { top: topPad + 8, backgroundColor: colors.card + "EE", borderColor: colors.border }]}
+        onPress={() => router.back()}
+        activeOpacity={0.8}
+      >
+        <Ionicons name="chevron-back" size={20} color={colors.foreground} />
+      </TouchableOpacity>
+
+      {isLoading ? (
+        <ScrollView contentContainerStyle={[styles.content, { paddingTop: topPad + 56 }]}>
+          <SkeletonList count={4} />
+        </ScrollView>
+      ) : error || !data ? (
+        <EmptyState icon="document-text-outline" title="Proyecto no encontrado" subtitle="No se encontró el expediente solicitado." actionLabel="Volver" onAction={() => router.back()} />
+      ) : (
+        <ScrollView
+          contentContainerStyle={[styles.content, { paddingTop: topPad + 56, paddingBottom: Platform.OS === "web" ? 100 : 60 }]}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Header Card */}
+          <View style={[styles.headerCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <View style={styles.numRow}>
+              <View style={[styles.numBadge, { backgroundColor: colors.primary + "15" }]}>
+                <Text style={[styles.numText, { color: colors.primary }]}>Exp. {data.numero}</Text>
+              </View>
+              <Badge label={data.estado} variant={getEstadoVariant(data.estado)} />
+            </View>
+            <Text style={[styles.title, { color: colors.foreground }]}>{data.titulo}</Text>
+            <Text style={[styles.iniciativa, { color: colors.mutedForeground }]}>
+              Iniciativa: {data.iniciativa}
+            </Text>
+          </View>
+
+          {/* Info Grid */}
+          <View style={styles.infoGrid}>
+            {[
+              { icon: "layers-outline", label: "Etapa Actual", value: data.etapa },
+              { icon: "calendar-outline", label: "Fecha de Ingreso", value: formatDate(data.fechaIngreso) },
+              ...(data.comision ? [{ icon: "briefcase-outline", label: "Comisión", value: data.comision }] : []),
+            ].map((item, i) => (
+              <View key={i} style={[styles.infoItem, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                <Ionicons name={item.icon as any} size={18} color={colors.primary} />
+                <Text style={[styles.infoLabel, { color: colors.mutedForeground }]}>{item.label}</Text>
+                <Text style={[styles.infoValue, { color: colors.foreground }]}>{item.value}</Text>
+              </View>
+            ))}
+          </View>
+
+          {/* Description */}
+          {data.descripcion && (
+            <View style={[styles.section, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <View style={styles.sectionHeader}>
+                <Ionicons name="document-text-outline" size={18} color={colors.primary} />
+                <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Resumen Ejecutivo</Text>
+              </View>
+              <Text style={[styles.bodyText, { color: colors.mutedForeground }]}>{data.descripcion}</Text>
+            </View>
+          )}
+
+          {/* Timeline / Historial */}
+          {data.historial && data.historial.length > 0 && (
+            <View style={[styles.section, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <View style={styles.sectionHeader}>
+                <Ionicons name="time-outline" size={18} color={colors.primary} />
+                <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Historial Legislativo</Text>
+              </View>
+              <View style={styles.timeline}>
+                {data.historial.map((h, i) => (
+                  <View key={i} style={styles.timelineItem}>
+                    <View style={styles.timelineLeft}>
+                      <View style={[styles.timelineDot, { backgroundColor: i === 0 ? colors.primary : colors.mutedForeground }]} />
+                      {i < data.historial!.length - 1 && (
+                        <View style={[styles.timelineLine, { backgroundColor: colors.border }]} />
+                      )}
+                    </View>
+                    <View style={styles.timelineContent}>
+                      <Text style={[styles.timelineDate, { color: colors.mutedForeground }]}>{formatDate(h.fecha)}</Text>
+                      <Text style={[styles.timelineEvent, { color: colors.foreground }]}>{h.evento}</Text>
+                      <Text style={[styles.timelineDesc, { color: colors.mutedForeground }]}>{h.descripcion}</Text>
+                    </View>
+                  </View>
+                ))}
+              </View>
+            </View>
+          )}
+
+          {/* Status Progress */}
+          <View style={[styles.section, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <View style={styles.sectionHeader}>
+              <Ionicons name="checkmark-circle-outline" size={18} color={colors.primary} />
+              <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Estado del Proceso</Text>
+            </View>
+            {["Presentación", "Comisión", "Primera Lectura", "Segunda Lectura", "Votación", "Aprobado", "Promulgado"].map((step, i) => {
+              const isActive = data.etapa.toLowerCase().includes(step.toLowerCase()) || data.estado.toLowerCase().includes(step.toLowerCase());
+              const isPast = data.historial?.some(h => h.evento.toLowerCase().includes(step.toLowerCase())) ?? false;
+              return (
+                <View key={i} style={styles.progressStep}>
+                  <View style={[styles.progressDot, {
+                    backgroundColor: isActive ? colors.primary : isPast ? colors.success : colors.border,
+                    width: isActive ? 12 : 10, height: isActive ? 12 : 10,
+                    borderRadius: isActive ? 6 : 5,
+                  }]} />
+                  <Text style={[styles.progressText, {
+                    color: isActive ? colors.primary : isPast ? colors.success : colors.mutedForeground,
+                    fontWeight: isActive ? "600" : "400",
+                  }]}>{step}</Text>
+                  {isActive && <Badge label="Actual" variant="default" size="sm" />}
+                </View>
+              );
+            })}
+          </View>
+        </ScrollView>
+      )}
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1 },
+  backBtn: {
+    position: "absolute", left: 16, zIndex: 10,
+    width: 40, height: 40, borderRadius: 12,
+    alignItems: "center", justifyContent: "center", borderWidth: 1,
+  },
+  content: { padding: 16, gap: 12 },
+  headerCard: { borderRadius: 20, borderWidth: 1, padding: 20, gap: 10 },
+  numRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  numBadge: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8 },
+  numText: { fontSize: 13, fontWeight: "700" as const, fontFamily: "Inter_700Bold" },
+  title: { fontSize: 18, fontWeight: "700" as const, fontFamily: "Inter_700Bold", lineHeight: 26 },
+  iniciativa: { fontSize: 13, fontFamily: "Inter_400Regular" },
+  infoGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
+  infoItem: { flex: 1, minWidth: "44%", borderRadius: 14, borderWidth: 1, padding: 14, gap: 6 },
+  infoLabel: { fontSize: 11, fontFamily: "Inter_400Regular" },
+  infoValue: { fontSize: 14, fontWeight: "600" as const, fontFamily: "Inter_600SemiBold" },
+  section: { borderRadius: 16, borderWidth: 1, padding: 16, gap: 12 },
+  sectionHeader: { flexDirection: "row", alignItems: "center", gap: 8 },
+  sectionTitle: { fontSize: 16, fontWeight: "700" as const, fontFamily: "Inter_700Bold" },
+  bodyText: { fontSize: 14, fontFamily: "Inter_400Regular", lineHeight: 22 },
+  timeline: { gap: 0 },
+  timelineItem: { flexDirection: "row", gap: 14 },
+  timelineLeft: { width: 16, alignItems: "center" },
+  timelineDot: { width: 12, height: 12, borderRadius: 6, marginTop: 4 },
+  timelineLine: { width: 2, flex: 1, marginTop: 4 },
+  timelineContent: { flex: 1, paddingBottom: 16, gap: 2 },
+  timelineDate: { fontSize: 11, fontFamily: "Inter_400Regular" },
+  timelineEvent: { fontSize: 14, fontWeight: "600" as const, fontFamily: "Inter_600SemiBold" },
+  timelineDesc: { fontSize: 13, fontFamily: "Inter_400Regular", lineHeight: 18 },
+  progressStep: { flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 6 },
+  progressDot: {},
+  progressText: { flex: 1, fontSize: 14, fontFamily: "Inter_400Regular" },
+});
+
+
+================================================================================
+FILE: artifacts/mobile/app/session/[id].tsx
+================================================================================
+import React from "react";
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View, Platform, Linking } from "react-native";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { Ionicons } from "@/components/Icon";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useGetSesionById } from "@workspace/api-client-react";
+import { useColors } from "@/hooks/useColors";
+import { Badge } from "@/components/ui/Badge";
+import { SkeletonList } from "@/components/ui/SkeletonCard";
+import { EmptyState } from "@/components/ui/EmptyState";
+
+function formatDate(dateStr: string): string {
+  try {
+    const d = new Date(dateStr + "T00:00:00");
+    return d.toLocaleDateString("es-PY", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+  } catch { return dateStr; }
+}
+
+export default function SessionDetailScreen() {
+  const colors = useColors();
+  const insets = useSafeAreaInsets();
+  const router = useRouter();
+  const { id } = useLocalSearchParams<{ id: string }>();
+
+  const { data, isLoading, error } = useGetSesionById(id ?? "", {
+    query: { queryKey: ["sesion", id], enabled: !!id },
+  });
+
+  const topPad = Platform.OS === "web" ? 67 : insets.top;
+  const isLive = data?.estado === "en-vivo";
+  const isProgramada = data?.estado === "programada";
+
+  return (
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <TouchableOpacity
+        style={[styles.backBtn, { top: topPad + 8, backgroundColor: colors.card + "EE", borderColor: colors.border }]}
+        onPress={() => router.back()}
+        activeOpacity={0.8}
+      >
+        <Ionicons name="chevron-back" size={20} color={colors.foreground} />
+      </TouchableOpacity>
+
+      {isLoading ? (
+        <ScrollView contentContainerStyle={[styles.content, { paddingTop: topPad + 56 }]}>
+          <SkeletonList count={3} />
+        </ScrollView>
+      ) : error || !data ? (
+        <EmptyState icon="calendar-outline" title="Sesión no encontrada" subtitle="No se pudo cargar la información de la sesión." actionLabel="Volver" onAction={() => router.back()} />
+      ) : (
+        <ScrollView
+          contentContainerStyle={[styles.content, { paddingTop: topPad + 56, paddingBottom: Platform.OS === "web" ? 100 : 60 }]}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Header Card */}
+          <View style={[styles.headerCard, {
+            backgroundColor: isLive ? colors.live + "12" : colors.card,
+            borderColor: isLive ? colors.live + "40" : colors.border,
+          }]}>
+            <View style={styles.headerTop}>
+              <View style={[styles.iconWrap, {
+                backgroundColor: isLive ? colors.live + "20" : colors.primary + "15",
+              }]}>
+                <Ionicons
+                  name={isLive ? "radio" : isProgramada ? "calendar" : "checkmark-circle"}
+                  size={28}
+                  color={isLive ? colors.live : colors.primary}
+                />
+              </View>
+              <Badge
+                label={isLive ? "EN VIVO" : isProgramada ? "Programada" : "Finalizada"}
+                variant={isLive ? "live" : isProgramada ? "warning" : "success"}
+              />
+            </View>
+            <Text style={[styles.sessionType, { color: colors.foreground }]}>{data.tipo}</Text>
+            <Text style={[styles.sessionDate, { color: colors.mutedForeground }]}>{formatDate(data.fecha)}</Text>
+            <View style={styles.timeRow}>
+              <Ionicons name="time-outline" size={16} color={colors.mutedForeground} />
+              <Text style={[styles.timeText, { color: colors.mutedForeground }]}>
+                {data.horaInicio}{data.horaFin ? ` — ${data.horaFin}` : " (en curso)"}
+              </Text>
+            </View>
+          </View>
+
+          {/* Live Streaming */}
+          {(isLive || isProgramada) && (
+            <View style={[styles.section, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Seguimiento</Text>
+              <View style={styles.streamBtns}>
+                <TouchableOpacity
+                  style={[styles.streamBtn, { backgroundColor: colors.primary }]}
+                  onPress={() => Linking.openURL("https://www.diputados.gov.py/sesiones/sesion-digital-comision-permanente")}
+                  activeOpacity={0.85}
+                >
+                  <Ionicons name="videocam-outline" size={18} color="#FFF" />
+                  <Text style={styles.streamBtnText}>Sesión Digital</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.streamBtn, { backgroundColor: "#FF0000" }]}
+                  onPress={() => Linking.openURL("https://www.youtube.com/@camaradediputadosparaguay")}
+                  activeOpacity={0.85}
+                >
+                  <Ionicons name="logo-youtube" size={18} color="#FFF" />
+                  <Text style={styles.streamBtnText}>YouTube</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
+
+          {/* Info */}
+          <View style={[styles.section, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Detalles</Text>
+            {[
+              { label: "Tipo", value: data.tipo, icon: "document-text-outline" },
+              { label: "Período", value: data.periodo, icon: "calendar-outline" },
+              { label: "Estado", value: data.estado, icon: "checkmark-circle-outline" },
+            ].map((item, i) => (
+              <View key={i} style={[styles.detailRow, { borderTopColor: i > 0 ? colors.border : "transparent" }]}>
+                <Ionicons name={item.icon as any} size={16} color={colors.primary} />
+                <Text style={[styles.detailLabel, { color: colors.mutedForeground }]}>{item.label}</Text>
+                <Text style={[styles.detailValue, { color: colors.foreground }]}>{item.value}</Text>
+              </View>
+            ))}
+            {data.descripcion && (
+              <View style={[styles.detailRow, { borderTopColor: colors.border }]}>
+                <Ionicons name="information-circle-outline" size={16} color={colors.primary} />
+                <Text style={[styles.detailLabel, { color: colors.mutedForeground }]}>Descripción</Text>
+                <Text style={[styles.detailValue, { color: colors.foreground, flex: 1 }]}>{data.descripcion}</Text>
+              </View>
+            )}
+          </View>
+
+          {/* Orden del Día */}
+          {data.orden_del_dia && data.orden_del_dia.length > 0 && (
+            <View style={[styles.section, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <View style={styles.sectionHeader}>
+                <Ionicons name="list-outline" size={18} color={colors.primary} />
+                <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Orden del Día</Text>
+              </View>
+              {data.orden_del_dia.map((item, i) => (
+                <View key={i} style={[styles.ordenItem, { borderTopColor: i > 0 ? colors.border : "transparent" }]}>
+                  <View style={[styles.ordenNum, { backgroundColor: colors.primary + "18" }]}>
+                    <Text style={[styles.ordenNumText, { color: colors.primary }]}>{i + 1}</Text>
+                  </View>
+                  <Text style={[styles.ordenText, { color: colors.foreground }]}>{item}</Text>
+                </View>
+              ))}
+            </View>
+          )}
+
+          {/* Diario de Sesiones */}
+          <TouchableOpacity
+            style={[styles.diarioBtn, { backgroundColor: colors.secondary, borderColor: colors.border }]}
+            onPress={() => Linking.openURL("https://www.diputados.gov.py/sesiones/diario-sesiones-comision-permanente")}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="newspaper-outline" size={18} color={colors.primary} />
+            <Text style={[styles.diarioBtnText, { color: colors.primary }]}>Ver Diario de Sesiones</Text>
+            <Ionicons name="open-outline" size={14} color={colors.primary} />
+          </TouchableOpacity>
+        </ScrollView>
+      )}
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1 },
+  backBtn: {
+    position: "absolute", left: 16, zIndex: 10,
+    width: 40, height: 40, borderRadius: 12,
+    alignItems: "center", justifyContent: "center", borderWidth: 1,
+  },
+  content: { padding: 16, gap: 12 },
+  headerCard: { borderRadius: 20, borderWidth: 1, padding: 20, gap: 10 },
+  headerTop: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  iconWrap: { width: 52, height: 52, borderRadius: 16, alignItems: "center", justifyContent: "center" },
+  sessionType: { fontSize: 20, fontWeight: "700" as const, fontFamily: "Inter_700Bold" },
+  sessionDate: { fontSize: 14, fontFamily: "Inter_400Regular", textTransform: "capitalize" },
+  timeRow: { flexDirection: "row", alignItems: "center", gap: 6 },
+  timeText: { fontSize: 14, fontFamily: "Inter_500Medium", fontWeight: "500" as const },
+  section: { borderRadius: 16, borderWidth: 1, padding: 16, gap: 12 },
+  sectionHeader: { flexDirection: "row", alignItems: "center", gap: 8 },
+  sectionTitle: { fontSize: 16, fontWeight: "700" as const, fontFamily: "Inter_700Bold" },
+  streamBtns: { flexDirection: "row", gap: 10 },
+  streamBtn: {
+    flex: 1, flexDirection: "row", alignItems: "center",
+    justifyContent: "center", gap: 8, paddingVertical: 12, borderRadius: 12,
+  },
+  streamBtnText: { color: "#FFF", fontSize: 14, fontWeight: "600" as const, fontFamily: "Inter_600SemiBold" },
+  detailRow: {
+    flexDirection: "row", alignItems: "flex-start",
+    gap: 10, paddingTop: 10, borderTopWidth: 1,
+  },
+  detailLabel: { fontSize: 13, fontFamily: "Inter_400Regular", width: 90 },
+  detailValue: { fontSize: 14, fontFamily: "Inter_500Medium", fontWeight: "500" as const, flex: 1 },
+  ordenItem: {
+    flexDirection: "row", alignItems: "flex-start",
+    gap: 12, paddingTop: 10, borderTopWidth: 1,
+  },
+  ordenNum: {
+    width: 26, height: 26, borderRadius: 8,
+    alignItems: "center", justifyContent: "center", marginTop: 1,
+  },
+  ordenNumText: { fontSize: 12, fontWeight: "700" as const, fontFamily: "Inter_700Bold" },
+  ordenText: { flex: 1, fontSize: 14, fontFamily: "Inter_400Regular", lineHeight: 20 },
+  diarioBtn: {
+    flexDirection: "row", alignItems: "center", justifyContent: "center",
+    gap: 10, padding: 16, borderRadius: 14, borderWidth: 1,
+  },
+  diarioBtnText: { fontSize: 14, fontWeight: "600" as const, fontFamily: "Inter_600SemiBold" },
+});
+
+
+================================================================================
+FILE: artifacts/mobile/app/(tabs)/deputies.tsx
+================================================================================
+import React, { useState, useMemo } from "react";
+import {
+  FlatList, Platform, StyleSheet, Text, TouchableOpacity, View,
+} from "react-native";
+import { useRouter } from "expo-router";
+import { Ionicons } from "@/components/Icon";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useGetLegisladores } from "@workspace/api-client-react";
+import { useColors } from "@/hooks/useColors";
+import { SearchBar } from "@/components/ui/SearchBar";
+import { DeputyCard } from "@/components/deputy/DeputyCard";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { SkeletonList } from "@/components/ui/SkeletonCard";
+
+const PARTIES = ["Todos", "ANR", "PLRA", "Frente Guasú", "Honor Colorado", "Patria Querida"];
+const DEPARTMENTS = ["Todos", "Asunción", "Central", "Alto Paraná", "Itapúa", "Caaguazú", "San Pedro", "Cordillera", "Concepción", "Amambay", "Guairá", "Misiones", "Paraguarí", "Canindeyú", "Caazapá", "Alto Paraguay"];
+
+export default function DeputiesScreen() {
+  const colors = useColors();
+  const insets = useSafeAreaInsets();
+  const router = useRouter();
+  const [search, setSearch] = useState("");
+  const [selectedParty, setSelectedParty] = useState("Todos");
+  const [showFilters, setShowFilters] = useState(false);
+  const [selectedDept, setSelectedDept] = useState("Todos");
+
+  const { data, isLoading, error, refetch } = useGetLegisladores(
+    { limit: 80 },
+    { query: { queryKey: ["legisladores"] } }
+  );
+
+  const filtered = useMemo(() => {
+    let list = data?.data ?? [];
+    if (search) {
+      const q = search.toLowerCase();
+      list = list.filter(l =>
+        l.nombre.toLowerCase().includes(q) ||
+        l.apellido.toLowerCase().includes(q) ||
+        l.partido.toLowerCase().includes(q) ||
+        l.departamento.toLowerCase().includes(q)
+      );
+    }
+    if (selectedParty !== "Todos") list = list.filter(l => l.partido === selectedParty);
+    if (selectedDept !== "Todos") list = list.filter(l => l.departamento === selectedDept);
+    return list;
+  }, [data, search, selectedParty, selectedDept]);
+
+  const topPad = Platform.OS === "web" ? 67 : insets.top;
+
+  return (
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      {/* Header */}
+      <View style={[styles.header, { paddingTop: topPad + 12, backgroundColor: colors.background, borderBottomColor: colors.border }]}>
+        <View style={styles.headerRow}>
+          <Text style={[styles.headerTitle, { color: colors.foreground }]}>Diputados</Text>
+          <TouchableOpacity
+            style={[styles.filterBtn, { backgroundColor: showFilters ? colors.primary : colors.card, borderColor: colors.border }]}
+            onPress={() => setShowFilters(v => !v)}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="options-outline" size={18} color={showFilters ? "#FFF" : colors.foreground} />
+          </TouchableOpacity>
+        </View>
+        <View style={styles.searchWrap}>
+          <SearchBar value={search} onChangeText={setSearch} placeholder="Buscar diputado, partido..." />
+        </View>
+        {showFilters && (
+          <View style={styles.filtersBlock}>
+            <Text style={[styles.filterLabel, { color: colors.mutedForeground }]}>Partido</Text>
+            <FlatList
+              data={PARTIES}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              keyExtractor={i => i}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={[styles.chip, {
+                    backgroundColor: selectedParty === item ? colors.primary : colors.card,
+                    borderColor: selectedParty === item ? colors.primary : colors.border,
+                  }]}
+                  onPress={() => setSelectedParty(item)}
+                  activeOpacity={0.8}
+                >
+                  <Text style={[styles.chipText, { color: selectedParty === item ? "#FFF" : colors.foreground }]}>{item}</Text>
+                </TouchableOpacity>
+              )}
+              contentContainerStyle={{ gap: 8, paddingVertical: 4 }}
+            />
+          </View>
+        )}
+        {data && (
+          <Text style={[styles.count, { color: colors.mutedForeground }]}>
+            {filtered.length} diputado{filtered.length !== 1 ? "s" : ""}
+          </Text>
+        )}
+      </View>
+
+      {/* List */}
+      {isLoading ? (
+        <View style={styles.listContent}>
+          <SkeletonList count={8} />
+        </View>
+      ) : error ? (
+        <EmptyState icon="alert-circle-outline" title="Error al cargar" subtitle="No se pudo obtener la lista de diputados." actionLabel="Reintentar" onAction={refetch} />
+      ) : (
+        <FlatList
+          data={filtered}
+          keyExtractor={item => item.id}
+          renderItem={({ item }) => (
+            <DeputyCard deputy={item} onPress={() => router.push(`/deputy/${item.id}`)} />
+          )}
+          contentContainerStyle={styles.listContent}
+          showsVerticalScrollIndicator={false}
+          scrollEnabled={!!filtered.length}
+          onRefresh={refetch}
+          refreshing={false}
+          ListEmptyComponent={
+            <EmptyState icon="person-outline" title="Sin resultados" subtitle="No se encontraron diputados con los filtros aplicados." actionLabel="Limpiar filtros" onAction={() => { setSearch(""); setSelectedParty("Todos"); setSelectedDept("Todos"); }} />
+          }
+        />
+      )}
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1 },
+  header: {
+    paddingHorizontal: 16,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+  },
+  headerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 12,
+  },
+  headerTitle: {
+    fontSize: 28,
+    fontWeight: "700" as const,
+    fontFamily: "Inter_700Bold",
+  },
+  filterBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+  },
+  searchWrap: { marginBottom: 8 },
+  filtersBlock: { marginBottom: 8, gap: 4 },
+  filterLabel: { fontSize: 12, fontFamily: "Inter_500Medium", fontWeight: "500" as const, marginBottom: 4 },
+  chip: {
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 100,
+    borderWidth: 1,
+  },
+  chipText: { fontSize: 13, fontFamily: "Inter_500Medium", fontWeight: "500" as const },
+  count: { fontSize: 13, fontFamily: "Inter_400Regular", marginTop: 4 },
+  listContent: { padding: 16, paddingBottom: 100 },
+});
+
+
+================================================================================
+FILE: artifacts/mobile/app/(tabs)/index.tsx
+================================================================================
+import React from "react";
+import {
+  ScrollView, StyleSheet, Text, TouchableOpacity, View,
+  Platform, RefreshControl, Linking, Image,
+} from "react-native";
+import { useRouter } from "expo-router";
+import { Ionicons } from "@/components/Icon";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { LinearGradient } from "expo-linear-gradient";
+import { useGetDashboard } from "@workspace/api-client-react";
+import { useColors } from "@/hooks/useColors";
+import { SectionHeader } from "@/components/ui/SectionHeader";
+import { SkeletonList } from "@/components/ui/SkeletonCard";
+import { SessionCard } from "@/components/session/SessionCard";
+import { ProjectCard } from "@/components/project/ProjectCard";
+import { StatsRow } from "@/components/dashboard/StatsRow";
+import { Badge } from "@/components/ui/Badge";
+
+export default function DashboardScreen() {
+  const colors = useColors();
+  const insets = useSafeAreaInsets();
+  const router = useRouter();
+  const [refreshing, setRefreshing] = React.useState(false);
+
+  const { data, isLoading, error, refetch } = useGetDashboard({
+    query: { queryKey: ["dashboard"] },
+  });
+
+  const onRefresh = React.useCallback(async () => {
+    setRefreshing(true);
+    await refetch();
+    setRefreshing(false);
+  }, [refetch]);
+
+  const topPad = Platform.OS === "web" ? 67 : insets.top;
+
+  return (
+    <ScrollView
+      style={[styles.container, { backgroundColor: colors.background }]}
+      contentContainerStyle={[styles.content, { paddingTop: topPad + 16, paddingBottom: Platform.OS === "web" ? 100 : 100 }]}
+      showsVerticalScrollIndicator={false}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
+    >
+      {/* Hero Header */}
+      <LinearGradient
+        colors={[colors.primary, colors.primary + "CC"]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.hero}
+      >
+        <View style={styles.heroContent}>
+          <View>
+            <Text style={styles.heroEyebrow}>REPÚBLICA DEL PARAGUAY</Text>
+            <Text style={styles.heroTitle}>Cámara de{"\n"}Diputados</Text>
+            <Text style={styles.heroSub}>Honorable Congreso Nacional</Text>
+          </View>
+          <View style={styles.heroLogoWrap}>
+            <Image
+              source={require("../../assets/images/logo-camara.png")}
+              style={styles.heroLogo}
+            />
+          </View>
+        </View>
+
+        {data?.sesionEnVivo && (
+          <TouchableOpacity
+            style={[styles.liveBar, { backgroundColor: "rgba(255,255,255,0.15)" }]}
+            onPress={() => router.push(`/session/${data.sesionEnVivo!.id}`)}
+            activeOpacity={0.8}
+          >
+            <Badge label="EN VIVO" variant="live" size="sm" />
+            <Text style={styles.liveText} numberOfLines={1}>
+              {data.sesionEnVivo.tipo} — {data.sesionEnVivo.horaInicio}
+            </Text>
+            <Ionicons name="chevron-forward" size={16} color="#FFFFFF" />
+          </TouchableOpacity>
+        )}
+      </LinearGradient>
+
+      {/* Stats */}
+      {isLoading ? (
+        <View style={styles.section}>
+          <SkeletonList count={1} />
+        </View>
+      ) : data && (
+        <View style={styles.section}>
+          <StatsRow stats={[
+            { icon: "people", value: data.totalLegisladores, label: "Diputados", color: colors.primary },
+            { icon: "briefcase", value: data.totalComisiones, label: "Comisiones", color: "#7C3AED" },
+            { icon: "document-text", value: data.proyectosPendientes, label: "Proyectos", color: colors.warning },
+            { icon: "ribbon", value: data.leyesAprobadas, label: "Leyes 2025", color: colors.success },
+          ]} />
+        </View>
+      )}
+
+      {/* Quick Actions */}
+      <View style={styles.section}>
+        <SectionHeader title="Acceso Rápido" />
+        <View style={styles.quickGrid}>
+          {[
+            { icon: "people-outline", label: "Diputados", color: colors.primary, route: "/(tabs)/deputies" },
+            { icon: "tv-outline", label: "Sesiones", color: "#7C3AED", route: "/(tabs)/sessions" },
+            { icon: "document-text-outline", label: "Proyectos", color: colors.warning, route: "/(tabs)/projects" },
+            { icon: "briefcase-outline", label: "Comisiones", color: "#0D9488", route: "/comisiones" },
+            { icon: "scale-outline", label: "Leyes", color: colors.success, route: "/(tabs)/projects" },
+            { icon: "sparkles-outline", label: "Asistente IA", color: colors.accent, route: "/ai-assistant" },
+          ].map((item, i) => (
+            <TouchableOpacity
+              key={i}
+              style={[styles.quickItem, { backgroundColor: colors.card, borderColor: colors.border }]}
+              onPress={() => router.push(item.route as any)}
+              activeOpacity={0.75}
+            >
+              <View style={[styles.quickIcon, { backgroundColor: item.color + "18" }]}>
+                <Ionicons name={item.icon as any} size={22} color={item.color} />
+              </View>
+              <Text style={[styles.quickLabel, { color: colors.foreground }]}>{item.label}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </View>
+
+      {/* Próximas Sesiones */}
+      {(isLoading || (data?.proximasSesiones && data.proximasSesiones.length > 0)) && (
+        <View style={styles.section}>
+          <SectionHeader
+            title="Próximas Sesiones"
+            onPress={() => router.push("/(tabs)/sessions")}
+          />
+          {isLoading ? <SkeletonList count={2} /> : data?.proximasSesiones.map(s => (
+            <SessionCard key={s.id} session={s} onPress={() => router.push(`/session/${s.id}`)} />
+          ))}
+        </View>
+      )}
+
+      {/* Últimos Proyectos */}
+      <View style={styles.section}>
+        <SectionHeader
+          title="Últimos Proyectos"
+          subtitle="Actividad legislativa reciente"
+          onPress={() => router.push("/(tabs)/projects")}
+        />
+        {isLoading ? (
+          <SkeletonList count={3} />
+        ) : error ? (
+          <Text style={[styles.errorText, { color: colors.mutedForeground }]}>
+            No se pudo cargar la información
+          </Text>
+        ) : data?.ultimosProyectos.map(p => (
+          <ProjectCard key={p.id} project={p} onPress={() => router.push(`/project/${p.id}`)} />
+        ))}
+      </View>
+
+      {/* Leyes Recientes */}
+      {data?.ultimasLeyes && data.ultimasLeyes.length > 0 && (
+        <View style={styles.section}>
+          <SectionHeader title="Leyes Sancionadas" subtitle="Legislación vigente" />
+          <View style={[styles.lawsBox, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            {data.ultimasLeyes.slice(0, 4).map((ley, i) => (
+              <View key={ley.numero}>
+                {i > 0 && <View style={[styles.divider, { backgroundColor: colors.border }]} />}
+                <View style={styles.lawRow}>
+                  <View style={[styles.lawNum, { backgroundColor: colors.success + "18" }]}>
+                    <Text style={[styles.lawNumText, { color: colors.success }]}>N° {ley.numero}</Text>
+                  </View>
+                  <Text style={[styles.lawTitle, { color: colors.foreground }]} numberOfLines={2}>{ley.titulo}</Text>
+                </View>
+              </View>
+            ))}
+          </View>
+        </View>
+      )}
+
+      {/* External Links */}
+      <View style={styles.section}>
+        <SectionHeader title="Portales Oficiales" />
+        <View style={[styles.linksBox, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          {[
+            { label: "Sitio Oficial", url: "https://www.diputados.gov.py", icon: "globe-outline" },
+            { label: "Datos Abiertos", url: "https://datos.congreso.gov.py/opendata/", icon: "cloud-download-outline" },
+            { label: "Sesión Digital", url: "https://www.diputados.gov.py/sesiones/sesion-digital-comision-permanente", icon: "videocam-outline" },
+          ].map((link, i) => (
+            <View key={i}>
+              {i > 0 && <View style={[styles.divider, { backgroundColor: colors.border }]} />}
+              <TouchableOpacity
+                style={styles.linkRow}
+                onPress={() => Linking.openURL(link.url)}
+                activeOpacity={0.7}
+              >
+                <Ionicons name={link.icon as any} size={18} color={colors.primary} />
+                <Text style={[styles.linkText, { color: colors.foreground }]}>{link.label}</Text>
+                <Ionicons name="open-outline" size={14} color={colors.mutedForeground} />
+              </TouchableOpacity>
+            </View>
+          ))}
+        </View>
+      </View>
+    </ScrollView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1 },
+  content: { paddingHorizontal: 16, gap: 4 },
+  hero: {
+    borderRadius: 20,
+    padding: 20,
+    marginBottom: 20,
+    gap: 14,
+  },
+  heroContent: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" },
+  heroEyebrow: { color: "rgba(255,255,255,0.7)", fontSize: 10, fontWeight: "700" as const, letterSpacing: 1.5, fontFamily: "Inter_700Bold" },
+  heroTitle: { color: "#FFFFFF", fontSize: 28, fontWeight: "700" as const, fontFamily: "Inter_700Bold", lineHeight: 34, marginTop: 4 },
+  heroSub: { color: "rgba(255,255,255,0.8)", fontSize: 13, marginTop: 4, fontFamily: "Inter_400Regular" },
+  heroShield: { width: 64, height: 64, borderRadius: 20, alignItems: "center", justifyContent: "center" },
+  heroLogoWrap: { width: 72, height: 72, borderRadius: 36, overflow: "hidden" as const },
+  heroLogo: { width: 168, height: 168, marginLeft: -48, marginTop: -3 },
+  liveBar: { flexDirection: "row", alignItems: "center", gap: 10, padding: 12, borderRadius: 12 },
+  liveText: { flex: 1, color: "#FFFFFF", fontSize: 13, fontFamily: "Inter_500Medium", fontWeight: "500" as const },
+  section: { marginBottom: 20 },
+  quickGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
+  quickItem: {
+    width: "30%",
+    alignItems: "center",
+    padding: 14,
+    borderRadius: 14,
+    borderWidth: 1,
+    gap: 8,
+    flexGrow: 1,
+  },
+  quickIcon: { width: 44, height: 44, borderRadius: 14, alignItems: "center", justifyContent: "center" },
+  quickLabel: { fontSize: 12, fontFamily: "Inter_500Medium", fontWeight: "500" as const, textAlign: "center" },
+  errorText: { fontSize: 14, textAlign: "center", padding: 20, fontFamily: "Inter_400Regular" },
+  lawsBox: { borderRadius: 14, borderWidth: 1, overflow: "hidden" },
+  lawRow: { flexDirection: "row", alignItems: "center", gap: 12, padding: 14 },
+  lawNum: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 },
+  lawNumText: { fontSize: 11, fontWeight: "700" as const, fontFamily: "Inter_700Bold" },
+  lawTitle: { flex: 1, fontSize: 13, fontFamily: "Inter_400Regular", lineHeight: 18 },
+  divider: { height: 1, marginHorizontal: 14 },
+  linksBox: { borderRadius: 14, borderWidth: 1, overflow: "hidden" },
+  linkRow: { flexDirection: "row", alignItems: "center", gap: 12, padding: 16 },
+  linkText: { flex: 1, fontSize: 14, fontFamily: "Inter_500Medium", fontWeight: "500" as const },
+});
+
+
+================================================================================
+FILE: artifacts/mobile/app/(tabs)/_layout.tsx
+================================================================================
+import { BlurView } from "expo-blur";
+import { isLiquidGlassAvailable } from "expo-glass-effect";
+import { Tabs } from "expo-router";
+import { Icon, Label, NativeTabs } from "expo-router/unstable-native-tabs";
+import { SymbolView } from "expo-symbols";
+import { Ionicons } from "@/components/Icon";
+import React from "react";
+import { Platform, StyleSheet, View, useColorScheme } from "react-native";
+
+import { useColors } from "@/hooks/useColors";
+
+// IMPORTANT: iOS 26 uses NativeTabs for native tabs with liquid glass support.
+// NativeTabs intentionally does NOT use custom design tokens — liquid glass
+// is a system-level appearance provided by iOS and cannot be overridden.
+// Custom brand colors are applied only on the ClassicTabLayout path (older iOS / Android / web).
+function NativeTabLayout() {
+  return (
+    <NativeTabs>
+      <NativeTabs.Trigger name="index">
+        <Icon sf={{ default: "house", selected: "house.fill" }} />
+        <Label>Inicio</Label>
+      </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="deputies">
+        <Icon sf={{ default: "person.2", selected: "person.2.fill" }} />
+        <Label>Diputados</Label>
+      </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="sessions">
+        <Icon sf={{ default: "tv", selected: "tv.fill" }} />
+        <Label>Sesiones</Label>
+      </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="projects">
+        <Icon sf={{ default: "doc.text", selected: "doc.text.fill" }} />
+        <Label>Proyectos</Label>
+      </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="more">
+        <Icon sf={{ default: "square.grid.2x2", selected: "square.grid.2x2.fill" }} />
+        <Label>Más</Label>
+      </NativeTabs.Trigger>
+    </NativeTabs>
+  );
+}
+
+function ClassicTabLayout() {
+  const colors = useColors();
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === "dark";
+  const isIOS = Platform.OS === "ios";
+  const isWeb = Platform.OS === "web";
+
+  return (
+    <Tabs
+      screenOptions={{
+        tabBarActiveTintColor: colors.primary,
+        tabBarInactiveTintColor: colors.mutedForeground,
+        headerShown: false,
+        tabBarStyle: {
+          position: "absolute",
+          backgroundColor: isIOS ? "transparent" : colors.background,
+          borderTopWidth: 1,
+          borderTopColor: colors.border,
+          elevation: 0,
+          ...(isWeb ? { height: 72, paddingBottom: 12 } : {}),
+        },
+        tabBarBackground: () =>
+          isIOS ? (
+            <BlurView
+              intensity={100}
+              tint={isDark ? "dark" : "light"}
+              style={StyleSheet.absoluteFill}
+            />
+          ) : isWeb ? (
+            <View
+              style={[
+                StyleSheet.absoluteFill,
+                { backgroundColor: colors.background },
+              ]}
+            />
+          ) : null,
+        tabBarLabelStyle: {
+          fontSize: 11,
+          fontFamily: "Inter_500Medium",
+          marginTop: 2,
+        },
+      }}
+    >
+      <Tabs.Screen
+        name="index"
+        options={{
+          title: "Inicio",
+          tabBarIcon: ({ color, focused }) =>
+            isIOS ? (
+              <SymbolView name={focused ? "house.fill" : "house"} tintColor={color} size={24} />
+            ) : (
+              <Ionicons name={focused ? "home" : "home-outline"} size={24} color={color} />
+            ),
+        }}
+      />
+      <Tabs.Screen
+        name="deputies"
+        options={{
+          title: "Diputados",
+          tabBarIcon: ({ color, focused }) =>
+            isIOS ? (
+              <SymbolView name={focused ? "person.2.fill" : "person.2"} tintColor={color} size={24} />
+            ) : (
+              <Ionicons name={focused ? "people" : "people-outline"} size={24} color={color} />
+            ),
+        }}
+      />
+      <Tabs.Screen
+        name="sessions"
+        options={{
+          title: "Sesiones",
+          tabBarIcon: ({ color, focused }) =>
+            isIOS ? (
+              <SymbolView name={focused ? "tv.fill" : "tv"} tintColor={color} size={24} />
+            ) : (
+              <Ionicons name={focused ? "tv" : "tv-outline"} size={24} color={color} />
+            ),
+        }}
+      />
+      <Tabs.Screen
+        name="projects"
+        options={{
+          title: "Proyectos",
+          tabBarIcon: ({ color, focused }) =>
+            isIOS ? (
+              <SymbolView name={focused ? "doc.text.fill" : "doc.text"} tintColor={color} size={24} />
+            ) : (
+              <Ionicons name={focused ? "document-text" : "document-text-outline"} size={24} color={color} />
+            ),
+        }}
+      />
+      <Tabs.Screen
+        name="more"
+        options={{
+          title: "Más",
+          tabBarIcon: ({ color, focused }) =>
+            isIOS ? (
+              <SymbolView name={focused ? "square.grid.2x2.fill" : "square.grid.2x2"} tintColor={color} size={24} />
+            ) : (
+              <Ionicons name={focused ? "grid" : "grid-outline"} size={24} color={color} />
+            ),
+        }}
+      />
+    </Tabs>
+  );
+}
+
+export default function TabLayout() {
+  if (isLiquidGlassAvailable()) {
+    return <NativeTabLayout />;
+  }
+  return <ClassicTabLayout />;
+}
+
+
+================================================================================
+FILE: artifacts/mobile/app/(tabs)/more.tsx
+================================================================================
+import React from "react";
+import { Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View, Linking } from "react-native";
+import { useRouter } from "expo-router";
+import { Ionicons } from "@/components/Icon";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useColors } from "@/hooks/useColors";
+
+interface MenuItem {
+  icon: keyof typeof Ionicons.glyphMap;
+  label: string;
+  subtitle?: string;
+  color: string;
+  onPress: () => void;
+  badge?: string;
+}
+
+function MenuSection({ title, items }: { title: string; items: MenuItem[] }) {
+  const colors = useColors();
+  return (
+    <View style={styles.section}>
+      <Text style={[styles.sectionTitle, { color: colors.mutedForeground }]}>{title}</Text>
+      <View style={[styles.menuBox, { backgroundColor: colors.card, borderColor: colors.border }]}>
+        {items.map((item, i) => (
+          <View key={i}>
+            {i > 0 && <View style={[styles.divider, { backgroundColor: colors.border }]} />}
+            <TouchableOpacity style={styles.menuItem} onPress={item.onPress} activeOpacity={0.7}>
+              <View style={[styles.menuIcon, { backgroundColor: item.color + "18" }]}>
+                <Ionicons name={item.icon} size={20} color={item.color} />
+              </View>
+              <View style={styles.menuText}>
+                <Text style={[styles.menuLabel, { color: colors.foreground }]}>{item.label}</Text>
+                {item.subtitle && <Text style={[styles.menuSub, { color: colors.mutedForeground }]}>{item.subtitle}</Text>}
+              </View>
+              {item.badge && (
+                <View style={[styles.badge, { backgroundColor: colors.accent }]}>
+                  <Text style={styles.badgeText}>{item.badge}</Text>
+                </View>
+              )}
+              <Ionicons name="chevron-forward" size={16} color={colors.mutedForeground} />
+            </TouchableOpacity>
+          </View>
+        ))}
+      </View>
+    </View>
+  );
+}
+
+export default function MoreScreen() {
+  const colors = useColors();
+  const insets = useSafeAreaInsets();
+  const router = useRouter();
+  const topPad = Platform.OS === "web" ? 67 : insets.top;
+  const botPad = Platform.OS === "web" ? 34 : 0;
+
+  return (
+    <ScrollView
+      style={[styles.container, { backgroundColor: colors.background }]}
+      contentContainerStyle={[styles.content, { paddingTop: topPad + 16, paddingBottom: 100 + botPad }]}
+      showsVerticalScrollIndicator={false}
+    >
+      <Text style={[styles.pageTitle, { color: colors.foreground }]}>Explorar</Text>
+
+      <MenuSection
+        title="LEGISLATIVO"
+        items={[
+          {
+            icon: "sparkles-outline",
+            label: "Asistente IA",
+            subtitle: "Consulta en lenguaje natural",
+            color: colors.accent,
+            onPress: () => router.push("/ai-assistant"),
+            badge: "IA",
+          },
+          {
+            icon: "briefcase-outline",
+            label: "Comisiones Permanentes",
+            subtitle: "Composición y agenda",
+            color: "#7C3AED",
+            onPress: () => router.push("/comisiones"),
+          },
+          {
+            icon: "ribbon-outline",
+            label: "Leyes Vigentes",
+            subtitle: "Leyes aprobadas y promulgadas",
+            color: colors.success,
+            onPress: () => router.push("/(tabs)/projects"),
+          },
+          {
+            icon: "stats-chart-outline",
+            label: "Votaciones",
+            subtitle: "Resultados y estadísticas",
+            color: "#0891B2",
+            onPress: () => router.push("/votaciones"),
+          },
+        ]}
+      />
+
+      <MenuSection
+        title="CONFIGURACIÓN"
+        items={[
+          {
+            icon: "settings-outline",
+            label: "Configuración",
+            subtitle: "Accesibilidad, idioma y portales",
+            color: "#6366F1",
+            onPress: () => router.push("/configuracion"),
+          },
+        ]}
+      />
+
+      <MenuSection
+        title="TRANSPARENCIA"
+        items={[
+          {
+            icon: "cloud-download-outline",
+            label: "Datos Abiertos",
+            subtitle: "Portal de datos legislativos",
+            color: "#0D9488",
+            onPress: () => Linking.openURL("https://datos.congreso.gov.py/opendata/"),
+          },
+          {
+            icon: "document-outline",
+            label: "Diario de Sesiones",
+            subtitle: "Actas y registros oficiales",
+            color: colors.primary,
+            onPress: () => Linking.openURL("https://www.diputados.gov.py/sesiones/diario-sesiones-comision-permanente"),
+          },
+          {
+            icon: "newspaper-outline",
+            label: "Informes Institucionales",
+            subtitle: "Informes y publicaciones",
+            color: "#6366F1",
+            onPress: () => Linking.openURL("https://www.diputados.gov.py"),
+          },
+        ]}
+      />
+
+      <MenuSection
+        title="PORTALES OFICIALES"
+        items={[
+          {
+            icon: "globe-outline",
+            label: "Sitio Oficial",
+            subtitle: "diputados.gov.py",
+            color: colors.primary,
+            onPress: () => Linking.openURL("https://www.diputados.gov.py"),
+          },
+          {
+            icon: "desktop-outline",
+            label: "Portal de Datos V2",
+            subtitle: "datosv2.congreso.gov.py",
+            color: "#7C3AED",
+            onPress: () => Linking.openURL("https://datosv2.congreso.gov.py/web/"),
+          },
+          {
+            icon: "videocam-outline",
+            label: "Sesión Digital",
+            subtitle: "Transmisión en tiempo real",
+            color: "#EF4444",
+            onPress: () => Linking.openURL("https://www.diputados.gov.py/sesiones/sesion-digital-comision-permanente"),
+          },
+        ]}
+      />
+
+      {/* App Info */}
+      <View style={styles.appInfo}>
+        <View style={[styles.appInfoBox, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <Ionicons name="business-outline" size={24} color={colors.primary} />
+          <Text style={[styles.appInfoTitle, { color: colors.foreground }]}>Diputados Paraguay</Text>
+          <Text style={[styles.appInfoSub, { color: colors.mutedForeground }]}>
+            Información oficial de la{"\n"}Honorable Cámara de Diputados{"\n"}República del Paraguay
+          </Text>
+          <Text style={[styles.appVersion, { color: colors.mutedForeground }]}>Versión 1.0.0 · 2025</Text>
+        </View>
+      </View>
+    </ScrollView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1 },
+  content: { paddingHorizontal: 16, gap: 4 },
+  pageTitle: { fontSize: 28, fontWeight: "700" as const, fontFamily: "Inter_700Bold", marginBottom: 16 },
+  section: { marginBottom: 20 },
+  sectionTitle: { fontSize: 12, fontWeight: "600" as const, fontFamily: "Inter_600SemiBold", letterSpacing: 1, marginBottom: 8 },
+  menuBox: { borderRadius: 16, borderWidth: 1, overflow: "hidden" },
+  menuItem: { flexDirection: "row", alignItems: "center", gap: 14, padding: 16 },
+  menuIcon: { width: 40, height: 40, borderRadius: 12, alignItems: "center", justifyContent: "center" },
+  menuText: { flex: 1 },
+  menuLabel: { fontSize: 15, fontWeight: "500" as const, fontFamily: "Inter_500Medium" },
+  menuSub: { fontSize: 13, fontFamily: "Inter_400Regular", marginTop: 2 },
+  divider: { height: 1, marginHorizontal: 16 },
+  badge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6 },
+  badgeText: { color: "#FFF", fontSize: 10, fontWeight: "700" as const, fontFamily: "Inter_700Bold" },
+  appInfo: { marginBottom: 20 },
+  appInfoBox: { borderRadius: 16, borderWidth: 1, padding: 20, alignItems: "center", gap: 8 },
+  appInfoTitle: { fontSize: 16, fontWeight: "700" as const, fontFamily: "Inter_700Bold" },
+  appInfoSub: { fontSize: 13, fontFamily: "Inter_400Regular", textAlign: "center", lineHeight: 20 },
+  appVersion: { fontSize: 12, fontFamily: "Inter_400Regular" },
+});
+
+
+================================================================================
+FILE: artifacts/mobile/app/(tabs)/projects.tsx
+================================================================================
+import React, { useState, useMemo } from "react";
+import {
+  FlatList, Platform, StyleSheet, Text, TouchableOpacity, View,
+} from "react-native";
+import { useRouter } from "expo-router";
+import { Ionicons } from "@/components/Icon";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useGetProyectos } from "@workspace/api-client-react";
+import { useColors } from "@/hooks/useColors";
+import { SearchBar } from "@/components/ui/SearchBar";
+import { ProjectCard } from "@/components/project/ProjectCard";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { SkeletonList } from "@/components/ui/SkeletonCard";
+
+const ESTADOS = ["Todos", "En tratamiento", "Aprobado en Cámara", "Promulgado", "Pendiente"];
+const INICIATIVAS = ["Todos", "Legislativa", "Poder Ejecutivo", "Poder Judicial", "Ciudadana"];
+
+export default function ProjectsScreen() {
+  const colors = useColors();
+  const insets = useSafeAreaInsets();
+  const router = useRouter();
+  const [search, setSearch] = useState("");
+  const [selectedEstado, setSelectedEstado] = useState("Todos");
+  const [showFilters, setShowFilters] = useState(false);
+  const topPad = Platform.OS === "web" ? 67 : insets.top;
+
+  const { data, isLoading, error, refetch } = useGetProyectos(
+    { limit: 50 },
+    { query: { queryKey: ["proyectos"] } }
+  );
+
+  const filtered = useMemo(() => {
+    let list = data?.data ?? [];
+    if (search) {
+      const q = search.toLowerCase();
+      list = list.filter(p =>
+        p.titulo.toLowerCase().includes(q) ||
+        p.numero.includes(q) ||
+        p.descripcion?.toLowerCase().includes(q)
+      );
+    }
+    if (selectedEstado !== "Todos") list = list.filter(p => p.estado === selectedEstado);
+    return list;
+  }, [data, search, selectedEstado]);
+
+  return (
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <View style={[styles.header, { paddingTop: topPad + 12, backgroundColor: colors.background, borderBottomColor: colors.border }]}>
+        <View style={styles.headerRow}>
+          <Text style={[styles.headerTitle, { color: colors.foreground }]}>Proyectos</Text>
+          <TouchableOpacity
+            style={[styles.filterBtn, { backgroundColor: showFilters ? colors.primary : colors.card, borderColor: colors.border }]}
+            onPress={() => setShowFilters(v => !v)}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="filter-outline" size={18} color={showFilters ? "#FFF" : colors.foreground} />
+          </TouchableOpacity>
+        </View>
+        <SearchBar value={search} onChangeText={setSearch} placeholder="Buscar proyecto, número..." />
+
+        {showFilters && (
+          <View style={styles.filtersBlock}>
+            <Text style={[styles.filterLabel, { color: colors.mutedForeground }]}>Estado</Text>
+            <FlatList
+              data={ESTADOS}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              keyExtractor={i => i}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={[styles.chip, {
+                    backgroundColor: selectedEstado === item ? colors.primary : colors.card,
+                    borderColor: selectedEstado === item ? colors.primary : colors.border,
+                  }]}
+                  onPress={() => setSelectedEstado(item)}
+                  activeOpacity={0.8}
+                >
+                  <Text style={[styles.chipText, { color: selectedEstado === item ? "#FFF" : colors.foreground }]}>{item}</Text>
+                </TouchableOpacity>
+              )}
+              contentContainerStyle={{ gap: 8, paddingVertical: 4 }}
+            />
+          </View>
+        )}
+
+        {data && (
+          <Text style={[styles.count, { color: colors.mutedForeground }]}>
+            {filtered.length} proyecto{filtered.length !== 1 ? "s" : ""}
+          </Text>
+        )}
+      </View>
+
+      {isLoading ? (
+        <View style={styles.listContent}>
+          <SkeletonList count={5} />
+        </View>
+      ) : error ? (
+        <EmptyState icon="alert-circle-outline" title="Error" subtitle="No se pudieron cargar los proyectos." actionLabel="Reintentar" onAction={refetch} />
+      ) : (
+        <FlatList
+          data={filtered}
+          keyExtractor={item => item.numero}
+          renderItem={({ item }) => (
+            <ProjectCard project={item} onPress={() => router.push(`/project/${item.id}`)} />
+          )}
+          contentContainerStyle={styles.listContent}
+          showsVerticalScrollIndicator={false}
+          scrollEnabled={!!filtered.length}
+          onRefresh={refetch}
+          refreshing={false}
+          ListEmptyComponent={
+            <EmptyState icon="document-text-outline" title="Sin resultados" subtitle="No se encontraron proyectos con esos criterios." actionLabel="Limpiar filtros" onAction={() => { setSearch(""); setSelectedEstado("Todos"); }} />
+          }
+        />
+      )}
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1 },
+  header: { paddingHorizontal: 16, paddingBottom: 12, borderBottomWidth: 1, gap: 10 },
+  headerRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  headerTitle: { fontSize: 28, fontWeight: "700" as const, fontFamily: "Inter_700Bold" },
+  filterBtn: { width: 40, height: 40, borderRadius: 12, alignItems: "center", justifyContent: "center", borderWidth: 1 },
+  filtersBlock: { gap: 4 },
+  filterLabel: { fontSize: 12, fontFamily: "Inter_500Medium", fontWeight: "500" as const },
+  chip: { paddingHorizontal: 14, paddingVertical: 7, borderRadius: 100, borderWidth: 1 },
+  chipText: { fontSize: 13, fontFamily: "Inter_500Medium", fontWeight: "500" as const },
+  count: { fontSize: 13, fontFamily: "Inter_400Regular" },
+  listContent: { padding: 16, paddingBottom: 100 },
+});
+
+
+================================================================================
+FILE: artifacts/mobile/app/(tabs)/sessions.tsx
+================================================================================
+import React, { useState } from "react";
+import {
+  FlatList, Platform, StyleSheet, Text, TouchableOpacity, View, Linking,
+} from "react-native";
+import { useRouter } from "expo-router";
+import { Ionicons } from "@/components/Icon";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useGetSesiones } from "@workspace/api-client-react";
+import { useColors } from "@/hooks/useColors";
+import { SessionCard } from "@/components/session/SessionCard";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { SkeletonList } from "@/components/ui/SkeletonCard";
+import { Badge } from "@/components/ui/Badge";
+
+const FILTERS = ["Todas", "Programadas", "Completadas"];
+
+export default function SessionsScreen() {
+  const colors = useColors();
+  const insets = useSafeAreaInsets();
+  const router = useRouter();
+  const [activeFilter, setActiveFilter] = useState("Todas");
+  const topPad = Platform.OS === "web" ? 67 : insets.top;
+
+  const { data, isLoading, error, refetch } = useGetSesiones(
+    {},
+    { query: { queryKey: ["sesiones"] } }
+  );
+
+  const filtered = React.useMemo(() => {
+    const list = data?.data ?? [];
+    if (activeFilter === "Programadas") return list.filter(s => s.estado === "programada");
+    if (activeFilter === "Completadas") return list.filter(s => s.estado === "completada");
+    return list;
+  }, [data, activeFilter]);
+
+  const sesionEnVivo = data?.sesionEnVivo;
+
+  return (
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      {/* Header */}
+      <View style={[styles.header, { paddingTop: topPad + 12, backgroundColor: colors.background, borderBottomColor: colors.border }]}>
+        <Text style={[styles.headerTitle, { color: colors.foreground }]}>Sesiones</Text>
+
+        {/* Live Session Banner */}
+        {sesionEnVivo && (
+          <TouchableOpacity
+            style={[styles.liveBanner, { backgroundColor: colors.live + "15", borderColor: colors.live + "40" }]}
+            onPress={() => router.push(`/session/${sesionEnVivo.id}`)}
+            activeOpacity={0.85}
+          >
+            <Badge label="EN VIVO" variant="live" />
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.liveBannerTitle, { color: colors.foreground }]}>{sesionEnVivo.tipo}</Text>
+              <Text style={[styles.liveBannerSub, { color: colors.mutedForeground }]}>Iniciada a las {sesionEnVivo.horaInicio}</Text>
+            </View>
+            <Ionicons name="radio-outline" size={22} color={colors.live} />
+          </TouchableOpacity>
+        )}
+
+        {/* Streaming Access */}
+        <View style={[styles.streamBox, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <Text style={[styles.streamTitle, { color: colors.foreground }]}>Seguimiento en Vivo</Text>
+          <View style={styles.streamBtns}>
+            <TouchableOpacity
+              style={[styles.streamBtn, { backgroundColor: colors.primary + "15" }]}
+              onPress={() => Linking.openURL("https://www.diputados.gov.py/sesiones/sesion-digital-comision-permanente")}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="videocam" size={16} color={colors.primary} />
+              <Text style={[styles.streamBtnText, { color: colors.primary }]}>Sesión Digital</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.streamBtn, { backgroundColor: colors.accent + "15" }]}
+              onPress={() => Linking.openURL("https://www.youtube.com/@camaradediputadosparaguay")}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="logo-youtube" size={16} color={colors.accent} />
+              <Text style={[styles.streamBtnText, { color: colors.accent }]}>YouTube</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Filters */}
+        <View style={styles.filters}>
+          {FILTERS.map(f => (
+            <TouchableOpacity
+              key={f}
+              style={[styles.filterChip, {
+                backgroundColor: activeFilter === f ? colors.primary : colors.card,
+                borderColor: activeFilter === f ? colors.primary : colors.border,
+              }]}
+              onPress={() => setActiveFilter(f)}
+              activeOpacity={0.8}
+            >
+              <Text style={[styles.filterChipText, { color: activeFilter === f ? "#FFF" : colors.foreground }]}>{f}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </View>
+
+      {isLoading ? (
+        <View style={styles.listContent}>
+          <SkeletonList count={4} />
+        </View>
+      ) : error ? (
+        <EmptyState icon="alert-circle-outline" title="Error" subtitle="No se pudieron cargar las sesiones." actionLabel="Reintentar" onAction={refetch} />
+      ) : (
+        <FlatList
+          data={filtered}
+          keyExtractor={item => item.id}
+          renderItem={({ item }) => (
+            <SessionCard session={item} onPress={() => router.push(`/session/${item.id}`)} />
+          )}
+          contentContainerStyle={styles.listContent}
+          showsVerticalScrollIndicator={false}
+          scrollEnabled={!!filtered.length}
+          onRefresh={refetch}
+          refreshing={false}
+          ListEmptyComponent={
+            <EmptyState icon="calendar-outline" title="Sin sesiones" subtitle="No hay sesiones con el filtro seleccionado." />
+          }
+        />
+      )}
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1 },
+  header: { paddingHorizontal: 16, paddingBottom: 12, borderBottomWidth: 1, gap: 12 },
+  headerTitle: { fontSize: 28, fontWeight: "700" as const, fontFamily: "Inter_700Bold" },
+  liveBanner: {
+    flexDirection: "row", alignItems: "center", gap: 12,
+    padding: 14, borderRadius: 14, borderWidth: 1,
+  },
+  liveBannerTitle: { fontSize: 15, fontWeight: "600" as const, fontFamily: "Inter_600SemiBold" },
+  liveBannerSub: { fontSize: 13, fontFamily: "Inter_400Regular", marginTop: 2 },
+  streamBox: { borderRadius: 14, padding: 14, borderWidth: 1, gap: 10 },
+  streamTitle: { fontSize: 14, fontWeight: "600" as const, fontFamily: "Inter_600SemiBold" },
+  streamBtns: { flexDirection: "row", gap: 10 },
+  streamBtn: { flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 10 },
+  streamBtnText: { fontSize: 13, fontWeight: "600" as const, fontFamily: "Inter_600SemiBold" },
+  filters: { flexDirection: "row", gap: 8 },
+  filterChip: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 100, borderWidth: 1 },
+  filterChipText: { fontSize: 13, fontFamily: "Inter_500Medium", fontWeight: "500" as const },
+  listContent: { padding: 16, paddingBottom: 100 },
+});
+
+
+================================================================================
+FILE: artifacts/mobile/app/votaciones.tsx
+================================================================================
+import React from "react";
+import { Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { useRouter } from "expo-router";
+import { Ionicons } from "@/components/Icon";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useColors } from "@/hooks/useColors";
+
+const MOCK_VOTACIONES = [
+  {
+    id: "1", proyecto: "Ley N° 7847 - Protección de Datos Personales",
+    fecha: "2025-05-28", tipo: "Final",
+    favor: 52, contra: 18, abstenciones: 4, ausentes: 6,
+    resultado: "Aprobado",
+  },
+  {
+    id: "2", proyecto: "Ley N° 7846 - Economía Social y Solidaria",
+    fecha: "2025-05-28", tipo: "Final",
+    favor: 48, contra: 22, abstenciones: 6, ausentes: 4,
+    resultado: "Aprobado",
+  },
+  {
+    id: "3", proyecto: "Reforma al Código Laboral",
+    fecha: "2025-05-21", tipo: "Primera Lectura",
+    favor: 38, contra: 32, abstenciones: 3, ausentes: 7,
+    resultado: "Aprobado",
+  },
+  {
+    id: "4", proyecto: "Ley de Inversiones Extranjeras",
+    fecha: "2025-05-14", tipo: "Comisión",
+    favor: 25, contra: 40, abstenciones: 8, ausentes: 7,
+    resultado: "Rechazado",
+  },
+];
+
+function VotacionCard({ v }: { v: typeof MOCK_VOTACIONES[0] }) {
+  const colors = useColors();
+  const total = v.favor + v.contra + v.abstenciones + v.ausentes;
+  const pctFavor = Math.round((v.favor / total) * 100);
+  const pctContra = Math.round((v.contra / total) * 100);
+  const isApproved = v.resultado === "Aprobado";
+
+  return (
+    <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+      <View style={styles.cardHeader}>
+        <View style={{ flex: 1 }}>
+          <Text style={[styles.cardTitle, { color: colors.foreground }]} numberOfLines={2}>{v.proyecto}</Text>
+          <Text style={[styles.cardDate, { color: colors.mutedForeground }]}>{v.fecha} · {v.tipo}</Text>
+        </View>
+        <View style={[styles.resultBadge, { backgroundColor: isApproved ? colors.success + "18" : colors.destructive + "18" }]}>
+          <Ionicons name={isApproved ? "checkmark-circle" : "close-circle"} size={14} color={isApproved ? colors.success : colors.destructive} />
+          <Text style={[styles.resultText, { color: isApproved ? colors.success : colors.destructive }]}>{v.resultado}</Text>
+        </View>
+      </View>
+
+      {/* Vote Bar */}
+      <View style={[styles.bar, { backgroundColor: colors.muted }]}>
+        <View style={[styles.barFavor, { flex: v.favor, backgroundColor: colors.success }]} />
+        <View style={[styles.barContra, { flex: v.contra, backgroundColor: colors.destructive }]} />
+        <View style={[styles.barAbs, { flex: v.abstenciones, backgroundColor: colors.warning }]} />
+      </View>
+
+      {/* Vote Stats */}
+      <View style={styles.statsRow}>
+        {[
+          { label: "A favor", value: v.favor, pct: pctFavor, color: colors.success, icon: "thumbs-up-outline" },
+          { label: "En contra", value: v.contra, pct: pctContra, color: colors.destructive, icon: "thumbs-down-outline" },
+          { label: "Abstenciones", value: v.abstenciones, pct: null, color: colors.warning, icon: "remove-circle-outline" },
+          { label: "Ausentes", value: v.ausentes, pct: null, color: colors.mutedForeground, icon: "person-remove-outline" },
+        ].map((stat, i) => (
+          <View key={i} style={styles.stat}>
+            <Ionicons name={stat.icon as any} size={14} color={stat.color} />
+            <Text style={[styles.statValue, { color: stat.color }]}>{stat.value}</Text>
+            <Text style={[styles.statLabel, { color: colors.mutedForeground }]}>{stat.label}</Text>
+          </View>
+        ))}
+      </View>
+    </View>
+  );
+}
+
+export default function VotacionesScreen() {
+  const colors = useColors();
+  const insets = useSafeAreaInsets();
+  const router = useRouter();
+  const topPad = Platform.OS === "web" ? 67 : insets.top;
+
+  return (
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <View style={[styles.header, { paddingTop: topPad + 8, backgroundColor: colors.background, borderBottomColor: colors.border }]}>
+        <View style={styles.headerRow}>
+          <TouchableOpacity onPress={() => router.back()} activeOpacity={0.7}>
+            <Ionicons name="chevron-back" size={24} color={colors.foreground} />
+          </TouchableOpacity>
+          <Text style={[styles.headerTitle, { color: colors.foreground }]}>Votaciones</Text>
+          <View style={{ width: 24 }} />
+        </View>
+      </View>
+      <ScrollView contentContainerStyle={[styles.content, { paddingBottom: Platform.OS === "web" ? 100 : 80 }]} showsVerticalScrollIndicator={false}>
+        {/* Summary */}
+        <View style={[styles.summaryCard, { backgroundColor: colors.primary + "12", borderColor: colors.primary + "30" }]}>
+          <Ionicons name="stats-chart" size={22} color={colors.primary} />
+          <View>
+            <Text style={[styles.summaryTitle, { color: colors.foreground }]}>Resumen 2025</Text>
+            <Text style={[styles.summarySub, { color: colors.mutedForeground }]}>{MOCK_VOTACIONES.length} votaciones registradas</Text>
+          </View>
+          <View style={styles.summaryStats}>
+            <Text style={[styles.summaryValue, { color: colors.success }]}>{MOCK_VOTACIONES.filter(v => v.resultado === "Aprobado").length} apr.</Text>
+            <Text style={[styles.summaryValue, { color: colors.destructive }]}>{MOCK_VOTACIONES.filter(v => v.resultado === "Rechazado").length} rech.</Text>
+          </View>
+        </View>
+
+        {MOCK_VOTACIONES.map(v => <VotacionCard key={v.id} v={v} />)}
+      </ScrollView>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1 },
+  header: { paddingHorizontal: 16, paddingBottom: 12, borderBottomWidth: 1 },
+  headerRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  headerTitle: { fontSize: 22, fontWeight: "700" as const, fontFamily: "Inter_700Bold" },
+  content: { padding: 16, gap: 10 },
+  summaryCard: { flexDirection: "row", alignItems: "center", gap: 12, padding: 16, borderRadius: 14, borderWidth: 1, marginBottom: 4 },
+  summaryTitle: { fontSize: 15, fontWeight: "600" as const, fontFamily: "Inter_600SemiBold" },
+  summarySub: { fontSize: 13, fontFamily: "Inter_400Regular" },
+  summaryStats: { marginLeft: "auto", flexDirection: "row", gap: 12 },
+  summaryValue: { fontSize: 14, fontWeight: "700" as const, fontFamily: "Inter_700Bold" },
+  card: { borderRadius: 14, borderWidth: 1, padding: 16, gap: 12 },
+  cardHeader: { flexDirection: "row", alignItems: "flex-start", gap: 12 },
+  cardTitle: { fontSize: 14, fontWeight: "600" as const, fontFamily: "Inter_600SemiBold", lineHeight: 20 },
+  cardDate: { fontSize: 12, fontFamily: "Inter_400Regular", marginTop: 3 },
+  resultBadge: { flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 100 },
+  resultText: { fontSize: 12, fontWeight: "600" as const, fontFamily: "Inter_600SemiBold" },
+  bar: { height: 8, borderRadius: 4, flexDirection: "row", overflow: "hidden" },
+  barFavor: {},
+  barContra: {},
+  barAbs: {},
+  statsRow: { flexDirection: "row", justifyContent: "space-between" },
+  stat: { alignItems: "center", gap: 3 },
+  statValue: { fontSize: 16, fontWeight: "700" as const, fontFamily: "Inter_700Bold" },
+  statLabel: { fontSize: 10, fontFamily: "Inter_400Regular", textAlign: "center" },
+});
+
+
+================================================================================
+FILE: artifacts/mobile/components/dashboard/StatsRow.tsx
+================================================================================
+import React from "react";
+import { StyleSheet, Text, View } from "react-native";
+import { Ionicons } from "@/components/Icon";
+import { useColors } from "@/hooks/useColors";
+
+interface Stat {
+  icon: keyof typeof Ionicons.glyphMap;
+  value: number | string;
+  label: string;
+  color?: string;
+}
+
+interface StatsRowProps {
+  stats: Stat[];
+}
+
+export function StatsRow({ stats }: StatsRowProps) {
+  const colors = useColors();
+  return (
+    <View style={styles.row}>
+      {stats.map((stat, i) => (
+        <View key={i} style={[styles.stat, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <View style={[styles.iconWrap, { backgroundColor: (stat.color ?? colors.primary) + "18" }]}>
+            <Ionicons name={stat.icon} size={20} color={stat.color ?? colors.primary} />
+          </View>
+          <Text style={[styles.value, { color: colors.foreground }]}>{stat.value}</Text>
+          <Text style={[styles.label, { color: colors.mutedForeground }]}>{stat.label}</Text>
+        </View>
+      ))}
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  row: {
+    flexDirection: "row",
+    gap: 10,
+  },
+  stat: {
+    flex: 1,
+    alignItems: "center",
+    padding: 14,
+    borderRadius: 14,
+    borderWidth: 1,
+    gap: 6,
+  },
+  iconWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  value: {
+    fontSize: 22,
+    fontWeight: "700" as const,
+    fontFamily: "Inter_700Bold",
+  },
+  label: {
+    fontSize: 11,
+    textAlign: "center",
+    fontFamily: "Inter_400Regular",
+    lineHeight: 14,
+  },
+});
+
+
+================================================================================
+FILE: artifacts/mobile/components/deputy/DeputyCard.tsx
+================================================================================
+import React from "react";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Ionicons } from "@/components/Icon";
+import { useColors } from "@/hooks/useColors";
+import type { Legislador } from "@workspace/api-client-react";
+
+interface DeputyCardProps {
+  deputy: Legislador;
+  onPress: () => void;
+  compact?: boolean;
+}
+
+const PARTY_COLORS: Record<string, string> = {
+  "ANR": "#C8102E",
+  "PLRA": "#1E3A8A",
+  "Frente Guasú": "#7C3AED",
+  "Honor Colorado": "#DC2626",
+  "Patria Querida": "#0D9488",
+  "PPS": "#0891B2",
+};
+
+function getPartyColor(partido: string): string {
+  return PARTY_COLORS[partido] ?? "#6B7280";
+}
+
+function getInitials(nombre: string, apellido: string): string {
+  return `${nombre.charAt(0)}${apellido.charAt(0)}`.toUpperCase();
+}
+
+export function DeputyCard({ deputy, onPress, compact = false }: DeputyCardProps) {
+  const colors = useColors();
+  const partyColor = getPartyColor(deputy.partido);
+
+  return (
+    <TouchableOpacity
+      style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}
+      onPress={onPress}
+      activeOpacity={0.75}
+    >
+      <View style={[styles.avatar, { backgroundColor: partyColor + "18" }]}>
+        <Text style={[styles.initials, { color: partyColor }]}>
+          {getInitials(deputy.nombre, deputy.apellido)}
+        </Text>
+      </View>
+      <View style={styles.info}>
+        <Text style={[styles.name, { color: colors.foreground }]} numberOfLines={1}>
+          {deputy.nombre} {deputy.apellido}
+        </Text>
+        <Text style={[styles.party, { color: partyColor }]} numberOfLines={1}>
+          {deputy.partido}
+        </Text>
+        {!compact && (
+          <View style={styles.meta}>
+            <Ionicons name="location-outline" size={12} color={colors.mutedForeground} />
+            <Text style={[styles.metaText, { color: colors.mutedForeground }]}>{deputy.departamento}</Text>
+          </View>
+        )}
+      </View>
+      <Ionicons name="chevron-forward" size={18} color={colors.mutedForeground} />
+    </TouchableOpacity>
+  );
+}
+
+export { getPartyColor };
+
+const styles = StyleSheet.create({
+  card: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 14,
+    borderRadius: 14,
+    borderWidth: 1,
+    marginBottom: 8,
+    gap: 12,
+  },
+  avatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  initials: {
+    fontSize: 16,
+    fontWeight: "700" as const,
+    fontFamily: "Inter_700Bold",
+  },
+  info: { flex: 1 },
+  name: {
+    fontSize: 15,
+    fontWeight: "600" as const,
+    fontFamily: "Inter_600SemiBold",
+  },
+  party: {
+    fontSize: 13,
+    marginTop: 2,
+    fontFamily: "Inter_500Medium",
+    fontWeight: "500" as const,
+  },
+  meta: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    marginTop: 4,
+  },
+  metaText: {
+    fontSize: 12,
+    fontFamily: "Inter_400Regular",
+  },
+});
+
+
+================================================================================
+FILE: artifacts/mobile/components/ErrorBoundary.tsx
+================================================================================
+import React, { Component, ComponentType, PropsWithChildren } from "react";
+
+import { ErrorFallback, ErrorFallbackProps } from "@/components/ErrorFallback";
+
+export type ErrorBoundaryProps = PropsWithChildren<{
+  FallbackComponent?: ComponentType<ErrorFallbackProps>;
+  onError?: (error: Error, stackTrace: string) => void;
+}>;
+
+type ErrorBoundaryState = { error: Error | null };
+
+/**
+ * This is a special case for for using the class components. Error boundaries must be class components because React only provides error boundary functionality through lifecycle methods (componentDidCatch and getDerivedStateFromError) which are not available in functional components.
+ * https://react.dev/reference/react/Component#catching-rendering-errors-with-an-error-boundary
+ */
+export class ErrorBoundary extends Component<
+  ErrorBoundaryProps,
+  ErrorBoundaryState
+> {
+  state: ErrorBoundaryState = { error: null };
+
+  static defaultProps: {
+    FallbackComponent: ComponentType<ErrorFallbackProps>;
+  } = {
+    FallbackComponent: ErrorFallback,
+  };
+
+  static getDerivedStateFromError(error: Error): ErrorBoundaryState {
+    return { error };
+  }
+
+  componentDidCatch(error: Error, info: { componentStack: string }): void {
+    if (typeof this.props.onError === "function") {
+      this.props.onError(error, info.componentStack);
+    }
+  }
+
+  resetError = (): void => {
+    this.setState({ error: null });
+  };
+
+  render() {
+    const { FallbackComponent } = this.props;
+
+    return this.state.error && FallbackComponent ? (
+      <FallbackComponent
+        error={this.state.error}
+        resetError={this.resetError}
+      />
+    ) : (
+      this.props.children
+    );
+  }
+}
+
+
+================================================================================
+FILE: artifacts/mobile/components/ErrorFallback.tsx
+================================================================================
+import { Feather } from "@/components/Icon";
+import { reloadAppAsync } from "expo";
+import React, { useState } from "react";
+import {
+  Modal,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+import { useColors } from "@/hooks/useColors";
+
+export type ErrorFallbackProps = {
+  error: Error;
+  resetError: () => void;
+};
+
+export function ErrorFallback({ error, resetError }: ErrorFallbackProps) {
+  const colors = useColors();
+  const insets = useSafeAreaInsets();
+
+  const [isModalVisible, setIsModalVisible] = useState(false);
+
+  const handleRestart = async () => {
+    try {
+      await reloadAppAsync();
+    } catch (restartError) {
+      console.error("Failed to restart app:", restartError);
+      resetError();
+    }
+  };
+
+  const formatErrorDetails = (): string => {
+    let details = `Error: ${error.message}\n\n`;
+    if (error.stack) {
+      details += `Stack Trace:\n${error.stack}`;
+    }
+    return details;
+  };
+
+  const monoFont = Platform.select({
+    ios: "Menlo",
+    android: "monospace",
+    default: "monospace",
+  });
+
+  return (
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      {__DEV__ ? (
+        <Pressable
+          onPress={() => setIsModalVisible(true)}
+          accessibilityLabel="View error details"
+          accessibilityRole="button"
+          style={({ pressed }) => [
+            styles.topButton,
+            {
+              top: insets.top + 16,
+              backgroundColor: colors.card,
+              opacity: pressed ? 0.8 : 1,
+            },
+          ]}
+        >
+          <Feather name="alert-circle" size={20} color={colors.foreground} />
+        </Pressable>
+      ) : null}
+
+      <View style={styles.content}>
+        <Text style={[styles.title, { color: colors.foreground }]}>
+          Something went wrong
+        </Text>
+
+        <Text style={[styles.message, { color: colors.mutedForeground }]}>
+          Please reload the app to continue.
+        </Text>
+
+        <Pressable
+          onPress={handleRestart}
+          style={({ pressed }) => [
+            styles.button,
+            {
+              backgroundColor: colors.primary,
+              opacity: pressed ? 0.9 : 1,
+              transform: [{ scale: pressed ? 0.98 : 1 }],
+            },
+          ]}
+        >
+          <Text
+            style={[
+              styles.buttonText,
+              { color: colors.primaryForeground },
+            ]}
+          >
+            Try Again
+          </Text>
+        </Pressable>
+      </View>
+
+      {__DEV__ ? (
+        <Modal
+          visible={isModalVisible}
+          animationType="slide"
+          transparent={true}
+          onRequestClose={() => setIsModalVisible(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View
+              style={[
+                styles.modalContainer,
+                { backgroundColor: colors.background },
+              ]}
+            >
+              <View
+                style={[
+                  styles.modalHeader,
+                  { borderBottomColor: colors.border },
+                ]}
+              >
+                <Text style={[styles.modalTitle, { color: colors.foreground }]}>
+                  Error Details
+                </Text>
+                <Pressable
+                  onPress={() => setIsModalVisible(false)}
+                  accessibilityLabel="Close error details"
+                  accessibilityRole="button"
+                  style={({ pressed }) => [
+                    styles.closeButton,
+                    { opacity: pressed ? 0.6 : 1 },
+                  ]}
+                >
+                  <Feather name="x" size={24} color={colors.foreground} />
+                </Pressable>
+              </View>
+
+              <ScrollView
+                style={styles.modalScrollView}
+                contentContainerStyle={[
+                  styles.modalScrollContent,
+                  { paddingBottom: insets.bottom + 16 },
+                ]}
+                showsVerticalScrollIndicator
+              >
+                <View
+                  style={[
+                    styles.errorContainer,
+                    { backgroundColor: colors.card },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.errorText,
+                      {
+                        color: colors.foreground,
+                        fontFamily: monoFont,
+                      },
+                    ]}
+                    selectable
+                  >
+                    {formatErrorDetails()}
+                  </Text>
+                </View>
+              </ScrollView>
+            </View>
+          </View>
+        </Modal>
+      ) : null}
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    width: "100%",
+    height: "100%",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 24,
+  },
+  content: {
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 16,
+    width: "100%",
+    maxWidth: 600,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: "700",
+    textAlign: "center",
+    lineHeight: 40,
+  },
+  message: {
+    fontSize: 16,
+    textAlign: "center",
+    lineHeight: 24,
+  },
+  topButton: {
+    position: "absolute",
+    right: 16,
+    width: 44,
+    height: 44,
+    borderRadius: 8,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 10,
+  },
+  button: {
+    paddingVertical: 16,
+    borderRadius: 8,
+    paddingHorizontal: 24,
+    minWidth: 200,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  buttonText: {
+    fontWeight: "600",
+    textAlign: "center",
+    fontSize: 16,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "flex-end",
+  },
+  modalContainer: {
+    width: "100%",
+    height: "90%",
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+  },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: "600",
+  },
+  closeButton: {
+    width: 44,
+    height: 44,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  modalScrollView: {
+    flex: 1,
+  },
+  modalScrollContent: {
+    padding: 16,
+  },
+  errorContainer: {
+    width: "100%",
+    borderRadius: 8,
+    overflow: "hidden",
+    padding: 16,
+  },
+  errorText: {
+    fontSize: 12,
+    lineHeight: 18,
+    width: "100%",
+  },
+});
+
+
+================================================================================
+FILE: artifacts/mobile/components/Icon.tsx
+================================================================================
+import * as React from "react";
+import {
+  Feather as VectorFeather,
+  Ionicons as VectorIonicons,
+} from "@expo/vector-icons";
+import type { StyleProp, ViewStyle } from "react-native";
+import {
+  Award,
+  Briefcase,
+  Building2,
+  Calendar,
+  ChartColumn,
+  ChevronLeft,
+  ChevronRight,
+  CircleAlert,
+  CircleCheck,
+  CircleMinus,
+  CircleX,
+  Clock,
+  CloudDownload,
+  ExternalLink,
+  File,
+  FileText,
+  Funnel,
+  Globe,
+  House,
+  Info,
+  Languages,
+  Layers,
+  LayoutGrid,
+  List,
+  Mail,
+  MapPin,
+  Monitor,
+  Newspaper,
+  Radio,
+  Scale,
+  Search,
+  Send,
+  Settings,
+  Sparkles,
+  ThumbsDown,
+  ThumbsUp,
+  Tv,
+  Type,
+  UserMinus,
+  UserRound,
+  Users,
+  Video,
+  X,
+} from "lucide-react-native";
+
+// Icon fonts (Ionicons/Feather via @expo/vector-icons) render as tofu boxes on
+// Android under Expo SDK 54 + New Architecture: runtime-registered glyph fonts
+// are not picked up by the native font manager (Expo issue #351). SVG icons
+// (react-native-svg) draw as vector paths with no font registration, so they
+// render reliably everywhere. We keep the original `<Ionicons name=... />` API
+// and map each Ionicons/Feather name to a lucide SVG component.
+
+type IconComponent = React.ComponentType<{
+  size?: number;
+  color?: string;
+  style?: StyleProp<ViewStyle>;
+}>;
+
+type IconProps = {
+  name: string;
+  size?: number;
+  color?: string;
+  style?: StyleProp<ViewStyle>;
+};
+
+const IONICON_MAP: Record<string, IconComponent> = {
+  home: House,
+  "home-outline": House,
+  people: Users,
+  "people-outline": Users,
+  person: UserRound,
+  "person-outline": UserRound,
+  "person-remove-outline": UserMinus,
+  tv: Tv,
+  "tv-outline": Tv,
+  "document-text": FileText,
+  "document-text-outline": FileText,
+  document: File,
+  "document-outline": File,
+  grid: LayoutGrid,
+  "grid-outline": LayoutGrid,
+  briefcase: Briefcase,
+  "briefcase-outline": Briefcase,
+  business: Building2,
+  "business-outline": Building2,
+  calendar: Calendar,
+  "calendar-outline": Calendar,
+  "checkmark-circle": CircleCheck,
+  "checkmark-circle-outline": CircleCheck,
+  "close-circle": CircleX,
+  "chevron-back": ChevronLeft,
+  "chevron-forward": ChevronRight,
+  "alert-circle": CircleAlert,
+  "alert-circle-outline": CircleAlert,
+  "filter-outline": Funnel,
+  "options-outline": Funnel,
+  "globe-outline": Globe,
+  "information-circle-outline": Info,
+  "language-outline": Languages,
+  "layers-outline": Layers,
+  "list-outline": List,
+  "location-outline": MapPin,
+  "logo-youtube": Video,
+  "mail-outline": Mail,
+  "newspaper-outline": Newspaper,
+  "open-outline": ExternalLink,
+  radio: Radio,
+  "radio-outline": Radio,
+  "search-outline": Search,
+  send: Send,
+  sparkles: Sparkles,
+  "sparkles-outline": Sparkles,
+  "stats-chart": ChartColumn,
+  "stats-chart-outline": ChartColumn,
+  "text-outline": Type,
+  "time-outline": Clock,
+  videocam: Video,
+  "videocam-outline": Video,
+  "thumbs-up-outline": ThumbsUp,
+  "thumbs-down-outline": ThumbsDown,
+  "remove-circle-outline": CircleMinus,
+  ribbon: Award,
+  "ribbon-outline": Award,
+  scale: Scale,
+  "scale-outline": Scale,
+  "settings-outline": Settings,
+  "cloud-download-outline": CloudDownload,
+  "desktop-outline": Monitor,
+};
+
+const FEATHER_MAP: Record<string, IconComponent> = {
+  "alert-circle": CircleAlert,
+  x: X,
+};
+
+function buildIconSet<G extends Record<string, string | number>>(
+  map: Record<string, IconComponent>,
+  fallback: IconComponent,
+  glyphMap: G,
+) {
+  function Icon({ name, size = 24, color = "#000000", style }: IconProps) {
+    const Mapped = map[name];
+    if (__DEV__ && !Mapped) {
+      console.warn(`[Icon] Unmapped icon name "${name}" — rendering fallback.`);
+    }
+    const Cmp = Mapped ?? fallback;
+    return <Cmp size={size} color={color} style={style} />;
+  }
+  return Object.assign(Icon, { glyphMap });
+}
+
+export const Ionicons = buildIconSet(
+  IONICON_MAP,
+  CircleAlert,
+  VectorIonicons.glyphMap,
+);
+
+export const Feather = buildIconSet(
+  FEATHER_MAP,
+  CircleAlert,
+  VectorFeather.glyphMap,
+);
+
+
+================================================================================
+FILE: artifacts/mobile/components/KeyboardAwareScrollViewCompat.tsx
+================================================================================
+import {
+  KeyboardAwareScrollView,
+  KeyboardAwareScrollViewProps,
+} from "react-native-keyboard-controller";
+import { Platform, ScrollView, ScrollViewProps } from "react-native";
+
+type Props = KeyboardAwareScrollViewProps & ScrollViewProps;
+
+export function KeyboardAwareScrollViewCompat({
+  children,
+  keyboardShouldPersistTaps = "handled",
+  ...props
+}: Props) {
+  if (Platform.OS === "web") {
+    return (
+      <ScrollView keyboardShouldPersistTaps={keyboardShouldPersistTaps} {...props}>
+        {children}
+      </ScrollView>
+    );
+  }
+  return (
+    <KeyboardAwareScrollView
+      keyboardShouldPersistTaps={keyboardShouldPersistTaps}
+      {...props}
+    >
+      {children}
+    </KeyboardAwareScrollView>
+  );
+}
+
+
+================================================================================
+FILE: artifacts/mobile/components/project/ProjectCard.tsx
+================================================================================
+import React from "react";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Ionicons } from "@/components/Icon";
+import { useColors } from "@/hooks/useColors";
+import { Badge } from "@/components/ui/Badge";
+import type { Proyecto } from "@workspace/api-client-react";
+
+interface ProjectCardProps {
+  project: Proyecto;
+  onPress: () => void;
+}
+
+function getEstadoVariant(estado: string): "default" | "success" | "warning" | "destructive" | "muted" {
+  const e = estado.toLowerCase();
+  if (e.includes("aprobado") || e.includes("promulgado")) return "success";
+  if (e.includes("tratamiento") || e.includes("comisión") || e.includes("comision")) return "warning";
+  if (e.includes("rechazado") || e.includes("archivado")) return "destructive";
+  if (e.includes("pendiente") || e.includes("presentación")) return "muted";
+  return "default";
+}
+
+function formatDate(dateStr: string): string {
+  try {
+    const d = new Date(dateStr + "T00:00:00");
+    return d.toLocaleDateString("es-PY", { day: "numeric", month: "short", year: "numeric" });
+  } catch { return dateStr; }
+}
+
+export function ProjectCard({ project, onPress }: ProjectCardProps) {
+  const colors = useColors();
+  return (
+    <TouchableOpacity
+      style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}
+      onPress={onPress}
+      activeOpacity={0.75}
+    >
+      <View style={styles.header}>
+        <View style={[styles.numBadge, { backgroundColor: colors.primary + "15" }]}>
+          <Text style={[styles.num, { color: colors.primary }]}>{project.numero}</Text>
+        </View>
+        <Badge label={project.estado} variant={getEstadoVariant(project.estado)} size="sm" />
+      </View>
+      <Text style={[styles.title, { color: colors.foreground }]} numberOfLines={2}>
+        {project.titulo}
+      </Text>
+      <View style={styles.meta}>
+        <View style={styles.metaRow}>
+          <Ionicons name="layers-outline" size={13} color={colors.mutedForeground} />
+          <Text style={[styles.metaText, { color: colors.mutedForeground }]}>{project.etapa}</Text>
+        </View>
+        <View style={styles.metaRow}>
+          <Ionicons name="calendar-outline" size={13} color={colors.mutedForeground} />
+          <Text style={[styles.metaText, { color: colors.mutedForeground }]}>{formatDate(project.fechaIngreso)}</Text>
+        </View>
+      </View>
+    </TouchableOpacity>
+  );
+}
+
+const styles = StyleSheet.create({
+  card: {
+    padding: 14,
+    borderRadius: 14,
+    borderWidth: 1,
+    marginBottom: 8,
+    gap: 10,
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  numBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  num: {
+    fontSize: 12,
+    fontWeight: "700" as const,
+    fontFamily: "Inter_700Bold",
+    letterSpacing: 0.5,
+  },
+  title: {
+    fontSize: 15,
+    fontWeight: "600" as const,
+    fontFamily: "Inter_600SemiBold",
+    lineHeight: 21,
+  },
+  meta: {
+    flexDirection: "row",
+    gap: 16,
+    flexWrap: "wrap",
+  },
+  metaRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+  },
+  metaText: {
+    fontSize: 12,
+    fontFamily: "Inter_400Regular",
+  },
+});
+
+
+================================================================================
+FILE: artifacts/mobile/components/session/SessionCard.tsx
+================================================================================
+import React from "react";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Ionicons } from "@/components/Icon";
+import { useColors } from "@/hooks/useColors";
+import { Badge } from "@/components/ui/Badge";
+import type { Sesion } from "@workspace/api-client-react";
+
+interface SessionCardProps {
+  session: Sesion;
+  onPress: () => void;
+}
+
+function formatDate(dateStr: string): string {
+  try {
+    const d = new Date(dateStr + "T00:00:00");
+    return d.toLocaleDateString("es-PY", { weekday: "long", day: "numeric", month: "long" });
+  } catch { return dateStr; }
+}
+
+function getEstadoBadge(estado: string): { label: string; variant: "live" | "success" | "warning" | "muted" } {
+  switch (estado) {
+    case "en-vivo": return { label: "EN VIVO", variant: "live" };
+    case "programada": return { label: "Programada", variant: "warning" };
+    case "completada": return { label: "Finalizada", variant: "success" };
+    default: return { label: estado, variant: "muted" };
+  }
+}
+
+export function SessionCard({ session, onPress }: SessionCardProps) {
+  const colors = useColors();
+  const { label, variant } = getEstadoBadge(session.estado);
+
+  return (
+    <TouchableOpacity
+      style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}
+      onPress={onPress}
+      activeOpacity={0.75}
+    >
+      <View style={styles.topRow}>
+        <View style={[styles.iconWrap, { backgroundColor: colors.primary + "15" }]}>
+          <Ionicons name={session.estado === "en-vivo" ? "radio" : "calendar"} size={20} color={colors.primary} />
+        </View>
+        <Badge label={label} variant={variant} size="sm" />
+      </View>
+      <Text style={[styles.tipo, { color: colors.foreground }]}>{session.tipo}</Text>
+      <View style={styles.meta}>
+        <View style={styles.metaRow}>
+          <Ionicons name="calendar-outline" size={13} color={colors.mutedForeground} />
+          <Text style={[styles.metaText, { color: colors.mutedForeground }]}>{formatDate(session.fecha)}</Text>
+        </View>
+        <View style={styles.metaRow}>
+          <Ionicons name="time-outline" size={13} color={colors.mutedForeground} />
+          <Text style={[styles.metaText, { color: colors.mutedForeground }]}>
+            {session.horaInicio}{session.horaFin ? ` - ${session.horaFin}` : ""}
+          </Text>
+        </View>
+      </View>
+      {session.descripcion && (
+        <Text style={[styles.desc, { color: colors.mutedForeground }]} numberOfLines={2}>
+          {session.descripcion}
+        </Text>
+      )}
+    </TouchableOpacity>
+  );
+}
+
+const styles = StyleSheet.create({
+  card: {
+    padding: 14,
+    borderRadius: 14,
+    borderWidth: 1,
+    marginBottom: 8,
+    gap: 10,
+  },
+  topRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  iconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  tipo: {
+    fontSize: 16,
+    fontWeight: "600" as const,
+    fontFamily: "Inter_600SemiBold",
+  },
+  meta: { flexDirection: "row", gap: 16, flexWrap: "wrap" },
+  metaRow: { flexDirection: "row", alignItems: "center", gap: 5 },
+  metaText: { fontSize: 13, fontFamily: "Inter_400Regular" },
+  desc: { fontSize: 13, fontFamily: "Inter_400Regular", lineHeight: 18 },
+});
+
+
+================================================================================
+FILE: artifacts/mobile/components/ui/Badge.tsx
+================================================================================
+import React from "react";
+import { StyleSheet, Text, View } from "react-native";
+import { useColors } from "@/hooks/useColors";
+
+type BadgeVariant = "default" | "success" | "warning" | "destructive" | "live" | "muted";
+
+interface BadgeProps {
+  label: string;
+  variant?: BadgeVariant;
+  size?: "sm" | "md";
+}
+
+export function Badge({ label, variant = "default", size = "md" }: BadgeProps) {
+  const colors = useColors();
+
+  const getColors = (): { bg: string; text: string } => {
+    switch (variant) {
+      case "success": return { bg: colors.success + "22", text: colors.success };
+      case "warning": return { bg: colors.warning + "22", text: colors.warning };
+      case "destructive": return { bg: colors.destructive + "22", text: colors.destructive };
+      case "live": return { bg: colors.live, text: colors.liveForeground };
+      case "muted": return { bg: colors.muted, text: colors.mutedForeground };
+      default: return { bg: colors.primary + "18", text: colors.primary };
+    }
+  };
+
+  const { bg, text } = getColors();
+  const isLive = variant === "live";
+
+  return (
+    <View style={[styles.badge, { backgroundColor: bg }, size === "sm" && styles.sm]}>
+      {isLive && <View style={[styles.dot, { backgroundColor: text }]} />}
+      <Text style={[styles.label, { color: text }, size === "sm" && styles.labelSm]}>
+        {label}
+      </Text>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  badge: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 100,
+    gap: 5,
+    alignSelf: "flex-start",
+  },
+  sm: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  dot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  label: {
+    fontSize: 12,
+    fontWeight: "600" as const,
+    letterSpacing: 0.2,
+  },
+  labelSm: {
+    fontSize: 11,
+  },
+});
+
+
+================================================================================
+FILE: artifacts/mobile/components/ui/EmptyState.tsx
+================================================================================
+import React from "react";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Ionicons } from "@/components/Icon";
+import { useColors } from "@/hooks/useColors";
+
+interface EmptyStateProps {
+  icon?: keyof typeof Ionicons.glyphMap;
+  title: string;
+  subtitle?: string;
+  actionLabel?: string;
+  onAction?: () => void;
+}
+
+export function EmptyState({ icon = "document-text-outline", title, subtitle, actionLabel, onAction }: EmptyStateProps) {
+  const colors = useColors();
+  return (
+    <View style={styles.container}>
+      <View style={[styles.iconContainer, { backgroundColor: colors.muted }]}>
+        <Ionicons name={icon} size={32} color={colors.mutedForeground} />
+      </View>
+      <Text style={[styles.title, { color: colors.foreground }]}>{title}</Text>
+      {subtitle && <Text style={[styles.subtitle, { color: colors.mutedForeground }]}>{subtitle}</Text>}
+      {actionLabel && onAction && (
+        <TouchableOpacity style={[styles.btn, { backgroundColor: colors.primary }]} onPress={onAction} activeOpacity={0.8}>
+          <Text style={[styles.btnText, { color: colors.primaryForeground }]}>{actionLabel}</Text>
+        </TouchableOpacity>
+      )}
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 32,
+    gap: 12,
+  },
+  iconContainer: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 4,
+  },
+  title: {
+    fontSize: 17,
+    fontWeight: "600" as const,
+    textAlign: "center",
+    fontFamily: "Inter_600SemiBold",
+  },
+  subtitle: {
+    fontSize: 14,
+    textAlign: "center",
+    lineHeight: 20,
+    fontFamily: "Inter_400Regular",
+  },
+  btn: {
+    marginTop: 8,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 100,
+  },
+  btnText: {
+    fontSize: 14,
+    fontWeight: "600" as const,
+    fontFamily: "Inter_600SemiBold",
+  },
+});
+
+
+================================================================================
+FILE: artifacts/mobile/components/ui/SearchBar.tsx
+================================================================================
+import React from "react";
+import { StyleSheet, TextInput, TouchableOpacity, View, Platform } from "react-native";
+import { Ionicons } from "@/components/Icon";
+import { useColors } from "@/hooks/useColors";
+
+interface SearchBarProps {
+  value: string;
+  onChangeText: (text: string) => void;
+  placeholder?: string;
+  onClear?: () => void;
+}
+
+export function SearchBar({ value, onChangeText, placeholder = "Buscar...", onClear }: SearchBarProps) {
+  const colors = useColors();
+  return (
+    <View style={[styles.container, { backgroundColor: colors.card, borderColor: colors.border }]}>
+      <Ionicons name="search-outline" size={18} color={colors.mutedForeground} />
+      <TextInput
+        style={[styles.input, { color: colors.foreground, fontFamily: "Inter_400Regular" }]}
+        value={value}
+        onChangeText={onChangeText}
+        placeholder={placeholder}
+        placeholderTextColor={colors.mutedForeground}
+        returnKeyType="search"
+        clearButtonMode={Platform.OS === "ios" ? "while-editing" : "never"}
+      />
+      {value.length > 0 && Platform.OS !== "ios" && (
+        <TouchableOpacity onPress={() => { onChangeText(""); onClear?.(); }} activeOpacity={0.7}>
+          <Ionicons name="close-circle" size={18} color={colors.mutedForeground} />
+        </TouchableOpacity>
+      )}
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 11,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  input: {
+    flex: 1,
+    fontSize: 15,
+    padding: 0,
+  },
+});
+
+
+================================================================================
+FILE: artifacts/mobile/components/ui/SectionHeader.tsx
+================================================================================
+import React from "react";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Ionicons } from "@/components/Icon";
+import { useColors } from "@/hooks/useColors";
+
+interface SectionHeaderProps {
+  title: string;
+  subtitle?: string;
+  onPress?: () => void;
+  actionLabel?: string;
+}
+
+export function SectionHeader({ title, subtitle, onPress, actionLabel = "Ver todo" }: SectionHeaderProps) {
+  const colors = useColors();
+  return (
+    <View style={styles.container}>
+      <View style={styles.left}>
+        <Text style={[styles.title, { color: colors.foreground }]}>{title}</Text>
+        {subtitle && <Text style={[styles.subtitle, { color: colors.mutedForeground }]}>{subtitle}</Text>}
+      </View>
+      {onPress && (
+        <TouchableOpacity style={styles.action} onPress={onPress} activeOpacity={0.7}>
+          <Text style={[styles.actionText, { color: colors.primary }]}>{actionLabel}</Text>
+          <Ionicons name="chevron-forward" size={14} color={colors.primary} />
+        </TouchableOpacity>
+      )}
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 12,
+  },
+  left: { flex: 1 },
+  title: {
+    fontSize: 18,
+    fontWeight: "700" as const,
+    fontFamily: "Inter_700Bold",
+  },
+  subtitle: {
+    fontSize: 13,
+    marginTop: 2,
+    fontFamily: "Inter_400Regular",
+  },
+  action: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 2,
+  },
+  actionText: {
+    fontSize: 14,
+    fontWeight: "500" as const,
+    fontFamily: "Inter_500Medium",
+  },
+});
+
+
+================================================================================
+FILE: artifacts/mobile/components/ui/SkeletonCard.tsx
+================================================================================
+import React, { useEffect, useRef } from "react";
+import { Animated, StyleSheet, View } from "react-native";
+import { useColors } from "@/hooks/useColors";
+
+interface SkeletonProps {
+  width?: number | string;
+  height?: number;
+  borderRadius?: number;
+  style?: object;
+}
+
+export function Skeleton({ width = "100%", height = 16, borderRadius = 8, style }: SkeletonProps) {
+  const colors = useColors();
+  const opacity = useRef(new Animated.Value(0.4)).current;
+
+  useEffect(() => {
+    const anim = Animated.loop(
+      Animated.sequence([
+        Animated.timing(opacity, { toValue: 1, duration: 800, useNativeDriver: true }),
+        Animated.timing(opacity, { toValue: 0.4, duration: 800, useNativeDriver: true }),
+      ])
+    );
+    anim.start();
+    return () => anim.stop();
+  }, [opacity]);
+
+  return (
+    <Animated.View
+      style={[{ width: width as number, height, borderRadius, backgroundColor: colors.muted, opacity }, style]}
+    />
+  );
+}
+
+export function SkeletonCard() {
+  const colors = useColors();
+  return (
+    <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+      <View style={styles.header}>
+        <Skeleton width={40} height={40} borderRadius={20} />
+        <View style={styles.headerText}>
+          <Skeleton width="60%" height={14} />
+          <Skeleton width="40%" height={12} style={{ marginTop: 6 }} />
+        </View>
+      </View>
+      <Skeleton height={12} style={{ marginTop: 12 }} />
+      <Skeleton width="80%" height={12} style={{ marginTop: 6 }} />
+    </View>
+  );
+}
+
+export function SkeletonList({ count = 4 }: { count?: number }) {
+  return (
+    <>
+      {Array.from({ length: count }).map((_, i) => (
+        <SkeletonCard key={i} />
+      ))}
+    </>
+  );
+}
+
+const styles = StyleSheet.create({
+  card: {
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 10,
+    borderWidth: 1,
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  headerText: {
+    flex: 1,
+    gap: 4,
+  },
+});
+
+
+================================================================================
+FILE: artifacts/mobile/constants/colors.ts
+================================================================================
+const colors = {
+  light: {
+    text: "#0A1628",
+    tint: "#002B7F",
+
+    background: "#F5F7FB",
+    foreground: "#0A1628",
+
+    card: "#FFFFFF",
+    cardForeground: "#0A1628",
+
+    primary: "#002B7F",
+    primaryForeground: "#FFFFFF",
+
+    secondary: "#E9EFF8",
+    secondaryForeground: "#1C3461",
+
+    muted: "#EEF2FA",
+    mutedForeground: "#637089",
+
+    accent: "#C8102E",
+    accentForeground: "#FFFFFF",
+
+    destructive: "#DC2626",
+    destructiveForeground: "#FFFFFF",
+
+    border: "#DDE4F0",
+    input: "#DDE4F0",
+
+    success: "#059669",
+    successForeground: "#FFFFFF",
+    warning: "#D97706",
+    warningForeground: "#FFFFFF",
+    live: "#EF4444",
+    liveForeground: "#FFFFFF",
+  },
+
+  dark: {
+    text: "#E2EAF8",
+    tint: "#4A8FE0",
+
+    background: "#07111F",
+    foreground: "#E2EAF8",
+
+    card: "#0F1E35",
+    cardForeground: "#E2EAF8",
+
+    primary: "#4A8FE0",
+    primaryForeground: "#FFFFFF",
+
+    secondary: "#132340",
+    secondaryForeground: "#A8C0E0",
+
+    muted: "#0D1930",
+    mutedForeground: "#7B9AC2",
+
+    accent: "#E8304A",
+    accentForeground: "#FFFFFF",
+
+    destructive: "#EF4444",
+    destructiveForeground: "#FFFFFF",
+
+    border: "#1C3054",
+    input: "#1A2D4A",
+
+    success: "#10B981",
+    successForeground: "#FFFFFF",
+    warning: "#F59E0B",
+    warningForeground: "#FFFFFF",
+    live: "#FF5252",
+    liveForeground: "#FFFFFF",
+  },
+
+  radius: 12,
+};
+
+export default colors;
+
+
+================================================================================
+FILE: artifacts/mobile/contexts/SettingsContext.tsx
+================================================================================
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import React, { createContext, useContext, useEffect, useState } from "react";
+
+export type FontSizeOption = "small" | "medium" | "large";
+
+interface Settings {
+  fontSize: FontSizeOption;
+  setFontSize: (size: FontSizeOption) => void;
+  fontScale: number;
+}
+
+const FONT_SCALES: Record<FontSizeOption, number> = {
+  small: 0.88,
+  medium: 1.0,
+  large: 1.18,
+};
+
+const STORAGE_KEY = "@diputados_settings";
+
+const SettingsContext = createContext<Settings>({
+  fontSize: "medium",
+  setFontSize: () => {},
+  fontScale: 1.0,
+});
+
+export function SettingsProvider({ children }: { children: React.ReactNode }) {
+  const [fontSize, setFontSizeState] = useState<FontSizeOption>("medium");
+
+  useEffect(() => {
+    AsyncStorage.getItem(STORAGE_KEY).then((val) => {
+      if (val) {
+        try {
+          const saved = JSON.parse(val) as Partial<{ fontSize: FontSizeOption }>;
+          if (saved.fontSize && saved.fontSize in FONT_SCALES) {
+            setFontSizeState(saved.fontSize);
+          }
+        } catch {}
+      }
+    });
+  }, []);
+
+  const setFontSize = (size: FontSizeOption) => {
+    setFontSizeState(size);
+    AsyncStorage.setItem(STORAGE_KEY, JSON.stringify({ fontSize: size }));
+  };
+
+  return (
+    <SettingsContext.Provider
+      value={{ fontSize, setFontSize, fontScale: FONT_SCALES[fontSize] }}
+    >
+      {children}
+    </SettingsContext.Provider>
+  );
+}
+
+export function useSettings() {
+  return useContext(SettingsContext);
+}
+
+
+================================================================================
+FILE: artifacts/mobile/hooks/useColors.ts
+================================================================================
+import { useColorScheme } from "react-native";
+
+import colors from "@/constants/colors";
+
+/**
+ * Returns the design tokens for the current color scheme.
+ *
+ * The returned object contains all color tokens for the active palette
+ * plus scheme-independent values like `radius`.
+ *
+ * Falls back to the light palette when no dark key is defined in
+ * constants/colors.ts (the scaffold ships light-only by default).
+ * When a sibling web artifact's dark tokens are synced into a `dark`
+ * key, this hook will automatically switch palettes based on the
+ * device's appearance setting.
+ */
+export function useColors() {
+  const palette = colors.light;
+  return { ...palette, radius: colors.radius };
+}
+
