@@ -8,49 +8,36 @@ import {
 
 const router: IRouter = Router();
 
-const CONGRESS_API_BASE = "https://datos.congreso.gov.py/opendata";
+const CONGRESS_API_BASE = "https://datos.congreso.gov.py/opendata/api/data";
+
+// ── Mock data (fallback when real API is unavailable) ──────────────────────────
 
 const MOCK_LEGISLADORES = [
-  { id: "1", nombre: "Juan Carlos", apellido: "Ortigoza", partido: "ANR", bancada: "Colorado", departamento: "Asunción", cargo: "Diputado", periodo: "2023-2028", foto: null, email: "jortigoza@diputados.gov.py", bio: "Diputado por Asunción. Miembro de la Comisión de Finanzas.", comisiones: ["Finanzas", "Presupuesto"] },
-  { id: "2", nombre: "María Elena", apellido: "Torales", partido: "PLRA", bancada: "Liberal", departamento: "Central", cargo: "Diputada", periodo: "2023-2028", foto: null, email: "mtorales@diputados.gov.py", bio: "Diputada por Central. Presidenta de la Comisión de Salud.", comisiones: ["Salud", "Mujer"] },
-  { id: "3", nombre: "Pedro Antonio", apellido: "Villalba", partido: "ANR", bancada: "Colorado", departamento: "Alto Paraná", cargo: "Diputado", periodo: "2023-2028", foto: null, email: "pvillalba@diputados.gov.py", bio: "Diputado por Alto Paraná. Especialista en temas agrarios.", comisiones: ["Agricultura", "Medio Ambiente"] },
-  { id: "4", nombre: "Rosa Mercedes", apellido: "Amarilla", partido: "Frente Guasú", bancada: "Frente Guasú", departamento: "Itapúa", cargo: "Diputada", periodo: "2023-2028", foto: null, email: "ramarilla@diputados.gov.py", bio: "Diputada por Itapúa. Defensora de los derechos sociales.", comisiones: ["Asuntos Sociales", "Educación"] },
-  { id: "5", nombre: "Carlos Alberto", apellido: "Rodríguez", partido: "ANR", bancada: "Colorado", departamento: "Caaguazú", cargo: "Diputado", periodo: "2023-2028", foto: null, email: "crodriguez@diputados.gov.py", bio: "Diputado por Caaguazú. Abogado constitucionalista.", comisiones: ["Asuntos Constitucionales", "Justicia"] },
-  { id: "6", nombre: "Ana Gloria", apellido: "Benítez", partido: "PLRA", bancada: "Liberal", departamento: "San Pedro", cargo: "Diputada", periodo: "2023-2028", foto: null, email: "abenitez@diputados.gov.py", bio: "Diputada por San Pedro. Especialista en infraestructura.", comisiones: ["Obras Públicas", "Transporte"] },
-  { id: "7", nombre: "Fernando", apellido: "Llamosas", partido: "Honor Colorado", bancada: "Honor Colorado", departamento: "Cordillera", cargo: "Diputado", periodo: "2023-2028", foto: null, email: "fllamosas@diputados.gov.py", bio: "Diputado por Cordillera. Médico de profesión.", comisiones: ["Salud", "Ciencia y Tecnología"] },
-  { id: "8", nombre: "Mirta", apellido: "Gusinky", partido: "ANR", bancada: "Colorado", departamento: "Concepción", cargo: "Diputada", periodo: "2023-2028", foto: null, email: "mgusinky@diputados.gov.py", bio: "Diputada por Concepción. Presidenta del Bloque Femenino.", comisiones: ["Mujer", "Niñez"] },
-  { id: "9", nombre: "Diego Armando", apellido: "Flores", partido: "PLRA", bancada: "Liberal", departamento: "Amambay", cargo: "Diputado", periodo: "2023-2028", foto: null, email: "dflores@diputados.gov.py", bio: "Diputado por Amambay. Empresario y emprendedor.", comisiones: ["Industria y Comercio", "Finanzas"] },
-  { id: "10", nombre: "Patricia", apellido: "Samudio", partido: "ANR", bancada: "Colorado", departamento: "Guairá", cargo: "Diputada", periodo: "2023-2028", foto: null, email: "psamudio@diputados.gov.py", bio: "Diputada por Guairá. Docente universitaria.", comisiones: ["Educación", "Cultura"] },
-  { id: "11", nombre: "Luis Alberto", apellido: "Castiglioni", partido: "ANR", bancada: "Colorado", departamento: "Asunción", cargo: "Diputado", periodo: "2023-2028", foto: null, email: "lcastiglioni@diputados.gov.py", bio: "Diputado por Asunción. Ex vicepresidente de la República.", comisiones: ["Relaciones Exteriores", "Asuntos Constitucionales"] },
-  { id: "12", nombre: "Sara", apellido: "Ayala", partido: "Frente Guasú", bancada: "Frente Guasú", departamento: "Central", cargo: "Diputada", periodo: "2023-2028", foto: null, email: "sayala@diputados.gov.py", bio: "Diputada por Central. Activista social y comunitaria.", comisiones: ["Asuntos Sociales", "Mujer"] },
-  { id: "13", nombre: "Roberto", apellido: "González", partido: "ANR", bancada: "Colorado", departamento: "Itapúa", cargo: "Diputado", periodo: "2023-2028", foto: null, email: "rgonzalez@diputados.gov.py", bio: "Diputado por Itapúa. Ingeniero agrónomo.", comisiones: ["Agricultura", "Medio Ambiente"] },
-  { id: "14", nombre: "Elena", apellido: "Riveros", partido: "PLRA", bancada: "Liberal", departamento: "Alto Paraná", cargo: "Diputada", periodo: "2023-2028", foto: null, email: "eriveros@diputados.gov.py", bio: "Diputada por Alto Paraná. Abogada especialista en DDHH.", comisiones: ["Derechos Humanos", "Justicia"] },
-  { id: "15", nombre: "César Augusto", apellido: "Penayo", partido: "ANR", bancada: "Colorado", departamento: "Caazapá", cargo: "Diputado", periodo: "2023-2028", foto: null, email: "cpenayo@diputados.gov.py", bio: "Diputado por Caazapá. Ganadero y agricultor.", comisiones: ["Agricultura", "Hacienda"] },
-  { id: "16", nombre: "Victoria", apellido: "Espínola", partido: "Patria Querida", bancada: "Patria Querida", departamento: "Asunción", cargo: "Diputada", periodo: "2023-2028", foto: null, email: "vespinola@diputados.gov.py", bio: "Diputada por Asunción. Economista y analista política.", comisiones: ["Finanzas", "Presupuesto"] },
-  { id: "17", nombre: "Óscar Daniel", apellido: "Chamorro", partido: "ANR", bancada: "Colorado", departamento: "Misiones", cargo: "Diputado", periodo: "2023-2028", foto: null, email: "ochamorro@diputados.gov.py", bio: "Diputado por Misiones. Constructor e ingeniero civil.", comisiones: ["Obras Públicas", "Transporte"] },
-  { id: "18", nombre: "Zunilda", apellido: "Martínez", partido: "PLRA", bancada: "Liberal", departamento: "Paraguarí", cargo: "Diputada", periodo: "2023-2028", foto: null, email: "zmartinez@diputados.gov.py", bio: "Diputada por Paraguarí. Pediatra de profesión.", comisiones: ["Salud", "Niñez"] },
-  { id: "19", nombre: "Arnaldo", apellido: "Samaniego", partido: "ANR", bancada: "Colorado", departamento: "Canindeyú", cargo: "Diputado", periodo: "2023-2028", foto: null, email: "asamaniego@diputados.gov.py", bio: "Diputado por Canindeyú. Empresario agroindustrial.", comisiones: ["Industria y Comercio", "Agricultura"] },
-  { id: "20", nombre: "Cynthia", apellido: "López", partido: "Frente Guasú", bancada: "Frente Guasú", departamento: "Alto Paraná", cargo: "Diputada", periodo: "2023-2028", foto: null, email: "clopez@diputados.gov.py", bio: "Diputada por Alto Paraná. Educadora y activista ambiental.", comisiones: ["Educación", "Medio Ambiente"] },
-  { id: "21", nombre: "Hugo Adalberto", apellido: "Velázquez", partido: "ANR", bancada: "Colorado", departamento: "Central", cargo: "Diputado", periodo: "2023-2028", foto: null, email: "hvelazquez@diputados.gov.py", bio: "Diputado por Central. Ex candidato presidencial.", comisiones: ["Relaciones Exteriores", "Asuntos Constitucionales"] },
-  { id: "22", nombre: "Rocío", apellido: "Cáceres", partido: "PLRA", bancada: "Liberal", departamento: "Concepción", cargo: "Diputada", periodo: "2023-2028", foto: null, email: "rcaceres@diputados.gov.py", bio: "Diputada por Concepción. Periodista y comunicadora social.", comisiones: ["Comunicación", "Cultura"] },
-  { id: "23", nombre: "Blas Antonio", apellido: "Llaneras", partido: "ANR", bancada: "Colorado", departamento: "Ñeembucú", cargo: "Diputado", periodo: "2023-2028", foto: null, email: "bllaneras@diputados.gov.py", bio: "Diputado por Ñeembucú. Médico rural.", comisiones: ["Salud", "Presupuesto"] },
-  { id: "24", nombre: "Fabiola", apellido: "Oviedo", partido: "Honor Colorado", bancada: "Honor Colorado", departamento: "Caaguazú", cargo: "Diputada", periodo: "2023-2028", foto: null, email: "foviedo@diputados.gov.py", bio: "Diputada por Caaguazú. Contadora pública nacional.", comisiones: ["Finanzas", "Hacienda"] },
-  { id: "25", nombre: "Marcelo Aníbal", apellido: "Duarte", partido: "PLRA", bancada: "Liberal", departamento: "Alto Paraguay", cargo: "Diputado", periodo: "2023-2028", foto: null, email: "mduarte@diputados.gov.py", bio: "Diputado por Alto Paraguay. Ambientalista y geógrafo.", comisiones: ["Medio Ambiente", "Derechos Humanos"] },
+  { id: "101405", nombre: "María Rocío", apellido: "Abed de Zacarías", partido: "Asociación Nacional Republicana", bancada: "ANR Colorado", departamento: "Alto Paraná", cargo: "Diputada Titular", periodo: "2023-2028", foto: "http://silpy.congreso.gov.py/images/101405.jpg", email: "rocio_abed@diputados.gov.py", bio: "Diputada por Alto Paraná. Periodo legislativo 2023-2028.", comisiones: [] },
+  { id: "101406", nombre: "Carlos", apellido: "Amarilla", partido: "Asociación Nacional Republicana", bancada: "ANR Colorado", departamento: "Caaguazú", cargo: "Diputado Titular", periodo: "2023-2028", foto: null, email: "camarilla@diputados.gov.py", bio: "Diputado por Caaguazú.", comisiones: [] },
+  { id: "101407", nombre: "Miguel", apellido: "Aquino", partido: "Partido Liberal Radical Auténtico", bancada: "Liberal", departamento: "Central", cargo: "Diputado Titular", periodo: "2023-2028", foto: null, email: "maquino@diputados.gov.py", bio: "Diputado por Central.", comisiones: [] },
+  { id: "101408", nombre: "Sandra", apellido: "Aranda", partido: "Asociación Nacional Republicana", bancada: "ANR Colorado", departamento: "Asunción", cargo: "Diputada Titular", periodo: "2023-2028", foto: null, email: "saranda@diputados.gov.py", bio: "Diputada por Asunción.", comisiones: [] },
+  { id: "101409", nombre: "Jorge", apellido: "Aveiro", partido: "Frente Guasú", bancada: "Frente Guasú", departamento: "Itapúa", cargo: "Diputado Titular", periodo: "2023-2028", foto: null, email: "javeiro@diputados.gov.py", bio: "Diputado por Itapúa.", comisiones: [] },
+  { id: "101410", nombre: "Lourdes", apellido: "Barboza", partido: "Partido Liberal Radical Auténtico", bancada: "Liberal", departamento: "Alto Paraná", cargo: "Diputada Titular", periodo: "2023-2028", foto: null, email: "lbarboza@diputados.gov.py", bio: "Diputada por Alto Paraná.", comisiones: [] },
+  { id: "101411", nombre: "Antonio", apellido: "Benítez", partido: "Asociación Nacional Republicana", bancada: "ANR Colorado", departamento: "San Pedro", cargo: "Diputado Titular", periodo: "2023-2028", foto: null, email: "abenitez@diputados.gov.py", bio: "Diputado por San Pedro.", comisiones: [] },
+  { id: "101412", nombre: "Diana", apellido: "Bogado", partido: "Asociación Nacional Republicana", bancada: "ANR Colorado", departamento: "Central", cargo: "Diputada Titular", periodo: "2023-2028", foto: null, email: "dbogado@diputados.gov.py", bio: "Diputada por Central.", comisiones: [] },
+  { id: "101413", nombre: "Federico", apellido: "Cáceres", partido: "Honor Colorado", bancada: "Honor Colorado", departamento: "Alto Paraguay", cargo: "Diputado Titular", periodo: "2023-2028", foto: null, email: "fcaceres@diputados.gov.py", bio: "Diputado por Alto Paraguay.", comisiones: [] },
+  { id: "101414", nombre: "Patricia", apellido: "Cazal", partido: "Asociación Nacional Republicana", bancada: "ANR Colorado", departamento: "Caazapá", cargo: "Diputada Titular", periodo: "2023-2028", foto: null, email: "pcazal@diputados.gov.py", bio: "Diputada por Caazapá.", comisiones: [] },
 ];
 
 const MOCK_COMISIONES = [
-  { id: "1", nombre: "Asuntos Constitucionales", tipo: "Permanente", camara: "Diputados", presidente: "Carlos Alberto Rodríguez", vicepresidente: "Luis Alberto Castiglioni", email: "comision.constitucional@diputados.gov.py", miembros: ["Carlos Alberto Rodríguez", "Luis Alberto Castiglioni", "Elena Riveros", "Hugo Adalberto Velázquez"] },
-  { id: "2", nombre: "Legislación y Codificación", tipo: "Permanente", camara: "Diputados", presidente: "Juan Carlos Ortigoza", vicepresidente: "Victoria Espínola", email: "comision.legislacion@diputados.gov.py", miembros: ["Juan Carlos Ortigoza", "Victoria Espínola", "Ana Gloria Benítez"] },
-  { id: "3", nombre: "Hacienda", tipo: "Permanente", camara: "Diputados", presidente: "Victoria Espínola", vicepresidente: "César Augusto Penayo", email: "comision.hacienda@diputados.gov.py", miembros: ["Victoria Espínola", "César Augusto Penayo", "Fabiola Oviedo", "Juan Carlos Ortigoza"] },
-  { id: "4", nombre: "Presupuesto", tipo: "Permanente", camara: "Diputados", presidente: "Fabiola Oviedo", vicepresidente: "Juan Carlos Ortigoza", email: "comision.presupuesto@diputados.gov.py", miembros: ["Fabiola Oviedo", "Juan Carlos Ortigoza", "Blas Antonio Llaneras", "Victoria Espínola"] },
-  { id: "5", nombre: "Relaciones Exteriores", tipo: "Permanente", camara: "Diputados", presidente: "Luis Alberto Castiglioni", vicepresidente: "Hugo Adalberto Velázquez", email: "comision.exterior@diputados.gov.py", miembros: ["Luis Alberto Castiglioni", "Hugo Adalberto Velázquez", "Marcelo Aníbal Duarte"] },
-  { id: "6", nombre: "Educación, Cultura y Culto", tipo: "Permanente", camara: "Diputados", presidente: "Patricia Samudio", vicepresidente: "Rosa Mercedes Amarilla", email: "comision.educacion@diputados.gov.py", miembros: ["Patricia Samudio", "Rosa Mercedes Amarilla", "Cynthia López", "Rocío Cáceres"] },
-  { id: "7", nombre: "Salud Pública", tipo: "Permanente", camara: "Diputados", presidente: "María Elena Torales", vicepresidente: "Fernando Llamosas", email: "comision.salud@diputados.gov.py", miembros: ["María Elena Torales", "Fernando Llamosas", "Zunilda Martínez", "Blas Antonio Llaneras"] },
-  { id: "8", nombre: "Agricultura y Ganadería", tipo: "Permanente", camara: "Diputados", presidente: "Pedro Antonio Villalba", vicepresidente: "Roberto González", email: "comision.agricultura@diputados.gov.py", miembros: ["Pedro Antonio Villalba", "Roberto González", "César Augusto Penayo", "Arnaldo Samaniego"] },
-  { id: "9", nombre: "Obras Públicas y Comunicaciones", tipo: "Permanente", camara: "Diputados", presidente: "Óscar Daniel Chamorro", vicepresidente: "Ana Gloria Benítez", email: "comision.obras@diputados.gov.py", miembros: ["Óscar Daniel Chamorro", "Ana Gloria Benítez", "Arnaldo Samaniego"] },
-  { id: "10", nombre: "Asuntos Sociales", tipo: "Permanente", camara: "Diputados", presidente: "Rosa Mercedes Amarilla", vicepresidente: "Sara Ayala", email: "comision.social@diputados.gov.py", miembros: ["Rosa Mercedes Amarilla", "Sara Ayala", "Mirta Gusinky"] },
-  { id: "11", nombre: "Mujer, Juventud y la Familia", tipo: "Permanente", camara: "Diputados", presidente: "Mirta Gusinky", vicepresidente: "Sara Ayala", email: "comision.mujer@diputados.gov.py", miembros: ["Mirta Gusinky", "Sara Ayala", "María Elena Torales", "Zunilda Martínez"] },
-  { id: "12", nombre: "Medio Ambiente y Desarrollo Sostenible", tipo: "Permanente", camara: "Diputados", presidente: "Marcelo Aníbal Duarte", vicepresidente: "Cynthia López", email: "comision.medioambiente@diputados.gov.py", miembros: ["Marcelo Aníbal Duarte", "Cynthia López", "Pedro Antonio Villalba", "Roberto González"] },
+  { id: "32", nombre: "Asuntos Constitucionales", tipo: "Permanente", camara: "Diputados", presidente: null, vicepresidente: null, email: "cconstitucionales@diputados.gov.py", miembros: [] },
+  { id: "33", nombre: "Asuntos Económicos y Financieros", tipo: "Permanente", camara: "Diputados", presidente: null, vicepresidente: null, email: "a.economicoshcd@gmail.com", miembros: [] },
+  { id: "34", nombre: "Legislación y Codificación", tipo: "Permanente", camara: "Diputados", presidente: null, vicepresidente: null, email: "legislacion_codificacion@diputados.gov.py", miembros: [] },
+  { id: "35", nombre: "Relaciones Exteriores", tipo: "Permanente", camara: "Diputados", presidente: null, vicepresidente: null, email: "cexteriores@diputados.gov.py", miembros: [] },
+  { id: "36", nombre: "Justicia, Trabajo y Previsión Social", tipo: "Permanente", camara: "Diputados", presidente: null, vicepresidente: null, email: "cjusticia@diputados.gov.py", miembros: [] },
+  { id: "37", nombre: "Derechos Humanos", tipo: "Permanente", camara: "Diputados", presidente: null, vicepresidente: null, email: "derechoshumanos.hcd@gmail.com", miembros: [] },
+  { id: "38", nombre: "Educación, Cultura y Culto", tipo: "Permanente", camara: "Diputados", presidente: null, vicepresidente: null, email: "ceducacion@diputados.gov.py", miembros: [] },
+  { id: "44", nombre: "Salud Pública", tipo: "Permanente", camara: "Diputados", presidente: null, vicepresidente: null, email: "csalud@diputados.gov.py", miembros: [] },
+  { id: "47", nombre: "Presupuesto", tipo: "Permanente", camara: "Diputados", presidente: null, vicepresidente: null, email: "presupuesto@diputados.gov.py", miembros: [] },
+  { id: "41", nombre: "Agricultura y Ganadería", tipo: "Permanente", camara: "Diputados", presidente: null, vicepresidente: null, email: "hcdagricultura@yahoo.com", miembros: [] },
+  { id: "53", nombre: "De Ambiente, Desarrollo Sostenible y Cambio Climático", tipo: "Permanente", camara: "Diputados", presidente: null, vicepresidente: null, email: "cecologia@diputados.gov.py", miembros: [] },
+  { id: "51", nombre: "Ciencia y Tecnología", tipo: "Permanente", camara: "Diputados", presidente: null, vicepresidente: null, email: "cyt@diputados.gov.py", miembros: [] },
 ];
 
 const now = new Date();
@@ -61,27 +48,27 @@ const nextWeek = new Date(now);
 nextWeek.setDate(nextWeek.getDate() + 7);
 
 const MOCK_SESIONES = [
-  { id: "1", fecha: todayStr, horaInicio: "09:00", horaFin: null, tipo: "Plenaria Ordinaria", estado: "programada", periodo: "2023-2028", descripcion: "Sesión ordinaria de la Cámara de Diputados", orden_del_dia: ["Tratamiento del Proyecto de Ley 128/2025 - Presupuesto General de la Nación", "Votación del Proyecto de Ley 156/2025 - Reforma Educativa", "Informes de Comisiones"] },
-  { id: "2", fecha: tomorrow.toISOString().split("T")[0], horaInicio: "10:00", horaFin: null, tipo: "Comisión de Salud", estado: "programada", periodo: "2023-2028", descripcion: "Reunión de la Comisión de Salud Pública", orden_del_dia: ["Análisis del Proyecto de Ley 143/2025 - Sistema de Salud Universal"] },
-  { id: "3", fecha: nextWeek.toISOString().split("T")[0], horaInicio: "09:00", horaFin: null, tipo: "Plenaria Extraordinaria", estado: "programada", periodo: "2023-2028", descripcion: "Sesión extraordinaria convocada por el Poder Ejecutivo", orden_del_dia: ["Proyecto de Ley 170/2025 - Inversiones Extranjeras", "Debate sobre Reforma Tributaria"] },
-  { id: "4", fecha: "2025-05-28", horaInicio: "09:00", horaFin: "17:30", tipo: "Plenaria Ordinaria", estado: "completada", periodo: "2023-2028", descripcion: "Sesión ordinaria - Se aprobaron 3 proyectos de ley", orden_del_dia: ["Ley 7845/2025 aprobada", "Ley 7846/2025 aprobada", "Ley 7847/2025 aprobada"] },
+  { id: "1", fecha: todayStr, horaInicio: "09:00", horaFin: null, tipo: "Plenaria Ordinaria", estado: "programada", periodo: "2023-2028", descripcion: "Sesión ordinaria de la Cámara de Diputados", orden_del_dia: ["Tratamiento de proyectos de ley en trámite", "Informes de Comisiones", "Varios"] },
+  { id: "2", fecha: tomorrow.toISOString().split("T")[0], horaInicio: "10:00", horaFin: null, tipo: "Comisión de Salud", estado: "programada", periodo: "2023-2028", descripcion: "Reunión de la Comisión de Salud Pública", orden_del_dia: ["Análisis de proyectos de ley sanitarios"] },
+  { id: "3", fecha: nextWeek.toISOString().split("T")[0], horaInicio: "09:00", horaFin: null, tipo: "Plenaria Extraordinaria", estado: "programada", periodo: "2023-2028", descripcion: "Sesión extraordinaria convocada por el Poder Ejecutivo", orden_del_dia: ["Proyectos de ley de inversiones", "Debate sobre reforma tributaria"] },
+  { id: "4", fecha: "2025-05-28", horaInicio: "09:00", horaFin: "17:30", tipo: "Plenaria Ordinaria", estado: "completada", periodo: "2023-2028", descripcion: "Sesión ordinaria - Se aprobaron 3 proyectos de ley", orden_del_dia: ["Ley aprobada", "Informe de comisiones"] },
   { id: "5", fecha: "2025-05-21", horaInicio: "09:00", horaFin: "15:00", tipo: "Plenaria Ordinaria", estado: "completada", periodo: "2023-2028", descripcion: "Sesión ordinaria - Debate sobre presupuesto", orden_del_dia: ["Presupuesto 2025", "Informe de la Comisión de Hacienda"] },
-  { id: "6", fecha: "2025-05-14", horaInicio: "10:00", horaFin: "13:00", tipo: "Plenaria Ordinaria", estado: "completada", periodo: "2023-2028", descripcion: "Sesión ordinaria - Derechos sociales", orden_del_dia: ["Proyecto Ley Social 112/2025", "Informe Comisión Social"] },
+  { id: "6", fecha: "2025-05-14", horaInicio: "10:00", horaFin: "13:00", tipo: "Plenaria Ordinaria", estado: "completada", periodo: "2023-2028", descripcion: "Sesión ordinaria - Derechos sociales", orden_del_dia: ["Proyecto Ley Social", "Informe Comisión Social"] },
 ];
 
 const MOCK_PROYECTOS = [
-  { numero: "128/2025", titulo: "Presupuesto General de la Nación Ejercicio Fiscal 2026", estado: "En tratamiento", etapa: "Comisión de Presupuesto", fechaIngreso: "2025-03-15", iniciativa: "Poder Ejecutivo", comision: "Presupuesto", descripcion: "Proyecto de ley que establece el presupuesto general de la nación para el ejercicio fiscal 2026.", historial: [{ fecha: "2025-03-15", evento: "Ingreso", descripcion: "Ingreso del proyecto al Congreso" }, { fecha: "2025-03-20", evento: "Comisión", descripcion: "Derivado a la Comisión de Presupuesto" }] },
-  { numero: "156/2025", titulo: "Reforma al Sistema Educativo Nacional", estado: "En tratamiento", etapa: "Primera lectura", fechaIngreso: "2025-04-10", iniciativa: "Legislativa", comision: "Educación, Cultura y Culto", descripcion: "Establece reformas estructurales al sistema educativo nacional.", historial: [{ fecha: "2025-04-10", evento: "Ingreso", descripcion: "Ingreso al Congreso" }, { fecha: "2025-04-18", evento: "Primera lectura", descripcion: "Leído en sesión plenaria" }] },
-  { numero: "143/2025", titulo: "Sistema Nacional de Salud Universal", estado: "En tratamiento", etapa: "Comisión de Salud", fechaIngreso: "2025-03-28", iniciativa: "Legislativa", comision: "Salud Pública", descripcion: "Crea el Sistema Nacional de Salud Universal garantizando cobertura a toda la población.", historial: [{ fecha: "2025-03-28", evento: "Ingreso", descripcion: "Ingreso al Congreso" }, { fecha: "2025-04-05", evento: "Comisión", descripcion: "Derivado a Comisión de Salud" }] },
-  { numero: "170/2025", titulo: "Ley de Inversiones Extranjeras Directas", estado: "Pendiente", etapa: "Presentación", fechaIngreso: "2025-05-02", iniciativa: "Poder Ejecutivo", comision: "Hacienda", descripcion: "Establece el marco legal para la promoción y protección de inversiones extranjeras.", historial: [{ fecha: "2025-05-02", evento: "Ingreso", descripcion: "Ingreso al Congreso" }] },
-  { numero: "112/2025", titulo: "Ley de Protección Social Integral", estado: "Aprobado en Cámara", etapa: "Senado", fechaIngreso: "2025-02-14", iniciativa: "Legislativa", comision: "Asuntos Sociales", descripcion: "Crea un sistema integral de protección social para las familias más vulnerables.", historial: [{ fecha: "2025-02-14", evento: "Ingreso", descripcion: "Ingreso al Congreso" }, { fecha: "2025-03-10", evento: "Aprobado", descripcion: "Aprobado en Cámara de Diputados" }, { fecha: "2025-03-20", evento: "Senado", descripcion: "Enviado al Senado" }] },
-  { numero: "098/2025", titulo: "Ley de Transparencia y Acceso a la Información Pública", estado: "Promulgado", etapa: "Finalizado", fechaIngreso: "2025-01-20", iniciativa: "Legislativa", comision: "Asuntos Constitucionales", descripcion: "Fortalece los mecanismos de transparencia y acceso a información pública.", historial: [{ fecha: "2025-01-20", evento: "Ingreso", descripcion: "Ingreso al Congreso" }, { fecha: "2025-02-28", evento: "Promulgado", descripcion: "Promulgado por el Poder Ejecutivo" }] },
-  { numero: "087/2025", titulo: "Reforma al Código Laboral", estado: "Comisión", etapa: "Comisión de Legislación", fechaIngreso: "2025-01-15", iniciativa: "Legislativa", comision: "Legislación y Codificación", descripcion: "Actualiza las normas laborales para adaptarlas a la economía digital.", historial: [{ fecha: "2025-01-15", evento: "Ingreso", descripcion: "Ingreso al Congreso" }, { fecha: "2025-02-01", evento: "Comisión", descripcion: "En análisis en Comisión" }] },
-  { numero: "200/2025", titulo: "Ley de Energías Renovables", estado: "En tratamiento", etapa: "Segunda lectura", fechaIngreso: "2025-05-20", iniciativa: "Poder Ejecutivo", comision: "Medio Ambiente y Desarrollo Sostenible", descripcion: "Promueve el desarrollo de fuentes de energía renovable en el país.", historial: [{ fecha: "2025-05-20", evento: "Ingreso", descripcion: "Ingreso al Congreso" }, { fecha: "2025-05-28", evento: "Segunda lectura", descripcion: "Leído en segunda instancia" }] },
+  { id: "1001", numero: "D-2163904", titulo: "Presupuesto General de la Nación Ejercicio Fiscal 2026", estado: "EN TRAMITE", etapa: "Comisión de Presupuesto", fechaIngreso: "2025-03-15", iniciativa: "PODER EJECUTIVO", comision: "Presupuesto", descripcion: "Proyecto de ley que establece el presupuesto general de la nación para el ejercicio fiscal 2026, con énfasis en inversión pública y desarrollo social.", appURL: null, historial: [{ fecha: "2025-03-15", evento: "Ingreso", descripcion: "Ingreso del proyecto al Congreso" }, { fecha: "2025-03-20", evento: "Comisión", descripcion: "Derivado a la Comisión de Presupuesto" }] },
+  { id: "1002", numero: "D-2163905", titulo: "Reforma al Sistema Educativo Nacional", estado: "EN TRAMITE", etapa: "PRIMER TRÁMITE CONSTITUCIONAL", fechaIngreso: "2025-04-10", iniciativa: "PARLAMENTARIA", comision: "Educación, Cultura y Culto", descripcion: "Establece reformas estructurales al sistema educativo nacional, promoviendo la inclusión digital.", appURL: null, historial: [{ fecha: "2025-04-10", evento: "Ingreso", descripcion: "Ingreso al Congreso" }, { fecha: "2025-04-18", evento: "Primera lectura", descripcion: "Leído en sesión plenaria" }] },
+  { id: "1003", numero: "D-2163906", titulo: "Sistema Nacional de Salud Universal", estado: "EN TRAMITE", etapa: "DICTAMEN DE COMISIÓN", fechaIngreso: "2025-03-28", iniciativa: "PARLAMENTARIA", comision: "Salud Pública", descripcion: "Crea el Sistema Nacional de Salud Universal garantizando cobertura médica a toda la población paraguaya.", appURL: null, historial: [{ fecha: "2025-03-28", evento: "Ingreso", descripcion: "Ingreso al Congreso" }, { fecha: "2025-04-05", evento: "Comisión", descripcion: "Derivado a Comisión de Salud" }] },
+  { id: "1004", numero: "D-2163907", titulo: "Ley de Inversiones Extranjeras Directas", estado: "EN TRAMITE", etapa: "PRESENTACIÓN", fechaIngreso: "2025-05-02", iniciativa: "PODER EJECUTIVO", comision: "Hacienda", descripcion: "Establece el marco legal para la promoción y protección de inversiones extranjeras directas.", appURL: null, historial: [{ fecha: "2025-05-02", evento: "Ingreso", descripcion: "Ingreso al Congreso" }] },
+  { id: "1005", numero: "D-2163908", titulo: "Ley de Protección Social Integral", estado: "APROBADO", etapa: "PROMULGACIÓN", fechaIngreso: "2025-02-14", iniciativa: "PARLAMENTARIA", comision: "Asuntos Sociales", descripcion: "Crea un sistema integral de protección social para las familias más vulnerables del Paraguay.", appURL: null, historial: [{ fecha: "2025-02-14", evento: "Ingreso", descripcion: "Ingreso al Congreso" }, { fecha: "2025-03-10", evento: "Aprobado", descripcion: "Aprobado en Cámara de Diputados" }, { fecha: "2025-03-20", evento: "Senado", descripcion: "Enviado al Senado" }] },
+  { id: "1006", numero: "D-2163909", titulo: "Ley de Transparencia y Acceso a la Información Pública", estado: "PROMULGADO", etapa: "FINALIZADO", fechaIngreso: "2025-01-20", iniciativa: "PARLAMENTARIA", comision: "Asuntos Constitucionales", descripcion: "Fortalece los mecanismos de transparencia y acceso a información pública del Estado paraguayo.", appURL: null, historial: [{ fecha: "2025-01-20", evento: "Ingreso", descripcion: "Ingreso al Congreso" }, { fecha: "2025-02-28", evento: "Promulgado", descripcion: "Promulgado por el Poder Ejecutivo" }] },
+  { id: "1007", numero: "D-2163910", titulo: "Reforma al Código Laboral", estado: "EN TRAMITE", etapa: "DICTAMEN DE COMISIÓN", fechaIngreso: "2025-01-15", iniciativa: "PARLAMENTARIA", comision: "Legislación y Codificación", descripcion: "Actualiza las normas laborales para adaptarlas a la economía digital y el trabajo remoto.", appURL: null, historial: [{ fecha: "2025-01-15", evento: "Ingreso", descripcion: "Ingreso al Congreso" }, { fecha: "2025-02-01", evento: "Comisión", descripcion: "En análisis en Comisión" }] },
+  { id: "1008", numero: "D-2163911", titulo: "Ley de Energías Renovables", estado: "EN TRAMITE", etapa: "SEGUNDO TRÁMITE CONSTITUCIONAL", fechaIngreso: "2025-05-20", iniciativa: "PODER EJECUTIVO", comision: "Energía y Minería", descripcion: "Promueve el desarrollo de fuentes de energía renovable y eficiencia energética en Paraguay.", appURL: null, historial: [{ fecha: "2025-05-20", evento: "Ingreso", descripcion: "Ingreso al Congreso" }, { fecha: "2025-05-28", evento: "Segunda lectura", descripcion: "Leído en segunda instancia" }] },
 ];
 
 const MOCK_LEYES = [
-  { numero: "7850", titulo: "Ley de Transparencia y Acceso a la Información Pública", fechaSancion: "2025-02-25", fechaPromulgacion: "2025-02-28", proyecto: "098/2025" },
+  { numero: "7850", titulo: "Ley de Transparencia y Acceso a la Información Pública", fechaSancion: "2025-02-25", fechaPromulgacion: "2025-02-28", proyecto: "D-2163909" },
   { numero: "7847", titulo: "Ley de Protección de Datos Personales", fechaSancion: "2025-05-28", fechaPromulgacion: "2025-05-30", proyecto: null },
   { numero: "7846", titulo: "Ley de Fomento a la Economía Social y Solidaria", fechaSancion: "2025-05-28", fechaPromulgacion: "2025-05-29", proyecto: null },
   { numero: "7845", titulo: "Ley de Aguas Nacionales", fechaSancion: "2025-05-28", fechaPromulgacion: null, proyecto: null },
@@ -90,68 +77,244 @@ const MOCK_LEYES = [
   { numero: "7835", titulo: "Ley de Fomento Agroindustrial", fechaSancion: "2025-03-10", fechaPromulgacion: "2025-03-12", proyecto: null },
 ];
 
-async function fetchFromCongress(path: string): Promise<unknown> {
+// ── Real API fetch helpers ─────────────────────────────────────────────────────
+
+async function fetchFromCongress(path: string, timeoutMs = 8000): Promise<unknown> {
   const url = `${CONGRESS_API_BASE}${path}`;
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 5000);
+  const tid = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    const res = await fetch(url, { signal: controller.signal, headers: { "Accept": "application/json" } });
-    clearTimeout(timeout);
+    const res = await fetch(url, {
+      signal: controller.signal,
+      headers: { Accept: "application/json" },
+    });
+    clearTimeout(tid);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return await res.json();
   } catch {
-    clearTimeout(timeout);
+    clearTimeout(tid);
     return null;
   }
 }
 
+// ── Field mappers: real API shape → our internal schema ───────────────────────
+
+interface RealParlamentario {
+  idParlamentario: number;
+  nombres: string;
+  apellidos: string;
+  partidoPolitico: string;
+  bancada: string;
+  departamento: string;
+  emailParlamentario: string;
+  fotoURL: string;
+  telefonoParlamentario: string;
+  periodoLegislativo: string;
+  tipoParlamentario: string;
+  appURL: string;
+}
+
+function mapParlamentario(p: RealParlamentario) {
+  return {
+    id: String(p.idParlamentario),
+    nombre: toTitleCase(p.nombres),
+    apellido: toTitleCase(p.apellidos),
+    partido: p.partidoPolitico || "Independiente",
+    bancada: p.bancada || "",
+    departamento: toTitleCase(p.departamento),
+    cargo: toTitleCase(p.tipoParlamentario ?? "Diputado/a"),
+    periodo: p.periodoLegislativo || "2023-2028",
+    foto: p.fotoURL || null,
+    email: p.emailParlamentario || null,
+    bio: `${toTitleCase(p.tipoParlamentario ?? "Diputado/a")} por ${toTitleCase(p.departamento)}. Período ${p.periodoLegislativo}.`,
+    comisiones: [] as string[],
+  };
+}
+
+interface RealComision {
+  idComision: number;
+  nombreComision: string;
+  tipoComision: string;
+  camaraComision: string;
+  email: string;
+  informacionComision: string;
+  competenciaComision: string;
+  numeroComision: string;
+  esComisionActiva: string;
+  appURL: string;
+}
+
+function mapComision(c: RealComision) {
+  return {
+    id: String(c.idComision),
+    nombre: toTitleCase(c.nombreComision),
+    tipo: toTitleCase(c.tipoComision),
+    camara: "Diputados",
+    presidente: null as string | null,
+    vicepresidente: null as string | null,
+    email: c.email?.trim() || null,
+    miembros: [] as string[],
+    descripcion: c.competenciaComision || null,
+    numero: c.numeroComision || null,
+  };
+}
+
+interface RealProyecto {
+  idProyecto: number;
+  acapite: string;
+  estadoProyecto: string;
+  descripcionEtapa: string;
+  descripcionSubEtapa: string;
+  fechaIngresoExpediente: string;
+  iniciativa: string;
+  origenProyecto: string;
+  tipoProyecto: string;
+  urgencia: string;
+  expedienteCamara: string;
+  appURL: string;
+}
+
+function mapProyecto(p: RealProyecto) {
+  return {
+    id: String(p.idProyecto),
+    numero: p.expedienteCamara || String(p.idProyecto),
+    titulo: toTitleCase(p.acapite || "Sin título"),
+    estado: p.estadoProyecto || "EN TRAMITE",
+    etapa: toTitleCase(p.descripcionEtapa || ""),
+    fechaIngreso: parseFechaIngreso(p.fechaIngresoExpediente),
+    iniciativa: toTitleCase(p.iniciativa || "PARLAMENTARIA"),
+    comision: null as string | null,
+    descripcion: null as string | null,
+    appURL: p.appURL || null,
+    historial: [] as { fecha: string; evento: string; descripcion: string }[],
+  };
+}
+
+interface RealLey {
+  idLey: number;
+  numero: string;
+  descripcion: string;
+  fechaPromulgacion: string;
+  appURL: string;
+}
+
+function mapLey(l: RealLey) {
+  return {
+    numero: l.numero || String(l.idLey),
+    titulo: toTitleCase(l.descripcion || "Sin título"),
+    fechaSancion: l.fechaPromulgacion || "",
+    fechaPromulgacion: l.fechaPromulgacion || null,
+    proyecto: null as string | null,
+  };
+}
+
+// ── Utility helpers ────────────────────────────────────────────────────────────
+
+function toTitleCase(str: string): string {
+  if (!str) return str;
+  return str
+    .toLowerCase()
+    .replace(/(?:^|\s|[-–/])\S/g, (ch) => ch.toUpperCase());
+}
+
+function parseFechaIngreso(raw: string): string {
+  if (!raw) return "";
+  // Real API returns "DD/MM/YYYY" → convert to ISO "YYYY-MM-DD"
+  const parts = raw.split("/");
+  if (parts.length === 3) {
+    const [d, m, y] = parts;
+    return `${y}-${m.padStart(2, "0")}-${d.padStart(2, "0")}`;
+  }
+  return raw;
+}
+
+function isArray(val: unknown): val is unknown[] {
+  return Array.isArray(val);
+}
+
+// ── Route handlers ─────────────────────────────────────────────────────────────
+
 router.get("/legislative/dashboard", async (_req, res): Promise<void> => {
+  // Try to get real counts from the API
+  const [realLegisladores, realComisiones, realProyectos] = await Promise.all([
+    fetchFromCongress("/parlamentario/camara/D?offset=1&limit=1", 5000),
+    fetchFromCongress("/comision/camara/D", 5000),
+    fetchFromCongress("/proyecto?offset=1&limit=5", 5000),
+  ]);
+
+  const totalLegisladores = isArray(realLegisladores) && realLegisladores.length > 0 ? 80 : MOCK_LEGISLADORES.length;
+  const totalComisiones = isArray(realComisiones) ? realComisiones.length : MOCK_COMISIONES.length;
+
+  const proyectos = isArray(realProyectos) && realProyectos.length > 0
+    ? realProyectos.map((p) => mapProyecto(p as RealProyecto)).slice(0, 5)
+    : MOCK_PROYECTOS.slice(0, 5);
+
   res.json({
-    totalLegisladores: MOCK_LEGISLADORES.length,
-    totalComisiones: MOCK_COMISIONES.length,
+    totalLegisladores,
+    totalComisiones,
     sesionesEsteMes: 4,
-    proyectosPendientes: MOCK_PROYECTOS.filter(p => p.estado !== "Promulgado").length,
+    proyectosPendientes: proyectos.filter((p) => p.estado !== "PROMULGADO" && p.estado !== "Promulgado").length,
     leyesAprobadas: MOCK_LEYES.length,
     sesionEnVivo: null,
-    proximasSesiones: MOCK_SESIONES.filter(s => s.estado === "programada").slice(0, 3),
-    ultimosProyectos: MOCK_PROYECTOS.slice(0, 5),
+    proximasSesiones: MOCK_SESIONES.filter((s) => s.estado === "programada").slice(0, 3),
+    ultimosProyectos: proyectos,
     ultimasLeyes: MOCK_LEYES.slice(0, 4),
   });
 });
 
 router.get("/legislative/legisladores", async (req, res): Promise<void> => {
   const params = GetLegisladoresQueryParams.safeParse(req.query);
-  let data = [...MOCK_LEGISLADORES];
+  const page = params.success ? (params.data.page ?? 1) : 1;
+  const limit = params.success ? (params.data.limit ?? 50) : 50;
 
+  // Try real API
+  const raw = await fetchFromCongress(`/parlamentario/camara/D?offset=${page}&limit=${limit}`);
+
+  let data: ReturnType<typeof mapParlamentario>[];
+
+  if (isArray(raw) && raw.length > 0) {
+    data = (raw as RealParlamentario[]).map(mapParlamentario);
+  } else {
+    data = [...MOCK_LEGISLADORES];
+  }
+
+  // Apply filters
   if (params.success) {
     if (params.data.partido) {
-      data = data.filter(l => l.partido.toLowerCase().includes(params.data.partido!.toLowerCase()));
+      const q = params.data.partido.toLowerCase();
+      data = data.filter((l) => l.partido.toLowerCase().includes(q) || l.bancada.toLowerCase().includes(q));
     }
     if (params.data.departamento) {
-      data = data.filter(l => l.departamento.toLowerCase().includes(params.data.departamento!.toLowerCase()));
+      const q = params.data.departamento.toLowerCase();
+      data = data.filter((l) => l.departamento.toLowerCase().includes(q));
     }
     if (params.data.search) {
       const q = params.data.search.toLowerCase();
-      data = data.filter(l =>
-        l.nombre.toLowerCase().includes(q) ||
-        l.apellido.toLowerCase().includes(q) ||
-        l.partido.toLowerCase().includes(q) ||
-        l.departamento.toLowerCase().includes(q)
+      data = data.filter(
+        (l) =>
+          l.nombre.toLowerCase().includes(q) ||
+          l.apellido.toLowerCase().includes(q) ||
+          l.partido.toLowerCase().includes(q) ||
+          l.departamento.toLowerCase().includes(q)
       );
     }
   }
 
-  const page = params.success ? (params.data.page ?? 1) : 1;
-  const limit = params.success ? (params.data.limit ?? 50) : 50;
-  const start = (page - 1) * limit;
-  const paged = data.slice(start, start + limit);
-
-  res.json({ data: paged, total: data.length, page, totalPages: Math.ceil(data.length / limit) });
+  res.json({ data, total: data.length, page, totalPages: Math.ceil(data.length / limit) });
 });
 
 router.get("/legislative/legisladores/:id", async (req, res): Promise<void> => {
-  const raw = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
-  const legislador = MOCK_LEGISLADORES.find(l => l.id === raw);
+  const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+
+  // Try real API
+  const raw = await fetchFromCongress(`/parlamentario/${id}`);
+  if (raw && typeof raw === "object" && !Array.isArray(raw)) {
+    const mapped = mapParlamentario(raw as RealParlamentario);
+    res.json(mapped);
+    return;
+  }
+
+  const legislador = MOCK_LEGISLADORES.find((l) => l.id === id);
   if (!legislador) {
     res.status(404).json({ error: "Legislador no encontrado" });
     return;
@@ -160,12 +323,28 @@ router.get("/legislative/legisladores/:id", async (req, res): Promise<void> => {
 });
 
 router.get("/legislative/comisiones", async (_req, res): Promise<void> => {
+  const raw = await fetchFromCongress("/comision/camara/D");
+
+  if (isArray(raw) && raw.length > 0) {
+    const data = (raw as RealComision[]).map(mapComision);
+    res.json({ data, total: data.length });
+    return;
+  }
+
   res.json({ data: MOCK_COMISIONES, total: MOCK_COMISIONES.length });
 });
 
 router.get("/legislative/comisiones/:id", async (req, res): Promise<void> => {
-  const raw = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
-  const comision = MOCK_COMISIONES.find(c => c.id === raw);
+  const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+
+  // Try real API
+  const raw = await fetchFromCongress(`/comision/${id}`);
+  if (raw && typeof raw === "object" && !Array.isArray(raw)) {
+    res.json(mapComision(raw as RealComision));
+    return;
+  }
+
+  const comision = MOCK_COMISIONES.find((c) => c.id === id);
   if (!comision) {
     res.status(404).json({ error: "Comisión no encontrada" });
     return;
@@ -178,16 +357,16 @@ router.get("/legislative/sesiones", async (req, res): Promise<void> => {
   let data = [...MOCK_SESIONES];
 
   if (params.success) {
-    if (params.data.estado) data = data.filter(s => s.estado === params.data.estado);
-    if (params.data.tipo) data = data.filter(s => s.tipo.toLowerCase().includes(params.data.tipo!.toLowerCase()));
+    if (params.data.estado) data = data.filter((s) => s.estado === params.data.estado);
+    if (params.data.tipo) data = data.filter((s) => s.tipo.toLowerCase().includes(params.data.tipo!.toLowerCase()));
   }
 
   res.json({ data, total: data.length, sesionEnVivo: null });
 });
 
 router.get("/legislative/sesiones/:id", async (req, res): Promise<void> => {
-  const raw = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
-  const sesion = MOCK_SESIONES.find(s => s.id === raw);
+  const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+  const sesion = MOCK_SESIONES.find((s) => s.id === id);
   if (!sesion) {
     res.status(404).json({ error: "Sesión no encontrada" });
     return;
@@ -197,27 +376,57 @@ router.get("/legislative/sesiones/:id", async (req, res): Promise<void> => {
 
 router.get("/legislative/proyectos", async (req, res): Promise<void> => {
   const params = GetProyectosQueryParams.safeParse(req.query);
-  let data = [...MOCK_PROYECTOS];
+  const page = params.success ? (params.data.page ?? 1) : 1;
+  const limit = params.success ? (params.data.limit ?? 20) : 20;
 
+  // Try real API
+  const raw = await fetchFromCongress(`/proyecto?offset=${page}&limit=${Math.min(limit, 50)}`);
+
+  let data: ReturnType<typeof mapProyecto>[];
+
+  if (isArray(raw) && raw.length > 0) {
+    data = (raw as RealProyecto[]).map(mapProyecto);
+  } else {
+    data = [...MOCK_PROYECTOS];
+  }
+
+  // Apply filters
   if (params.success) {
-    if (params.data.estado) data = data.filter(p => p.estado.toLowerCase().includes(params.data.estado!.toLowerCase()));
-    if (params.data.comision) data = data.filter(p => p.comision?.toLowerCase().includes(params.data.comision!.toLowerCase()));
+    if (params.data.estado) {
+      const q = params.data.estado.toLowerCase();
+      data = data.filter((p) => p.estado.toLowerCase().includes(q));
+    }
+    if (params.data.comision) {
+      const q = params.data.comision.toLowerCase();
+      data = data.filter((p) => p.comision?.toLowerCase().includes(q));
+    }
     if (params.data.search) {
       const q = params.data.search.toLowerCase();
-      data = data.filter(p => p.titulo.toLowerCase().includes(q) || p.numero.includes(q) || p.descripcion?.toLowerCase().includes(q));
+      data = data.filter(
+        (p) =>
+          p.titulo.toLowerCase().includes(q) ||
+          p.numero.toLowerCase().includes(q) ||
+          p.descripcion?.toLowerCase().includes(q)
+      );
     }
   }
 
-  const page = params.success ? (params.data.page ?? 1) : 1;
-  const limit = params.success ? (params.data.limit ?? 20) : 20;
-  const start = (page - 1) * limit;
-
-  res.json({ data: data.slice(start, start + limit), total: data.length, page, totalPages: Math.ceil(data.length / limit) });
+  res.json({ data: data.slice(0, limit), total: data.length, page, totalPages: Math.ceil(data.length / limit) });
 });
 
-router.get("/legislative/proyectos/:numero", async (req, res): Promise<void> => {
-  const raw = Array.isArray(req.params.numero) ? req.params.numero[0] : req.params.numero;
-  const proyecto = MOCK_PROYECTOS.find(p => p.numero === raw);
+// GET /legislative/proyectos/:id — uses numeric id (fixes the 404 slash bug)
+router.get("/legislative/proyectos/:id", async (req, res): Promise<void> => {
+  const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+
+  // Try real API
+  const raw = await fetchFromCongress(`/proyecto/${id}`);
+  if (raw && typeof raw === "object" && !Array.isArray(raw)) {
+    res.json(mapProyecto(raw as RealProyecto));
+    return;
+  }
+
+  // Fallback to mock by id
+  const proyecto = MOCK_PROYECTOS.find((p) => p.id === id);
   if (!proyecto) {
     res.status(404).json({ error: "Proyecto no encontrado" });
     return;
@@ -227,22 +436,28 @@ router.get("/legislative/proyectos/:numero", async (req, res): Promise<void> => 
 
 router.get("/legislative/leyes", async (req, res): Promise<void> => {
   const params = GetLeyesQueryParams.safeParse(req.query);
-  let data = [...MOCK_LEYES];
+  const page = params.success ? (params.data.page ?? 1) : 1;
+  const anio = params.success ? params.data.anio : undefined;
 
-  if (params.success) {
-    if (params.data.search) {
-      const q = params.data.search.toLowerCase();
-      data = data.filter(l => l.titulo.toLowerCase().includes(q) || l.numero.includes(q));
-    }
-    if (params.data.anio) {
-      data = data.filter(l => l.fechaSancion.startsWith(String(params.data.anio)));
-    }
+  // Try real API for the requested year, then current year, then fallback
+  const yearToTry = anio ?? new Date().getFullYear();
+  const raw = await fetchFromCongress(`/ley/anho/${yearToTry}?offset=${page}&limit=20`);
+
+  let data: ReturnType<typeof mapLey>[];
+
+  if (isArray(raw) && raw.length > 0) {
+    data = (raw as RealLey[]).map(mapLey);
+  } else {
+    data = [...MOCK_LEYES];
   }
 
-  const page = params.success ? (params.data.page ?? 1) : 1;
-  const paged = data.slice((page - 1) * 20, page * 20);
+  // Search filter
+  if (params.success && params.data.search) {
+    const q = params.data.search.toLowerCase();
+    data = data.filter((l) => l.titulo.toLowerCase().includes(q) || l.numero.includes(q));
+  }
 
-  res.json({ data: paged, total: data.length, page, totalPages: Math.ceil(data.length / 20) });
+  res.json({ data: data.slice(0, 20), total: data.length, page, totalPages: Math.ceil(data.length / 20) });
 });
 
 export { MOCK_LEGISLADORES, MOCK_COMISIONES, MOCK_SESIONES, MOCK_PROYECTOS, MOCK_LEYES };

@@ -101,7 +101,7 @@ export default function ProjectsScreen() {
           data={filtered}
           keyExtractor={item => item.numero}
           renderItem={({ item }) => (
-            <ProjectCard project={item} onPress={() => router.push(`/project/${encodeURIComponent(item.numero)}`)} />
+            <ProjectCard project={item} onPress={() => router.push(`/project/${item.id}`)} />
           )}
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}

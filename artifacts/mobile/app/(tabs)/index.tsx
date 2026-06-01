@@ -144,7 +144,7 @@ export default function DashboardScreen() {
             No se pudo cargar la información
           </Text>
         ) : data?.ultimosProyectos.map(p => (
-          <ProjectCard key={p.numero} project={p} onPress={() => router.push(`/project/${encodeURIComponent(p.numero)}`)} />
+          <ProjectCard key={p.id} project={p} onPress={() => router.push(`/project/${p.id}`)} />
         ))}
       </View>
 

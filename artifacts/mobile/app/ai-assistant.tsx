@@ -202,7 +202,6 @@ export default function AIAssistantScreen() {
           placeholderTextColor={colors.mutedForeground}
           multiline
           maxLength={500}
-          fontFamily="Inter_400Regular"
           onSubmitEditing={() => sendMessage(input)}
         />
         <TouchableOpacity

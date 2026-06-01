@@ -76,6 +76,7 @@ export type ProyectoHistorialItem = {
 };
 
 export interface Proyecto {
+  id: string;
   numero: string;
   titulo: string;
   estado: string;
@@ -84,6 +85,7 @@ export interface Proyecto {
   iniciativa: string;
   comision?: string | null;
   descripcion?: string | null;
+  appURL?: string | null;
   historial?: ProyectoHistorialItem[];
 }
 

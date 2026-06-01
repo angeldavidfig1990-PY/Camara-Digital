@@ -50,6 +50,7 @@ export const GetDashboardResponse = zod.object({
   "orden_del_dia": zod.array(zod.string()).optional()
 })),
   "ultimosProyectos": zod.array(zod.object({
+  "id": zod.string(),
   "numero": zod.string(),
   "titulo": zod.string(),
   "estado": zod.string(),
@@ -58,6 +59,7 @@ export const GetDashboardResponse = zod.object({
   "iniciativa": zod.string(),
   "comision": zod.string().nullish(),
   "descripcion": zod.string().nullish(),
+  "appURL": zod.string().nullish(),
   "historial": zod.array(zod.object({
   "fecha": zod.string(),
   "evento": zod.string(),
@@ -243,6 +245,7 @@ export const GetProyectosQueryParams = zod.object({
 
 export const GetProyectosResponse = zod.object({
   "data": zod.array(zod.object({
+  "id": zod.string(),
   "numero": zod.string(),
   "titulo": zod.string(),
   "estado": zod.string(),
@@ -251,6 +254,7 @@ export const GetProyectosResponse = zod.object({
   "iniciativa": zod.string(),
   "comision": zod.string().nullish(),
   "descripcion": zod.string().nullish(),
+  "appURL": zod.string().nullish(),
   "historial": zod.array(zod.object({
   "fecha": zod.string(),
   "evento": zod.string(),
@@ -264,13 +268,14 @@ export const GetProyectosResponse = zod.object({
 
 
 /**
- * @summary Get project by number
+ * @summary Get project by id
  */
-export const GetProyectoByNumeroParams = zod.object({
-  "numero": zod.coerce.string()
+export const GetProyectoByIdParams = zod.object({
+  "id": zod.coerce.string()
 })
 
-export const GetProyectoByNumeroResponse = zod.object({
+export const GetProyectoByIdResponse = zod.object({
+  "id": zod.string(),
   "numero": zod.string(),
   "titulo": zod.string(),
   "estado": zod.string(),
@@ -279,6 +284,7 @@ export const GetProyectoByNumeroResponse = zod.object({
   "iniciativa": zod.string(),
   "comision": zod.string().nullish(),
   "descripcion": zod.string().nullish(),
+  "appURL": zod.string().nullish(),
   "historial": zod.array(zod.object({
   "fecha": zod.string(),
   "evento": zod.string(),

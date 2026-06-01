@@ -230,14 +230,14 @@ paths:
               schema:
                 $ref: "#/components/schemas/ProyectosResponse"
 
-  /legislative/proyectos/{numero}:
+  /legislative/proyectos/{id}:
     get:
-      operationId: getProyectoByNumero
+      operationId: getProyectoById
       tags: [legislative]
-      summary: Get project by number
+      summary: Get project by id
       parameters:
         - in: path
-          name: numero
+          name: id
           required: true
           schema:
             type: string
@@ -477,6 +477,8 @@ components:
     Proyecto:
       type: object
       properties:
+        id:
+          type: string
         numero:
           type: string
         titulo:
@@ -495,6 +497,9 @@ components:
         descripcion:
           type: string
           nullable: true
+        appURL:
+          type: string
+          nullable: true
         historial:
           type: array
           items:
@@ -511,6 +516,7 @@ components:
               - evento
               - descripcion
       required:
+        - id
         - numero
         - titulo
         - estado

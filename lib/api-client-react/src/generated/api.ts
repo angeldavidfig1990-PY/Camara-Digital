@@ -768,20 +768,20 @@ export function useGetProyectos<TData = Awaited<ReturnType<typeof getProyectos>>
 
 
 
-export const getGetProyectoByNumeroUrl = (numero: string,) => {
+export const getGetProyectoByIdUrl = (id: string,) => {
 
 
 
 
-  return `/api/legislative/proyectos/${numero}`
+  return `/api/legislative/proyectos/${id}`
 }
 
 /**
- * @summary Get project by number
+ * @summary Get project by id
  */
-export const getProyectoByNumero = async (numero: string, options?: RequestInit): Promise<Proyecto> => {
+export const getProyectoById = async (id: string, options?: RequestInit): Promise<Proyecto> => {
 
-  return customFetch<Proyecto>(getGetProyectoByNumeroUrl(numero),
+  return customFetch<Proyecto>(getGetProyectoByIdUrl(id),
   {
     ...options,
     method: 'GET'
@@ -794,45 +794,45 @@ export const getProyectoByNumero = async (numero: string, options?: RequestInit)
 
 
 
-export const getGetProyectoByNumeroQueryKey = (numero: string,) => {
+export const getGetProyectoByIdQueryKey = (id: string,) => {
     return [
-    `/api/legislative/proyectos/${numero}`
+    `/api/legislative/proyectos/${id}`
     ] as const;
     }
 
 
-export const getGetProyectoByNumeroQueryOptions = <TData = Awaited<ReturnType<typeof getProyectoByNumero>>, TError = ErrorType<ErrorResponse>>(numero: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getProyectoByNumero>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getGetProyectoByIdQueryOptions = <TData = Awaited<ReturnType<typeof getProyectoById>>, TError = ErrorType<ErrorResponse>>(id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getProyectoById>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
 
-  const queryKey =  queryOptions?.queryKey ?? getGetProyectoByNumeroQueryKey(numero);
+  const queryKey =  queryOptions?.queryKey ?? getGetProyectoByIdQueryKey(id);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getProyectoByNumero>>> = ({ signal }) => getProyectoByNumero(numero, { signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getProyectoById>>> = ({ signal }) => getProyectoById(id, { signal, ...requestOptions });
 
 
 
 
 
-   return  { queryKey, queryFn, enabled: !!(numero), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getProyectoByNumero>>, TError, TData> & { queryKey: QueryKey }
+   return  { queryKey, queryFn, enabled: !!(id), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getProyectoById>>, TError, TData> & { queryKey: QueryKey }
 }
 
-export type GetProyectoByNumeroQueryResult = NonNullable<Awaited<ReturnType<typeof getProyectoByNumero>>>
-export type GetProyectoByNumeroQueryError = ErrorType<ErrorResponse>
+export type GetProyectoByIdQueryResult = NonNullable<Awaited<ReturnType<typeof getProyectoById>>>
+export type GetProyectoByIdQueryError = ErrorType<ErrorResponse>
 
 
 /**
- * @summary Get project by number
+ * @summary Get project by id
  */
 
-export function useGetProyectoByNumero<TData = Awaited<ReturnType<typeof getProyectoByNumero>>, TError = ErrorType<ErrorResponse>>(
- numero: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getProyectoByNumero>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export function useGetProyectoById<TData = Awaited<ReturnType<typeof getProyectoById>>, TError = ErrorType<ErrorResponse>>(
+ id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getProyectoById>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
-  const queryOptions = getGetProyectoByNumeroQueryOptions(numero,options)
+  const queryOptions = getGetProyectoByIdQueryOptions(id,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

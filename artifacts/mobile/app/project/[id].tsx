@@ -5,7 +5,7 @@ import {
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useGetProyectoByNumero } from "@workspace/api-client-react";
+import { useGetProyectoById } from "@workspace/api-client-react";
 import { useColors } from "@/hooks/useColors";
 import { Badge } from "@/components/ui/Badge";
 import { SkeletonList } from "@/components/ui/SkeletonCard";
@@ -32,10 +32,9 @@ export default function ProjectDetailScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const numero = decodeURIComponent(id ?? "");
 
-  const { data, isLoading, error } = useGetProyectoByNumero(numero, {
-    query: { queryKey: ["proyecto", numero], enabled: !!numero },
+  const { data, isLoading, error } = useGetProyectoById(id ?? "", {
+    query: { queryKey: ["proyecto", id], enabled: !!id },
   });
 
   const topPad = Platform.OS === "web" ? 67 : insets.top;
