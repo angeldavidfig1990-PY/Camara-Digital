@@ -5,7 +5,11 @@
  * API specification - Diputados Paraguay
  * OpenAPI spec version: 0.1.0
  */
+import type { Ley } from './ley';
 
-export interface HealthStatus {
-  status: string;
+export interface LeyesResponse {
+  data: Ley[];
+  total: number;
+  page: number;
+  totalPages: number;
 }

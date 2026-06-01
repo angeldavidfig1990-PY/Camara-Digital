@@ -1,0 +1,2 @@
+- [Paraguay app Zod schema naming](zod-schema-naming.md) — Orval generates `GetXxxQueryParams` (not `GetXxxParams`) for query params; path params use `GetXxxByIdParams`
+- [Paraguay app colors](paraguay-colors.md) — Primary `#002B7F` (institutional blue), accent `#C8102E` (flag red); dark mode uses `#4A8FE0` primary

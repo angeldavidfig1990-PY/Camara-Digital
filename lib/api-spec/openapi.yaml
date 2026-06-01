@@ -3,13 +3,17 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: API specification - Diputados Paraguay
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: legislative
+    description: Legislative data (proxied from Paraguay Congress API)
+  - name: ai
+    description: AI legislative assistant
 paths:
   /healthz:
     get:
@@ -24,6 +28,279 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /legislative/dashboard:
+    get:
+      operationId: getDashboard
+      tags: [legislative]
+      summary: Get dashboard data
+      description: Returns legislative dashboard statistics and recent activity
+      responses:
+        "200":
+          description: Dashboard data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardData"
+
+  /legislative/legisladores:
+    get:
+      operationId: getLegisladores
+      tags: [legislative]
+      summary: Get list of legislators
+      parameters:
+        - in: query
+          name: partido
+          schema:
+            type: string
+        - in: query
+          name: departamento
+          schema:
+            type: string
+        - in: query
+          name: search
+          schema:
+            type: string
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 50
+      responses:
+        "200":
+          description: List of legislators
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LegisladoresResponse"
+
+  /legislative/legisladores/{id}:
+    get:
+      operationId: getLegisladorById
+      tags: [legislative]
+      summary: Get legislator by ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Legislator detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Legislador"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /legislative/comisiones:
+    get:
+      operationId: getComisiones
+      tags: [legislative]
+      summary: Get list of commissions
+      responses:
+        "200":
+          description: List of commissions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ComisionesResponse"
+
+  /legislative/comisiones/{id}:
+    get:
+      operationId: getComisionById
+      tags: [legislative]
+      summary: Get commission by ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Commission detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Comision"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /legislative/sesiones:
+    get:
+      operationId: getSesiones
+      tags: [legislative]
+      summary: Get list of sessions
+      parameters:
+        - in: query
+          name: estado
+          schema:
+            type: string
+        - in: query
+          name: tipo
+          schema:
+            type: string
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+      responses:
+        "200":
+          description: List of sessions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SesionesResponse"
+
+  /legislative/sesiones/{id}:
+    get:
+      operationId: getSesionById
+      tags: [legislative]
+      summary: Get session by ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Session detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Sesion"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /legislative/proyectos:
+    get:
+      operationId: getProyectos
+      tags: [legislative]
+      summary: Get list of bills/projects
+      parameters:
+        - in: query
+          name: estado
+          schema:
+            type: string
+        - in: query
+          name: comision
+          schema:
+            type: string
+        - in: query
+          name: search
+          schema:
+            type: string
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: List of projects
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProyectosResponse"
+
+  /legislative/proyectos/{numero}:
+    get:
+      operationId: getProyectoByNumero
+      tags: [legislative]
+      summary: Get project by number
+      parameters:
+        - in: path
+          name: numero
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Project detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Proyecto"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /legislative/leyes:
+    get:
+      operationId: getLeyes
+      tags: [legislative]
+      summary: Get list of approved laws
+      parameters:
+        - in: query
+          name: anio
+          schema:
+            type: integer
+        - in: query
+          name: search
+          schema:
+            type: string
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+      responses:
+        "200":
+          description: List of laws
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LeyesResponse"
+
+  /ai/consult:
+    post:
+      operationId: aiConsult
+      tags: [ai]
+      summary: AI legislative assistant query
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AIConsultRequest"
+      responses:
+        "200":
+          description: AI response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AIConsultResponse"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +311,344 @@ components:
       required:
         - status
 
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
+
+    Legislador:
+      type: object
+      properties:
+        id:
+          type: string
+        nombre:
+          type: string
+        apellido:
+          type: string
+        partido:
+          type: string
+        bancada:
+          type: string
+        departamento:
+          type: string
+        cargo:
+          type: string
+        periodo:
+          type: string
+        foto:
+          type: string
+          nullable: true
+        email:
+          type: string
+          nullable: true
+        bio:
+          type: string
+          nullable: true
+        comisiones:
+          type: array
+          items:
+            type: string
+      required:
+        - id
+        - nombre
+        - apellido
+        - partido
+        - bancada
+        - departamento
+        - cargo
+        - periodo
+
+    LegisladoresResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Legislador"
+        total:
+          type: integer
+        page:
+          type: integer
+        totalPages:
+          type: integer
+      required:
+        - data
+        - total
+        - page
+        - totalPages
+
+    Comision:
+      type: object
+      properties:
+        id:
+          type: string
+        nombre:
+          type: string
+        tipo:
+          type: string
+        camara:
+          type: string
+        presidente:
+          type: string
+          nullable: true
+        vicepresidente:
+          type: string
+          nullable: true
+        email:
+          type: string
+          nullable: true
+        miembros:
+          type: array
+          items:
+            type: string
+      required:
+        - id
+        - nombre
+        - tipo
+        - camara
+        - miembros
+
+    ComisionesResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Comision"
+        total:
+          type: integer
+      required:
+        - data
+        - total
+
+    Sesion:
+      type: object
+      properties:
+        id:
+          type: string
+        fecha:
+          type: string
+        horaInicio:
+          type: string
+        horaFin:
+          type: string
+          nullable: true
+        tipo:
+          type: string
+        estado:
+          type: string
+        periodo:
+          type: string
+        descripcion:
+          type: string
+          nullable: true
+        orden_del_dia:
+          type: array
+          items:
+            type: string
+      required:
+        - id
+        - fecha
+        - horaInicio
+        - tipo
+        - estado
+        - periodo
+
+    SesionesResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Sesion"
+        total:
+          type: integer
+        sesionEnVivo:
+          nullable: true
+          allOf:
+            - $ref: "#/components/schemas/Sesion"
+      required:
+        - data
+        - total
+
+    Proyecto:
+      type: object
+      properties:
+        numero:
+          type: string
+        titulo:
+          type: string
+        estado:
+          type: string
+        etapa:
+          type: string
+        fechaIngreso:
+          type: string
+        iniciativa:
+          type: string
+        comision:
+          type: string
+          nullable: true
+        descripcion:
+          type: string
+          nullable: true
+        historial:
+          type: array
+          items:
+            type: object
+            properties:
+              fecha:
+                type: string
+              evento:
+                type: string
+              descripcion:
+                type: string
+            required:
+              - fecha
+              - evento
+              - descripcion
+      required:
+        - numero
+        - titulo
+        - estado
+        - etapa
+        - fechaIngreso
+        - iniciativa
+
+    ProyectosResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Proyecto"
+        total:
+          type: integer
+        page:
+          type: integer
+        totalPages:
+          type: integer
+      required:
+        - data
+        - total
+        - page
+        - totalPages
+
+    Ley:
+      type: object
+      properties:
+        numero:
+          type: string
+        titulo:
+          type: string
+        fechaSancion:
+          type: string
+        fechaPromulgacion:
+          type: string
+          nullable: true
+        proyecto:
+          type: string
+          nullable: true
+      required:
+        - numero
+        - titulo
+        - fechaSancion
+
+    LeyesResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Ley"
+        total:
+          type: integer
+        page:
+          type: integer
+        totalPages:
+          type: integer
+      required:
+        - data
+        - total
+        - page
+        - totalPages
+
+    DashboardData:
+      type: object
+      properties:
+        totalLegisladores:
+          type: integer
+        totalComisiones:
+          type: integer
+        sesionesEsteMes:
+          type: integer
+        proyectosPendientes:
+          type: integer
+        leyesAprobadas:
+          type: integer
+        sesionEnVivo:
+          nullable: true
+          allOf:
+            - $ref: "#/components/schemas/Sesion"
+        proximasSesiones:
+          type: array
+          items:
+            $ref: "#/components/schemas/Sesion"
+        ultimosProyectos:
+          type: array
+          items:
+            $ref: "#/components/schemas/Proyecto"
+        ultimasLeyes:
+          type: array
+          items:
+            $ref: "#/components/schemas/Ley"
+      required:
+        - totalLegisladores
+        - totalComisiones
+        - sesionesEsteMes
+        - proyectosPendientes
+        - leyesAprobadas
+        - proximasSesiones
+        - ultimosProyectos
+        - ultimasLeyes
+
+    AIConsultRequest:
+      type: object
+      properties:
+        pregunta:
+          type: string
+        historial:
+          type: array
+          items:
+            type: object
+            properties:
+              role:
+                type: string
+              content:
+                type: string
+            required:
+              - role
+              - content
+      required:
+        - pregunta
+
+    AIConsultResponse:
+      type: object
+      properties:
+        respuesta:
+          type: string
+        tipo:
+          type: string
+        datos:
+          nullable: true
+        fuentes:
+          type: array
+          items:
+            type: string
+      required:
+        - respuesta
+        - tipo
+        - fuentes

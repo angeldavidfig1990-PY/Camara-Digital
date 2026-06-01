@@ -6,6 +6,10 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface HealthStatus {
-  status: string;
+export interface Ley {
+  numero: string;
+  titulo: string;
+  fechaSancion: string;
+  fechaPromulgacion?: string | null;
+  proyecto?: string | null;
 }

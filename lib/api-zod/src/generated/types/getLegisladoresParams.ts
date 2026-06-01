@@ -6,6 +6,10 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface HealthStatus {
-  status: string;
-}
+export type GetLegisladoresParams = {
+partido?: string;
+departamento?: string;
+search?: string;
+page?: number;
+limit?: number;
+};

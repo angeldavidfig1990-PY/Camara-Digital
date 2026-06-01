@@ -5,7 +5,10 @@
  * API specification - Diputados Paraguay
  * OpenAPI spec version: 0.1.0
  */
+import type { Sesion } from './sesion';
 
-export interface HealthStatus {
-  status: string;
+export interface SesionesResponse {
+  data: Sesion[];
+  total: number;
+  sesionEnVivo?: Sesion | null;
 }

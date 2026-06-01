@@ -1,0 +1,20 @@
+uploads = []
+outputs = []
+
+[[generated]]
+id = "QX_04j4MncaiMuP_FLFtR"
+uri = "file://artifacts/mobile/assets/images/icon.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "f95-aqrOKgSSrOxDuvV_t"
+uri = "file://artifacts/mobile/assets/images/hero-parliament.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "trAEdnhxE8DVcemHdGku8"
+uri = "file://artifacts/mobile/assets/images/splash.png"
+type = "image"
+title = "generated_image"
