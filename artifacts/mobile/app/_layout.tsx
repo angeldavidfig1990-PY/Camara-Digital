@@ -9,17 +9,10 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import React, { useEffect } from "react";
-import { Platform, Text, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
-import StockIonicons from "@expo/vector-icons/Ionicons";
-import {
-  FEATHER_FONT_FAMILY,
-  IONICONS_FONT_FAMILY,
-  Ionicons,
-} from "@/components/Icon";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { SettingsProvider } from "@/contexts/SettingsContext";
 import { setBaseUrl } from "@workspace/api-client-react";
@@ -88,8 +81,6 @@ export default function RootLayout() {
     Inter_500Medium,
     Inter_600SemiBold,
     Inter_700Bold,
-    [IONICONS_FONT_FAMILY]: require("../assets/fonts/Ionicons.ttf"),
-    [FEATHER_FONT_FAMILY]: require("../assets/fonts/Feather.ttf"),
   });
 
   useEffect(() => {
@@ -108,44 +99,6 @@ export default function RootLayout() {
             <GestureHandlerRootView style={{ flex: 1 }}>
               <KeyboardProvider>
                 <RootLayoutNav />
-                {__DEV__ ? (
-                  <View
-                    style={{
-                      position: "absolute",
-                      top: 44,
-                      left: 8,
-                      right: 8,
-                      zIndex: 99999,
-                      backgroundColor: "rgba(0,0,0,0.92)",
-                      padding: 8,
-                      borderRadius: 8,
-                      gap: 4,
-                    }}
-                  >
-                    <Text style={{ color: "#FFD400", fontSize: 13, fontWeight: "700" }}>
-                      DIAG v4 · OS:{Platform.OS} loaded:{String(fontsLoaded)} err:
-                      {fontError ? String(fontError.message ?? fontError) : "none"}
-                    </Text>
-                    <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
-                      <Text style={{ color: "#fff", fontSize: 11, width: 110 }}>
-                        stock (ExpoGo):
-                      </Text>
-                      <StockIonicons name="home" size={26} color="#fff" />
-                      <Text style={{ color: "#fff", fontFamily: "ionicons", fontSize: 26 }}>
-                        {String.fromCodePoint(Number(Ionicons.glyphMap.home))}
-                      </Text>
-                    </View>
-                    <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
-                      <Text style={{ color: "#fff", fontSize: 11, width: 110 }}>
-                        custom (runtime):
-                      </Text>
-                      <Ionicons name="home" size={26} color="#fff" />
-                      <Text style={{ color: "#fff", fontFamily: IONICONS_FONT_FAMILY, fontSize: 26 }}>
-                        {String.fromCodePoint(Number(Ionicons.glyphMap.home))}
-                      </Text>
-                    </View>
-                  </View>
-                ) : null}
               </KeyboardProvider>
             </GestureHandlerRootView>
           </QueryClientProvider>

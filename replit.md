@@ -57,6 +57,7 @@ _Populate as you build — explicit user instructions worth remembering across s
 
 ## Gotchas
 
+- **Íconos = SVG, no fuentes.** Las fuentes de íconos (Ionicons/Feather) renderizan como cajas en Android con Expo SDK 54 + New Architecture (Expo issue #351). La app usa `lucide-react-native` (SVG) vía el wrapper `components/Icon.tsx`, que conserva la API `<Ionicons name="..."/>`. Para agregar un ícono nuevo, mapeá su nombre→componente lucide en `Icon.tsx` (un `console.warn` en DEV avisa si falta).
 - Always run `pnpm --filter @workspace/api-spec run codegen` after changing `lib/api-spec/openapi.yaml`
 - Zod query param schemas are `GetXxxQueryParams`, not `GetXxxParams`
 - Express 5: wildcard routes use `/{*splat}` syntax; always annotate handlers `Promise<void>`

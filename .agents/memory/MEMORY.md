@@ -1,2 +1,1 @@
-- [Paraguay app Zod schema naming](zod-schema-naming.md) — Orval generates `GetXxxQueryParams` (not `GetXxxParams`) for query params; path params use `GetXxxByIdParams`
-- [Paraguay app colors](paraguay-colors.md) — Primary `#002B7F` (institutional blue), accent `#C8102E` (flag red); dark mode uses `#4A8FE0` primary
+- [Expo SDK54 icon fonts → SVG](expo-sdk54-icon-fonts.md) — icon fonts tofu on Android (New Arch, issue #351); fix is lucide SVG via Icon.tsx wrapper, not fonts.
