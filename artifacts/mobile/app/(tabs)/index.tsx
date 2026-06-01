@@ -4,7 +4,7 @@ import {
   Platform, RefreshControl, Linking, Image,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons } from "@/components/Icon";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { useGetDashboard } from "@workspace/api-client-react";

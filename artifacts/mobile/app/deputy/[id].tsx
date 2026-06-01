@@ -4,7 +4,7 @@ import {
   Platform, Linking,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons } from "@/components/Icon";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useGetLegisladorById } from "@workspace/api-client-react";
 import { useColors } from "@/hooks/useColors";

@@ -14,7 +14,11 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
-import { Ionicons } from "@expo/vector-icons";
+import {
+  FEATHER_FONT_FAMILY,
+  IONICONS_FONT_FAMILY,
+  Ionicons,
+} from "@/components/Icon";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { SettingsProvider } from "@/contexts/SettingsContext";
 import { setBaseUrl } from "@workspace/api-client-react";
@@ -83,7 +87,8 @@ export default function RootLayout() {
     Inter_500Medium,
     Inter_600SemiBold,
     Inter_700Bold,
-    Ionicons: require("../assets/fonts/Ionicons.ttf"),
+    [IONICONS_FONT_FAMILY]: require("../assets/fonts/Ionicons.ttf"),
+    [FEATHER_FONT_FAMILY]: require("../assets/fonts/Feather.ttf"),
   });
 
   useEffect(() => {
@@ -122,7 +127,7 @@ export default function RootLayout() {
                       OS:{Platform.OS} loaded:{String(fontsLoaded)} err:
                       {fontError ? String(fontError.message ?? fontError) : "none"}
                     </Text>
-                    <Text style={{ color: "#fff", fontFamily: "Ionicons", fontSize: 26 }}>
+                    <Text style={{ color: "#fff", fontFamily: IONICONS_FONT_FAMILY, fontSize: 26 }}>
                       {String.fromCodePoint(Number(Ionicons.glyphMap.home))}
                     </Text>
                     <Ionicons name="home" size={26} color="#fff" />

@@ -1,6 +1,6 @@
 import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons } from "@/components/Icon";
 import { useColors } from "@/hooks/useColors";
 import { Badge } from "@/components/ui/Badge";
 import type { Sesion } from "@workspace/api-client-react";

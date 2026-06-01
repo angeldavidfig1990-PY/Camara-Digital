@@ -4,7 +4,7 @@ import {
   TouchableOpacity, View, ActivityIndicator,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons } from "@/components/Icon";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAiConsult } from "@workspace/api-client-react";
 import { useColors } from "@/hooks/useColors";
