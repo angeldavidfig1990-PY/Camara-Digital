@@ -9,10 +9,12 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import React, { useEffect } from "react";
+import { Platform, Text, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
+import { Ionicons } from "@expo/vector-icons";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { SettingsProvider } from "@/contexts/SettingsContext";
 import { setBaseUrl } from "@workspace/api-client-react";
@@ -100,6 +102,32 @@ export default function RootLayout() {
             <GestureHandlerRootView style={{ flex: 1 }}>
               <KeyboardProvider>
                 <RootLayoutNav />
+                {__DEV__ ? (
+                  <View
+                    style={{
+                      position: "absolute",
+                      top: 44,
+                      left: 8,
+                      right: 8,
+                      zIndex: 99999,
+                      backgroundColor: "rgba(0,0,0,0.85)",
+                      padding: 8,
+                      borderRadius: 8,
+                      flexDirection: "row",
+                      alignItems: "center",
+                      gap: 12,
+                    }}
+                  >
+                    <Text style={{ color: "#fff", fontSize: 11, flex: 1 }}>
+                      OS:{Platform.OS} loaded:{String(fontsLoaded)} err:
+                      {fontError ? String(fontError.message ?? fontError) : "none"}
+                    </Text>
+                    <Text style={{ color: "#fff", fontFamily: "Ionicons", fontSize: 26 }}>
+                      {String.fromCodePoint(Number(Ionicons.glyphMap.home))}
+                    </Text>
+                    <Ionicons name="home" size={26} color="#fff" />
+                  </View>
+                ) : null}
               </KeyboardProvider>
             </GestureHandlerRootView>
           </QueryClientProvider>
