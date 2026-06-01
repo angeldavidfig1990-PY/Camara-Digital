@@ -14,6 +14,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
+import StockIonicons from "@expo/vector-icons/Ionicons";
 import {
   FEATHER_FONT_FAMILY,
   IONICONS_FONT_FAMILY,
@@ -115,22 +116,34 @@ export default function RootLayout() {
                       left: 8,
                       right: 8,
                       zIndex: 99999,
-                      backgroundColor: "rgba(0,0,0,0.85)",
+                      backgroundColor: "rgba(0,0,0,0.92)",
                       padding: 8,
                       borderRadius: 8,
-                      flexDirection: "row",
-                      alignItems: "center",
-                      gap: 12,
+                      gap: 4,
                     }}
                   >
-                    <Text style={{ color: "#fff", fontSize: 11, flex: 1 }}>
-                      OS:{Platform.OS} loaded:{String(fontsLoaded)} err:
+                    <Text style={{ color: "#FFD400", fontSize: 13, fontWeight: "700" }}>
+                      DIAG v4 · OS:{Platform.OS} loaded:{String(fontsLoaded)} err:
                       {fontError ? String(fontError.message ?? fontError) : "none"}
                     </Text>
-                    <Text style={{ color: "#fff", fontFamily: IONICONS_FONT_FAMILY, fontSize: 26 }}>
-                      {String.fromCodePoint(Number(Ionicons.glyphMap.home))}
-                    </Text>
-                    <Ionicons name="home" size={26} color="#fff" />
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
+                      <Text style={{ color: "#fff", fontSize: 11, width: 110 }}>
+                        stock (ExpoGo):
+                      </Text>
+                      <StockIonicons name="home" size={26} color="#fff" />
+                      <Text style={{ color: "#fff", fontFamily: "ionicons", fontSize: 26 }}>
+                        {String.fromCodePoint(Number(Ionicons.glyphMap.home))}
+                      </Text>
+                    </View>
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
+                      <Text style={{ color: "#fff", fontSize: 11, width: 110 }}>
+                        custom (runtime):
+                      </Text>
+                      <Ionicons name="home" size={26} color="#fff" />
+                      <Text style={{ color: "#fff", fontFamily: IONICONS_FONT_FAMILY, fontSize: 26 }}>
+                        {String.fromCodePoint(Number(Ionicons.glyphMap.home))}
+                      </Text>
+                    </View>
                   </View>
                 ) : null}
               </KeyboardProvider>
