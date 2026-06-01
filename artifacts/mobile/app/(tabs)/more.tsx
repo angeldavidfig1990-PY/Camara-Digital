@@ -96,6 +96,19 @@ export default function MoreScreen() {
       />
 
       <MenuSection
+        title="CONFIGURACIÓN"
+        items={[
+          {
+            icon: "settings-outline",
+            label: "Configuración",
+            subtitle: "Accesibilidad, idioma y portales",
+            color: "#6366F1",
+            onPress: () => router.push("/configuracion"),
+          },
+        ]}
+      />
+
+      <MenuSection
         title="TRANSPARENCIA"
         items={[
           {
