@@ -460,5 +460,93 @@ router.get("/legislative/leyes", async (req, res): Promise<void> => {
   res.json({ data: data.slice(0, 20), total: data.length, page, totalPages: Math.ceil(data.length / 20) });
 });
 
+// ── Service functions (for use by AI route) ────────────────────────────────────
+
+export async function serviceLegisladores(opts: { partido?: string; departamento?: string; search?: string; limit?: number } = {}) {
+  const limit = opts.limit ?? 80;
+  const raw = await fetchFromCongress(`/parlamentario/camara/D?offset=1&limit=${limit}`);
+  let data = isArray(raw) && raw.length > 0
+    ? (raw as RealParlamentario[]).map(mapParlamentario)
+    : [...MOCK_LEGISLADORES];
+  if (opts.partido) { const q = opts.partido.toLowerCase(); data = data.filter(l => l.partido.toLowerCase().includes(q) || l.bancada.toLowerCase().includes(q)); }
+  if (opts.departamento) { const q = opts.departamento.toLowerCase(); data = data.filter(l => l.departamento.toLowerCase().includes(q)); }
+  if (opts.search) { const q = opts.search.toLowerCase(); data = data.filter(l => l.nombre.toLowerCase().includes(q) || l.apellido.toLowerCase().includes(q) || l.partido.toLowerCase().includes(q)); }
+  return data;
+}
+
+export async function serviceLegisladorById(id: string) {
+  const raw = await fetchFromCongress(`/parlamentario/${id}`);
+  if (raw && typeof raw === "object" && !Array.isArray(raw)) return mapParlamentario(raw as RealParlamentario);
+  return MOCK_LEGISLADORES.find(l => l.id === id) ?? null;
+}
+
+export async function serviceComisiones() {
+  const raw = await fetchFromCongress("/comision/camara/D");
+  if (isArray(raw) && raw.length > 0) return (raw as RealComision[]).map(mapComision);
+  return [...MOCK_COMISIONES];
+}
+
+export async function serviceComisionById(id: string) {
+  const raw = await fetchFromCongress(`/comision/${id}`);
+  if (raw && typeof raw === "object" && !Array.isArray(raw)) return mapComision(raw as RealComision);
+  return MOCK_COMISIONES.find(c => c.id === id) ?? null;
+}
+
+export async function serviceProyectos(opts: { estado?: string; search?: string; limit?: number } = {}) {
+  const limit = opts.limit ?? 50;
+  const raw = await fetchFromCongress(`/proyecto?offset=1&limit=${Math.min(limit, 50)}`);
+  let data = isArray(raw) && raw.length > 0
+    ? (raw as RealProyecto[]).map(mapProyecto)
+    : [...MOCK_PROYECTOS];
+  if (opts.estado) { const q = opts.estado.toLowerCase(); data = data.filter(p => p.estado.toLowerCase().includes(q)); }
+  if (opts.search) { const q = opts.search.toLowerCase(); data = data.filter(p => p.titulo.toLowerCase().includes(q) || p.numero.toLowerCase().includes(q)); }
+  return data;
+}
+
+export async function serviceProyectoById(id: string) {
+  const raw = await fetchFromCongress(`/proyecto/${id}`);
+  if (raw && typeof raw === "object" && !Array.isArray(raw)) return mapProyecto(raw as RealProyecto);
+  return MOCK_PROYECTOS.find(p => p.id === id) ?? null;
+}
+
+export async function serviceSesiones(opts: { estado?: string } = {}) {
+  let data = [...MOCK_SESIONES];
+  if (opts.estado) data = data.filter(s => s.estado === opts.estado);
+  return data;
+}
+
+export async function serviceLeyes(opts: { search?: string; anio?: number } = {}) {
+  const year = opts.anio ?? new Date().getFullYear();
+  const raw = await fetchFromCongress(`/ley/anho/${year}?offset=1&limit=20`);
+  let data = isArray(raw) && raw.length > 0
+    ? (raw as RealLey[]).map(mapLey)
+    : [...MOCK_LEYES];
+  if (opts.search) { const q = opts.search.toLowerCase(); data = data.filter(l => l.titulo.toLowerCase().includes(q) || l.numero.includes(q)); }
+  return data;
+}
+
+export async function serviceDashboard() {
+  const [rawLeg, rawCom, rawProy] = await Promise.all([
+    fetchFromCongress("/parlamentario/camara/D?offset=1&limit=1", 5000),
+    fetchFromCongress("/comision/camara/D", 5000),
+    fetchFromCongress("/proyecto?offset=1&limit=5", 5000),
+  ]);
+  const totalLegisladores = isArray(rawLeg) && rawLeg.length > 0 ? 80 : MOCK_LEGISLADORES.length;
+  const totalComisiones = isArray(rawCom) ? rawCom.length : MOCK_COMISIONES.length;
+  const proyectos = isArray(rawProy) && rawProy.length > 0
+    ? (rawProy as RealProyecto[]).map(mapProyecto).slice(0, 5)
+    : MOCK_PROYECTOS.slice(0, 5);
+  return {
+    totalLegisladores, totalComisiones,
+    sesionesEsteMes: 4,
+    proyectosPendientes: proyectos.filter(p => p.estado !== "PROMULGADO").length,
+    leyesAprobadas: MOCK_LEYES.length,
+    sesionEnVivo: null,
+    proximasSesiones: MOCK_SESIONES.filter(s => s.estado === "programada").slice(0, 3),
+    ultimosProyectos: proyectos,
+    ultimasLeyes: MOCK_LEYES.slice(0, 4),
+  };
+}
+
 export { MOCK_LEGISLADORES, MOCK_COMISIONES, MOCK_SESIONES, MOCK_PROYECTOS, MOCK_LEYES };
 export default router;
