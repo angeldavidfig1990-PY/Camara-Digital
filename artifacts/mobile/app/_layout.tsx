@@ -13,7 +13,6 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
-import { Ionicons } from "@expo/vector-icons";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { SettingsProvider } from "@/contexts/SettingsContext";
 import { setBaseUrl } from "@workspace/api-client-react";
@@ -82,7 +81,7 @@ export default function RootLayout() {
     Inter_500Medium,
     Inter_600SemiBold,
     Inter_700Bold,
-    ...Ionicons.font,
+    Ionicons: require("../assets/fonts/Ionicons.ttf"),
   });
 
   useEffect(() => {
