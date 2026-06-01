@@ -1,7 +1,7 @@
 import React from "react";
 import {
   ScrollView, StyleSheet, Text, TouchableOpacity, View,
-  Platform, RefreshControl, Linking,
+  Platform, RefreshControl, Linking, Image,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -54,8 +54,11 @@ export default function DashboardScreen() {
             <Text style={styles.heroTitle}>Cámara de{"\n"}Diputados</Text>
             <Text style={styles.heroSub}>Honorable Congreso Nacional</Text>
           </View>
-          <View style={[styles.heroShield, { backgroundColor: "rgba(255,255,255,0.1)" }]}>
-            <Ionicons name="business" size={32} color="#FFFFFF" />
+          <View style={styles.heroLogoWrap}>
+            <Image
+              source={require("../../assets/images/logo-camara.png")}
+              style={styles.heroLogo}
+            />
           </View>
         </View>
 
@@ -210,6 +213,8 @@ const styles = StyleSheet.create({
   heroTitle: { color: "#FFFFFF", fontSize: 28, fontWeight: "700" as const, fontFamily: "Inter_700Bold", lineHeight: 34, marginTop: 4 },
   heroSub: { color: "rgba(255,255,255,0.8)", fontSize: 13, marginTop: 4, fontFamily: "Inter_400Regular" },
   heroShield: { width: 64, height: 64, borderRadius: 20, alignItems: "center", justifyContent: "center" },
+  heroLogoWrap: { width: 72, height: 72, borderRadius: 36, overflow: "hidden" as const },
+  heroLogo: { width: 168, height: 168, marginLeft: -48, marginTop: -3 },
   liveBar: { flexDirection: "row", alignItems: "center", gap: 10, padding: 12, borderRadius: 12 },
   liveText: { flex: 1, color: "#FFFFFF", fontSize: 13, fontFamily: "Inter_500Medium", fontWeight: "500" as const },
   section: { marginBottom: 20 },
