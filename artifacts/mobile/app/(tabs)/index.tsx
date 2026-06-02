@@ -119,7 +119,7 @@ export default function DashboardScreen() {
 
       {/* Quick Actions */}
       <View style={styles.section}>
-        <SectionHeader title="Acceso Rápido" />
+        <SectionHeader title="Enlaces Claves" />
         <View style={styles.quickGrid}>
           {[
             { icon: "people-outline", label: "Diputados", color: colors.primary, route: "/(tabs)/deputies" },

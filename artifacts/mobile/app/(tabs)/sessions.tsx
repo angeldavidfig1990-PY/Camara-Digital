@@ -71,7 +71,7 @@ export default function SessionsScreen() {
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.streamBtn, { backgroundColor: colors.accent + "15" }]}
-              onPress={() => Linking.openURL("https://www.youtube.com/@camaradediputadosparaguay")}
+              onPress={() => Linking.openURL("https://www.youtube.com/@tvcamarahcd/streams")}
               activeOpacity={0.8}
             >
               <Ionicons name="logo-youtube" size={16} color={colors.accent} />

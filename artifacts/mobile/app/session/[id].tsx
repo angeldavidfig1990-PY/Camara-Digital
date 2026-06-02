@@ -96,7 +96,7 @@ export default function SessionDetailScreen() {
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[styles.streamBtn, { backgroundColor: "#FF0000" }]}
-                  onPress={() => Linking.openURL("https://www.youtube.com/@camaradediputadosparaguay")}
+                  onPress={() => Linking.openURL("https://www.youtube.com/@tvcamarahcd/streams")}
                   activeOpacity={0.85}
                 >
                   <Ionicons name="logo-youtube" size={18} color="#FFF" />

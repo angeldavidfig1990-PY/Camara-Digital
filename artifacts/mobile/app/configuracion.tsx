@@ -218,7 +218,7 @@ export default function ConfiguracionScreen() {
               <Ionicons name="business" size={28} color="#FFF" />
             </View>
             <Text style={[styles.aboutTitle, { color: colors.foreground, fontSize: 17 * fontScale }]}>
-              Aplicación Legislativa
+              Cámara de Diputados
             </Text>
             <Text style={[styles.aboutSub, { color: colors.mutedForeground, fontSize: 13 * fontScale }]}>
               App institucional de la{"\n"}Honorable Cámara de Diputados{"\n"}República del Paraguay
