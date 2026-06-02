@@ -23,8 +23,17 @@ export function StatsRow({ stats }: StatsRowProps) {
           <View style={[styles.iconWrap, { backgroundColor: (stat.color ?? colors.primary) + "18" }]}>
             <Ionicons name={stat.icon} size={20} color={stat.color ?? colors.primary} />
           </View>
-          <Text style={[styles.value, { color: colors.foreground }]}>{stat.value}</Text>
-          <Text style={[styles.label, { color: colors.mutedForeground }]}>{stat.label}</Text>
+          <Text
+            style={[styles.value, { color: colors.foreground }]}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.7}
+          >
+            {stat.value}
+          </Text>
+          <Text style={[styles.label, { color: colors.mutedForeground }]} numberOfLines={2}>
+            {stat.label}
+          </Text>
         </View>
       ))}
     </View>
@@ -34,12 +43,14 @@ export function StatsRow({ stats }: StatsRowProps) {
 const styles = StyleSheet.create({
   row: {
     flexDirection: "row",
+    flexWrap: "wrap",
     gap: 10,
   },
   stat: {
-    flex: 1,
+    width: "47%",
+    flexGrow: 1,
     alignItems: "center",
-    padding: 14,
+    padding: 16,
     borderRadius: 14,
     borderWidth: 1,
     gap: 6,
