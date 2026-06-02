@@ -1,4 +1,6 @@
 import { Router, type IRouter } from "express";
+import type { Request } from "express";
+import OpenAI from "openai";
 import {
   getLegisladores,
   getLegisladorById,
@@ -22,6 +24,12 @@ import {
 } from "../lib/congress";
 
 const router: IRouter = Router();
+
+// Real LLM (user-provided OpenAI key). When absent, the assistant falls back to
+// the deterministic keyword engine below.
+const openai = process.env.OPENAI_API_KEY
+  ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+  : null;
 
 // Exact phrase required when no data exists in the official synchronized sources.
 const NO_DATA = "No existen datos disponibles en las fuentes oficiales sincronizadas.";
@@ -317,6 +325,335 @@ function fmtAnalyticsPartido(data: Legislador[]): string {
   return r;
 }
 
+// ── LLM-backed assistant (real AI, grounded on official data) ────────────────────
+
+const SYSTEM_PROMPT = `Sos el "Asistente Legislativo" oficial de la Honorable Cámara de Diputados de la República del Paraguay.
+
+ALCANCE — MUY IMPORTANTE:
+- SOLO respondés preguntas relacionadas con la Cámara de Diputados del Paraguay: diputados/legisladores, comisiones, proyectos de ley, sesiones, leyes, votaciones, autoridades (Mesa Directiva) y estadísticas de la Cámara.
+- Si la pregunta NO trata sobre la Cámara de Diputados (por ejemplo: clima, matemática, deportes, otros países, el Senado, temas personales, programación, etc.), llamá a la herramienta "fuera_de_alcance" y NO llames a ninguna otra herramienta. Nunca uses herramientas de datos para preguntas fuera de tema.
+
+REGLAS DE DATOS:
+- Usá SIEMPRE las herramientas para obtener datos reales. Nunca inventes nombres, números, fechas ni resultados.
+- Si las herramientas no devuelven información que responda la pregunta, decílo con honestidad (no inventes).
+- Las consultas pueden venir mal escritas, incompletas o en lenguaje coloquial: interpretá la intención y hacé coincidencias aproximadas con los nombres reales (ej. "industrial y comercio" → "Industria, Comercio, Turismo y Cooperativismo").
+
+ESTILO:
+- Respondé en español, de forma clara y concisa, usando markdown con viñetas cuando ayude.
+- No menciones herramientas, funciones internas, ni detalles técnicos del sistema.`;
+
+type ToolResult = { result: unknown; fuente: string };
+
+const TOOLS: OpenAI.Chat.Completions.ChatCompletionTool[] = [
+  {
+    type: "function",
+    function: {
+      name: "listar_diputados",
+      description:
+        "Lista diputados de la Cámara. Permite filtrar por nombre/apellido (search), partido o departamento. Útil para conteos por partido o búsquedas generales.",
+      parameters: {
+        type: "object",
+        properties: {
+          search: { type: "string", description: "Texto para buscar por nombre o apellido" },
+          partido: { type: "string", description: "Nombre del partido político" },
+          departamento: { type: "string", description: "Departamento (ej. Central, Asunción)" },
+        },
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "detalle_diputado",
+      description: "Devuelve el detalle completo de un diputado por su id.",
+      parameters: {
+        type: "object",
+        properties: { id: { type: "string" } },
+        required: ["id"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "listar_comisiones",
+      description:
+        "Lista TODAS las comisiones permanentes con sus miembros. Usalo para preguntas sobre qué diputados integran una comisión o qué comisiones existen.",
+      parameters: { type: "object", properties: {} },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "detalle_comision",
+      description: "Devuelve el detalle de una comisión (incluye miembros) por su id.",
+      parameters: { type: "object", properties: { id: { type: "string" } }, required: ["id"] },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "listar_proyectos",
+      description: "Lista proyectos de ley. Permite filtrar por texto (search) o estado.",
+      parameters: {
+        type: "object",
+        properties: {
+          search: { type: "string" },
+          estado: { type: "string" },
+        },
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "detalle_proyecto",
+      description: "Devuelve el detalle de un proyecto de ley (incluye historial) por su id o número.",
+      parameters: { type: "object", properties: { id: { type: "string" } }, required: ["id"] },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "listar_sesiones",
+      description: "Lista sesiones legislativas (próximas, en vivo y completadas).",
+      parameters: { type: "object", properties: {} },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "listar_leyes",
+      description: "Lista leyes sancionadas/promulgadas del período. Permite filtrar por texto (search).",
+      parameters: { type: "object", properties: { search: { type: "string" } } },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "listar_votaciones",
+      description: "Lista votaciones recientes de la Cámara con sus resultados.",
+      parameters: { type: "object", properties: {} },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "autoridades_mesa_directiva",
+      description: "Devuelve las autoridades de la Cámara (Mesa Directiva): presidente, vicepresidentes y secretarios.",
+      parameters: { type: "object", properties: {} },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "resumen_dashboard",
+      description: "Devuelve un resumen general del sistema legislativo (totales y novedades).",
+      parameters: { type: "object", properties: {} },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "fuera_de_alcance",
+      description:
+        "Usar SOLO cuando la pregunta NO trata sobre la Cámara de Diputados del Paraguay (ej. clima, deportes, matemática, el Senado, otros países, temas personales). No devuelve datos: indica que la consulta está fuera de alcance.",
+      parameters: {
+        type: "object",
+        properties: {
+          motivo: { type: "string", description: "Breve motivo por el que está fuera de alcance" },
+        },
+      },
+    },
+  },
+];
+
+const OUT_OF_SCOPE_MSG =
+  "Solo puedo responder consultas sobre la Honorable Cámara de Diputados del Paraguay: diputados, comisiones, proyectos de ley, sesiones, leyes, votaciones, autoridades (Mesa Directiva) y estadísticas de la Cámara.\n\n¿Sobre cuál de estos temas te puedo ayudar?";
+
+async function executeTool(name: string, args: Record<string, string>): Promise<ToolResult> {
+  switch (name) {
+    case "listar_diputados": {
+      const data = await getLegisladores(args);
+      return {
+        result: data.map((l) => ({
+          id: l.id,
+          nombre: `${l.nombre} ${l.apellido}`,
+          partido: l.partido,
+          departamento: l.departamento,
+          cargo: l.cargo,
+          comisiones: l.comisiones,
+        })),
+        fuente: "/legislative/legisladores",
+      };
+    }
+    case "detalle_diputado": {
+      const d = await getLegisladorById(args.id);
+      return { result: d, fuente: `/legislative/legisladores/${args.id}` };
+    }
+    case "listar_comisiones": {
+      const data = await getComisiones();
+      return {
+        result: data.map((c) => ({
+          id: c.id,
+          nombre: c.nombre,
+          tipo: c.tipo,
+          email: c.email,
+          miembros: c.miembros,
+        })),
+        fuente: "/legislative/comisiones",
+      };
+    }
+    case "detalle_comision": {
+      const d = await getComisionById(args.id);
+      return { result: d, fuente: `/legislative/comisiones/${args.id}` };
+    }
+    case "listar_proyectos": {
+      const { data } = await getProyectos(args);
+      return {
+        result: data.map((p) => ({
+          id: p.id,
+          numero: p.numero,
+          titulo: p.titulo,
+          estado: p.estado,
+          etapa: p.etapa,
+          fechaIngreso: p.fechaIngreso,
+        })),
+        fuente: "/legislative/proyectos",
+      };
+    }
+    case "detalle_proyecto": {
+      const d = await getProyectoById(args.id);
+      return { result: d, fuente: `/legislative/proyectos/${args.id}` };
+    }
+    case "listar_sesiones": {
+      const { data } = await getSesiones();
+      return {
+        result: data.map((s) => ({
+          tipo: s.tipo,
+          fecha: s.fecha,
+          horaInicio: s.horaInicio,
+          horaFin: s.horaFin,
+          estado: s.estado,
+        })),
+        fuente: "/legislative/sesiones",
+      };
+    }
+    case "listar_leyes": {
+      const data = await getLeyes(args);
+      return {
+        result: data.map((l) => ({
+          numero: l.numero,
+          titulo: l.titulo,
+          fechaSancion: l.fechaSancion,
+          fechaPromulgacion: l.fechaPromulgacion,
+        })),
+        fuente: "/legislative/leyes",
+      };
+    }
+    case "listar_votaciones": {
+      const data = await getVotaciones();
+      return {
+        result: data.map((v) => ({
+          titulo: v.titulo,
+          fecha: v.fecha,
+          resultado: v.resultado,
+          favor: v.favor,
+          contra: v.contra,
+          abstenciones: v.abstenciones,
+          ausentes: v.ausentes,
+        })),
+        fuente: "/legislative/votaciones",
+      };
+    }
+    case "autoridades_mesa_directiva": {
+      const m = await getAutoridades();
+      return { result: m, fuente: "diputados.gov.py/institucional/mesa-directiva" };
+    }
+    case "resumen_dashboard": {
+      const d = await getDashboard();
+      return { result: d, fuente: "/legislative/dashboard" };
+    }
+    default:
+      return { result: { error: "herramienta desconocida" }, fuente: "" };
+  }
+}
+
+type LlmResult = { respuesta: string; datos: Record<string, unknown>; fuentes: string[] };
+
+async function llmConsult(
+  client: OpenAI,
+  pregunta: string,
+  req: Request,
+): Promise<LlmResult | null> {
+  const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
+    { role: "system", content: SYSTEM_PROMPT },
+    { role: "user", content: pregunta },
+  ];
+  const fuentes = new Set<string>();
+  const datos: Record<string, unknown> = {};
+  let dataToolUsed = false;
+
+  for (let turn = 0; turn < 5; turn++) {
+    const completion = await client.chat.completions.create({
+      model: "gpt-4o-mini",
+      temperature: 0.2,
+      messages,
+      tools: TOOLS,
+      // Force a tool decision on the first turn so the model must either fetch
+      // official data or explicitly mark the question out of scope — it can
+      // never answer ungrounded.
+      tool_choice: turn === 0 ? "required" : "auto",
+    });
+
+    const msg = completion.choices[0]?.message;
+    if (!msg) return null;
+    messages.push(msg);
+
+    const toolCalls = msg.tool_calls ?? [];
+    if (toolCalls.length === 0) {
+      // A final text answer is only trustworthy if it was grounded on at least
+      // one successful data tool call; otherwise fall back to the keyword engine.
+      if (!dataToolUsed || !msg.content?.trim()) return null;
+      return { respuesta: msg.content, datos, fuentes: [...fuentes] };
+    }
+
+    for (const tc of toolCalls) {
+      if (tc.type !== "function") continue;
+
+      // Scope gate: a controlled refusal, independent of the model's free text.
+      if (tc.function.name === "fuera_de_alcance") {
+        return { respuesta: OUT_OF_SCOPE_MSG, datos: {}, fuentes: [] };
+      }
+
+      let parsed: Record<string, string> = {};
+      try {
+        parsed = tc.function.arguments ? JSON.parse(tc.function.arguments) : {};
+      } catch {
+        parsed = {};
+      }
+      let toolOutput: ToolResult;
+      try {
+        toolOutput = await executeTool(tc.function.name, parsed);
+        dataToolUsed = true;
+      } catch (err) {
+        req.log.error({ err, tool: tc.function.name }, "ai tool execution failed");
+        toolOutput = { result: { error: "no se pudo obtener el dato" }, fuente: "" };
+      }
+      if (toolOutput.fuente) fuentes.add(toolOutput.fuente);
+      datos[tc.function.name] = toolOutput.result;
+      messages.push({
+        role: "tool",
+        tool_call_id: tc.id,
+        content: JSON.stringify(toolOutput.result).slice(0, 60000),
+      });
+    }
+  }
+
+  // Tool-call budget exhausted without a final text answer.
+  return null;
+}
+
 // ── Main route ─────────────────────────────────────────────────────────────────
 
 router.post("/ai/consult", async (req, res): Promise<void> => {
@@ -325,6 +662,21 @@ router.post("/ai/consult", async (req, res): Promise<void> => {
   if (!pregunta || typeof pregunta !== "string" || pregunta.trim().length === 0) {
     res.status(400).json({ error: "La pregunta es requerida" });
     return;
+  }
+
+  // Preferred path: real LLM grounded on official data via tool-calling.
+  if (openai) {
+    try {
+      const llm = await llmConsult(openai, pregunta, req);
+      if (llm && llm.respuesta.trim().length > 0) {
+        let respuesta = llm.respuesta.trim();
+        if (llm.fuentes.length > 0) respuesta += `\n\n_Fuente: ${llm.fuentes.join(" · ")}_`;
+        res.json({ respuesta, tipo: "ia", datos: llm.datos, fuentes: llm.fuentes });
+        return;
+      }
+    } catch (err) {
+      req.log.error({ err }, "llm consult failed, falling back to keyword engine");
+    }
   }
 
   const { intent, params } = classifyIntent(pregunta);
