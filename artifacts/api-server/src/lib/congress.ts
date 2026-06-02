@@ -690,10 +690,22 @@ export async function getLegisladorById(id: string): Promise<Legislador | null> 
 export async function getComisiones(): Promise<Comision[]> {
   return cached("comisiones", "comisiones:D", async () => {
     const raw = (await rawFetch("/comision?idCamara=D&page=0&size=200")) as RealComision[];
-    return raw
-      .filter((c) => /SI/i.test(c.esComisionActiva || ""))
-      .map((c) => mapComision(c))
-      .sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
+    const activas = raw.filter((c) => /SI/i.test(c.esComisionActiva || ""));
+
+    // The list endpoint does not include members, so the member count would
+    // always render as 0. Fetch each commission's roster in parallel (cached
+    // upstream) so the list shows the real count, matching the detail screen.
+    const periodo = await getCurrentPeriodoId();
+    const withMembers = await Promise.all(
+      activas.map(async (c) => {
+        const miembros = (await rawFetch(`/comision/${c.idComision}/miembros/${periodo}`).catch(
+          () => [],
+        )) as RealComision[];
+        return mapComision({ ...c, miembros: miembros[0]?.miembros ?? [] });
+      }),
+    );
+
+    return withMembers.sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
   });
 }
 
