@@ -1,5 +1,5 @@
-import React from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import React, { useState } from "react";
+import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Ionicons } from "@/components/Icon";
 import { useColors } from "@/hooks/useColors";
 import type { Legislador } from "@workspace/api-client-react";
@@ -11,16 +11,40 @@ interface DeputyCardProps {
 }
 
 const PARTY_COLORS: Record<string, string> = {
-  "ANR": "#C8102E",
-  "PLRA": "#1E3A8A",
-  "Frente Guasú": "#7C3AED",
-  "Honor Colorado": "#DC2626",
-  "Patria Querida": "#0D9488",
-  "PPS": "#0891B2",
+  ANR: "#C8102E",
+  PLRA: "#1E3A8A",
+  PPS: "#0891B2",
+  PPQ: "#0D9488",
+  PEN: "#7C3AED",
 };
 
+/** Map a (possibly full) party name to a canonical short key. */
+function partyKey(partido: string): string {
+  const p = partido.toUpperCase();
+  if (p.includes("REPUBLICANA") || p.includes("COLORADO") || /\bANR\b/.test(p)) return "ANR";
+  if (p.includes("LIBERAL") || /\bPLRA\b/.test(p)) return "PLRA";
+  if (p.includes("PAÍS SOLIDARIO") || p.includes("PAIS SOLIDARIO") || /\bPPS\b/.test(p)) return "PPS";
+  if (p.includes("PATRIA QUERIDA") || /\bPPQ\b/.test(p)) return "PPQ";
+  if (p.includes("ENCUENTRO NACIONAL") || /\bPEN\b/.test(p)) return "PEN";
+  return "";
+}
+
 function getPartyColor(partido: string): string {
-  return PARTY_COLORS[partido] ?? "#6B7280";
+  return PARTY_COLORS[partyKey(partido)] ?? "#6B7280";
+}
+
+function toTitle(str: string): string {
+  return str.toLowerCase().replace(/(?:^|\s)\S/g, (ch) => ch.toUpperCase());
+}
+
+/** A compact label for chips/badges: trailing acronym when present, else title-cased. */
+function getPartyShort(partido: string): string {
+  const key = partyKey(partido);
+  if (key) return key;
+  const words = partido.trim().split(/\s+/);
+  const last = words[words.length - 1];
+  if (words.length > 1 && /^[A-ZÁÉÍÓÚÑ]{2,6}$/.test(last)) return last;
+  return toTitle(partido);
 }
 
 function getInitials(nombre: string, apellido: string): string {
@@ -30,6 +54,8 @@ function getInitials(nombre: string, apellido: string): string {
 export function DeputyCard({ deputy, onPress, compact = false }: DeputyCardProps) {
   const colors = useColors();
   const partyColor = getPartyColor(deputy.partido);
+  const [imgError, setImgError] = useState(false);
+  const showPhoto = !!deputy.foto && !imgError;
 
   return (
     <TouchableOpacity
@@ -37,10 +63,17 @@ export function DeputyCard({ deputy, onPress, compact = false }: DeputyCardProps
       onPress={onPress}
       activeOpacity={0.75}
     >
-      <View style={[styles.avatar, { backgroundColor: partyColor + "18" }]}>
+      <View style={[styles.avatar, { backgroundColor: partyColor + "18", borderColor: partyColor + "33" }]}>
         <Text style={[styles.initials, { color: partyColor }]}>
           {getInitials(deputy.nombre, deputy.apellido)}
         </Text>
+        {showPhoto && (
+          <Image
+            source={{ uri: deputy.foto! }}
+            style={styles.avatarImg}
+            onError={() => setImgError(true)}
+          />
+        )}
       </View>
       <View style={styles.info}>
         <Text style={[styles.name, { color: colors.foreground }]} numberOfLines={1}>
@@ -61,7 +94,7 @@ export function DeputyCard({ deputy, onPress, compact = false }: DeputyCardProps
   );
 }
 
-export { getPartyColor };
+export { getPartyColor, getPartyShort };
 
 const styles = StyleSheet.create({
   card: {
@@ -79,6 +112,14 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     alignItems: "center",
     justifyContent: "center",
+    borderWidth: 1,
+    overflow: "hidden",
+  },
+  avatarImg: {
+    position: "absolute",
+    width: 44,
+    height: 44,
+    borderRadius: 22,
   },
   initials: {
     fontSize: 16,

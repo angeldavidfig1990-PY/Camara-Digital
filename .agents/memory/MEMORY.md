@@ -1,1 +1,1 @@
-- [Codegen stale after merge](codegen-after-merge.md) — merged branches can carry stale generated API client/zod; rerun codegen if typecheck flags missing schema fields.
+- [Congress API data quirks](congress-api-data-quirks.md) — API returns full party names + odd department labels ("Capital" not "Asunción"); derive filters from data, never hardcode.

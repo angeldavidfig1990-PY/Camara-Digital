@@ -1,6 +1,6 @@
-import React from "react";
+import React, { useState } from "react";
 import {
-  ScrollView, StyleSheet, Text, TouchableOpacity, View,
+  Image, ScrollView, StyleSheet, Text, TouchableOpacity, View,
   Platform, Linking,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -22,6 +22,7 @@ export default function DeputyDetailScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
+  const [imgError, setImgError] = useState(false);
 
   const { data, isLoading, error } = useGetLegisladorById(id ?? "", {
     query: { queryKey: ["legislador", id], enabled: !!id },
@@ -54,10 +55,17 @@ export default function DeputyDetailScreen() {
         >
           {/* Profile Header */}
           <View style={[styles.profileCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <View style={[styles.avatar, { backgroundColor: partyColor + "20" }]}>
+            <View style={[styles.avatar, { backgroundColor: partyColor + "20", borderColor: partyColor + "33" }]}>
               <Text style={[styles.initials, { color: partyColor }]}>
                 {getInitials(data.nombre, data.apellido)}
               </Text>
+              {data.foto && !imgError && (
+                <Image
+                  source={{ uri: data.foto }}
+                  style={styles.avatarImg}
+                  onError={() => setImgError(true)}
+                />
+              )}
             </View>
             <Text style={[styles.name, { color: colors.foreground }]}>
               {data.cargo} {data.nombre} {data.apellido}
@@ -156,7 +164,10 @@ const styles = StyleSheet.create({
     width: 80, height: 80, borderRadius: 40,
     alignItems: "center", justifyContent: "center",
     marginBottom: 4,
+    borderWidth: 1,
+    overflow: "hidden",
   },
+  avatarImg: { position: "absolute", width: 80, height: 80, borderRadius: 40 },
   initials: { fontSize: 28, fontWeight: "700" as const, fontFamily: "Inter_700Bold" },
   name: { fontSize: 20, fontWeight: "700" as const, fontFamily: "Inter_700Bold", textAlign: "center" },
   badges: { flexDirection: "row", gap: 8, flexWrap: "wrap", justifyContent: "center" },
