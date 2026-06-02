@@ -10,12 +10,12 @@ interface ProjectCardProps {
   onPress: () => void;
 }
 
-function getEstadoVariant(estado: string): "default" | "success" | "warning" | "destructive" | "muted" {
-  const e = estado.toLowerCase();
-  if (e.includes("aprobado") || e.includes("promulgado")) return "success";
-  if (e.includes("tratamiento") || e.includes("comisión") || e.includes("comision")) return "warning";
-  if (e.includes("rechazado") || e.includes("archivado")) return "destructive";
-  if (e.includes("pendiente") || e.includes("presentación")) return "muted";
+function getTipoVariant(tipo: string): "default" | "success" | "warning" | "destructive" | "muted" {
+  const t = tipo.toLowerCase();
+  if (t.includes("ley")) return "success";
+  if (t.includes("declaraci")) return "default";
+  if (t.includes("pedido")) return "warning";
+  if (t.includes("resoluci") || t.includes("acuerdo")) return "muted";
   return "default";
 }
 
@@ -38,7 +38,7 @@ export function ProjectCard({ project, onPress }: ProjectCardProps) {
         <View style={[styles.numBadge, { backgroundColor: colors.primary + "15" }]}>
           <Text style={[styles.num, { color: colors.primary }]}>{project.numero}</Text>
         </View>
-        <Badge label={project.estado} variant={getEstadoVariant(project.estado)} size="sm" />
+        <Badge label={project.tipo} variant={getTipoVariant(project.tipo)} size="sm" />
       </View>
       <Text style={[styles.title, { color: colors.foreground }]} numberOfLines={2}>
         {project.titulo}

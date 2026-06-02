@@ -12,15 +12,12 @@ import { ProjectCard } from "@/components/project/ProjectCard";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { SkeletonList } from "@/components/ui/SkeletonCard";
 
-const ESTADOS = ["Todos", "En tratamiento", "Aprobado en Cámara", "Promulgado", "Pendiente"];
-const INICIATIVAS = ["Todos", "Legislativa", "Poder Ejecutivo", "Poder Judicial", "Ciudadana"];
-
 export default function ProjectsScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const [search, setSearch] = useState("");
-  const [selectedEstado, setSelectedEstado] = useState("Todos");
+  const [selectedTipo, setSelectedTipo] = useState("Todos");
   const [showFilters, setShowFilters] = useState(false);
   const topPad = Platform.OS === "web" ? 67 : insets.top;
 
@@ -28,6 +25,11 @@ export default function ProjectsScreen() {
     { limit: 50 },
     { query: { queryKey: ["proyectos"] } }
   );
+
+  const tipos = useMemo(() => {
+    const set = new Set((data?.data ?? []).map(p => p.tipo).filter(Boolean));
+    return ["Todos", ...Array.from(set).sort((a, b) => a.localeCompare(b, "es"))];
+  }, [data]);
 
   const filtered = useMemo(() => {
     let list = data?.data ?? [];
@@ -39,9 +41,9 @@ export default function ProjectsScreen() {
         p.descripcion?.toLowerCase().includes(q)
       );
     }
-    if (selectedEstado !== "Todos") list = list.filter(p => p.estado === selectedEstado);
+    if (selectedTipo !== "Todos") list = list.filter(p => p.tipo === selectedTipo);
     return list;
-  }, [data, search, selectedEstado]);
+  }, [data, search, selectedTipo]);
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -60,22 +62,22 @@ export default function ProjectsScreen() {
 
         {showFilters && (
           <View style={styles.filtersBlock}>
-            <Text style={[styles.filterLabel, { color: colors.mutedForeground }]}>Estado</Text>
+            <Text style={[styles.filterLabel, { color: colors.mutedForeground }]}>Tipo de proyecto</Text>
             <FlatList
-              data={ESTADOS}
+              data={tipos}
               horizontal
               showsHorizontalScrollIndicator={false}
               keyExtractor={i => i}
               renderItem={({ item }) => (
                 <TouchableOpacity
                   style={[styles.chip, {
-                    backgroundColor: selectedEstado === item ? colors.primary : colors.card,
-                    borderColor: selectedEstado === item ? colors.primary : colors.border,
+                    backgroundColor: selectedTipo === item ? colors.primary : colors.card,
+                    borderColor: selectedTipo === item ? colors.primary : colors.border,
                   }]}
-                  onPress={() => setSelectedEstado(item)}
+                  onPress={() => setSelectedTipo(item)}
                   activeOpacity={0.8}
                 >
-                  <Text style={[styles.chipText, { color: selectedEstado === item ? "#FFF" : colors.foreground }]}>{item}</Text>
+                  <Text style={[styles.chipText, { color: selectedTipo === item ? "#FFF" : colors.foreground }]}>{item}</Text>
                 </TouchableOpacity>
               )}
               contentContainerStyle={{ gap: 8, paddingVertical: 4 }}
@@ -109,7 +111,7 @@ export default function ProjectsScreen() {
           onRefresh={refetch}
           refreshing={false}
           ListEmptyComponent={
-            <EmptyState icon="document-text-outline" title="Sin resultados" subtitle="No se encontraron proyectos con esos criterios." actionLabel="Limpiar filtros" onAction={() => { setSearch(""); setSelectedEstado("Todos"); }} />
+            <EmptyState icon="document-text-outline" title="Sin resultados" subtitle="No se encontraron proyectos con esos criterios." actionLabel="Limpiar filtros" onAction={() => { setSearch(""); setSelectedTipo("Todos"); }} />
           }
         />
       )}

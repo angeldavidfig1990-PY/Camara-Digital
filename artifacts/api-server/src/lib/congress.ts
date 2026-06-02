@@ -224,6 +224,20 @@ function smartTitle(str: string | undefined | null): string {
   return isShouting ? toTitleCase(c) : c;
 }
 
+/** Collapse the verbose upstream `tipoProyecto` into a short, filterable label. */
+function normalizeTipo(str: string | undefined | null): string {
+  const t = (str || "").toUpperCase();
+  if (!t) return "Otro";
+  if (t.includes("PROYECTO DE LEY") || /\bLEY\b/.test(t)) return "Proyecto de Ley";
+  if (t.includes("DECLARACI")) return "Declaración";
+  if (t.includes("PEDIDO DE INFORMES")) return "Pedido de Informes";
+  if (t.includes("RESOLUCI")) return "Resolución";
+  if (t.includes("ACUERDO")) return "Acuerdo";
+  if (t.includes("HOMENAJE")) return "Homenaje";
+  if (t.includes("MINUTA")) return "Minuta";
+  return smartTitle(str) || "Otro";
+}
+
 // ── Raw API shapes (only the fields we consume) ─────────────────────────────────
 
 interface RealLegislador {
@@ -368,6 +382,7 @@ export interface Proyecto {
   numero: string;
   titulo: string;
   estado: string;
+  tipo: string;
   etapa: string;
   fechaIngreso: string;
   iniciativa: string;
@@ -472,7 +487,8 @@ function mapProyecto(p: RealProyecto, withDetail = false): Proyecto {
     id: String(p.idProyecto),
     numero: p.expedienteCamara || String(p.idProyecto),
     titulo: smartTitle(p.acapite) || "Sin título",
-    estado: p.estadoProyecto || "EN TRAMITE",
+    estado: smartTitle(p.estadoProyecto) || "En Trámite",
+    tipo: normalizeTipo(p.tipoProyecto),
     etapa: smartTitle(p.descripcionEtapa),
     fechaIngreso: toIso(p.fechaIngresoExpediente),
     iniciativa: toTitleCase(p.iniciativa || "Parlamentaria"),

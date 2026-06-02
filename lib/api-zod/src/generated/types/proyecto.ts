@@ -12,6 +12,7 @@ export interface Proyecto {
   numero: string;
   titulo: string;
   estado: string;
+  tipo: string;
   etapa: string;
   fechaIngreso: string;
   iniciativa: string;

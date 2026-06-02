@@ -547,6 +547,8 @@ components:
           type: string
         estado:
           type: string
+        tipo:
+          type: string
         etapa:
           type: string
         fechaIngreso:
@@ -582,6 +584,7 @@ components:
         - numero
         - titulo
         - estado
+        - tipo
         - etapa
         - fechaIngreso
         - iniciativa
