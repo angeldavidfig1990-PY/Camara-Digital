@@ -1,1 +1,1 @@
-- [Congress API quirks](congress-api-quirks.md) — datosv2.congreso.gov.py envelope, period-filtering for the sitting chamber, and HTTP 404 = empty (not outage).
+- [Codegen stale after merge](codegen-after-merge.md) — merged branches can carry stale generated API client/zod; rerun codegen if typecheck flags missing schema fields.

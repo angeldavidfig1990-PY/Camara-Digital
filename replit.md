@@ -28,6 +28,7 @@ App móvil institucional de la Honorable Cámara de Diputados de la República d
 - `artifacts/mobile/app/(tabs)/` — 5 tab screens (index, deputies, sessions, projects, more)
 - `artifacts/mobile/app/` — detail screens (deputy, project, session, comision, ai-assistant, votaciones)
 - `artifacts/mobile/components/` — UI components (Badge, Skeleton, EmptyState, SearchBar, SectionHeader, DeputyCard, ProjectCard, SessionCard, StatsRow)
+- `artifacts/mobile/assets/images/` — `header-building.png` (Palacio Legislativo, dashboard hero bg), `splash-logo.png` (escudo + título, pantalla de bienvenida), `logo-horizontal.png`, `escudo.png`, `icon.png`
 - `artifacts/mobile/constants/colors.ts` — Paraguay institutional color tokens (light + dark)
 - `artifacts/mobile/hooks/useColors.ts` — color hook
 

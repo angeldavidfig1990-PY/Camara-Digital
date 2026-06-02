@@ -1,7 +1,7 @@
 import React from "react";
 import {
   ScrollView, StyleSheet, Text, TouchableOpacity, View,
-  Platform, RefreshControl, Linking, Image,
+  Platform, RefreshControl, Linking, ImageBackground,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@/components/Icon";
@@ -62,48 +62,49 @@ export default function DashboardScreen() {
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
     >
       {/* Hero Header */}
-      <LinearGradient
-        colors={[colors.primary, colors.primary + "CC"]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.hero}
-      >
-        <View style={styles.heroContent}>
-          <View>
-            <Text style={styles.heroEyebrow}>REPÚBLICA DEL PARAGUAY</Text>
-            <Text style={styles.heroTitle}>Cámara de{"\n"}Diputados</Text>
-            <Text style={styles.heroSub}>Honorable Congreso Nacional</Text>
-            {lastSync && (
-              <View style={styles.syncRow}>
-                <View style={[styles.syncDot, { backgroundColor: online ? "#34D399" : "#F87171" }]} />
-                <Text style={styles.syncText}>
-                  {online ? `Datos oficiales · Actualizado ${lastSync}` : "Sin conexión con fuentes oficiales"}
-                </Text>
-              </View>
-            )}
-          </View>
-          <View style={styles.heroLogoWrap}>
-            <Image
-              source={require("../../assets/images/logo-camara.png")}
-              style={styles.heroLogo}
-            />
-          </View>
-        </View>
-
-        {data?.sesionEnVivo && (
-          <TouchableOpacity
-            style={[styles.liveBar, { backgroundColor: "rgba(255,255,255,0.15)" }]}
-            onPress={() => router.push(`/session/${data.sesionEnVivo!.id}`)}
-            activeOpacity={0.8}
+      <View style={styles.hero}>
+        <ImageBackground
+          source={require("../../assets/images/header-building.png")}
+          style={styles.heroBg}
+          imageStyle={styles.heroBgImage}
+          resizeMode="cover"
+        >
+          <LinearGradient
+            colors={["rgba(0,14,42,0.10)", "rgba(0,14,42,0.55)", "rgba(0,14,42,0.94)"]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 0, y: 1 }}
+            style={styles.heroScrim}
           >
-            <Badge label="EN VIVO" variant="live" size="sm" />
-            <Text style={styles.liveText} numberOfLines={1}>
-              {data.sesionEnVivo.tipo} — {data.sesionEnVivo.horaInicio}
-            </Text>
-            <Ionicons name="chevron-forward" size={16} color="#FFFFFF" />
-          </TouchableOpacity>
-        )}
-      </LinearGradient>
+            <View style={styles.heroTextWrap}>
+              <Text style={styles.heroEyebrow}>REPÚBLICA DEL PARAGUAY</Text>
+              <Text style={styles.heroTitle}>Cámara de{"\n"}Diputados</Text>
+              <Text style={styles.heroSub}>Honorable Congreso Nacional</Text>
+              {lastSync && (
+                <View style={styles.syncRow}>
+                  <View style={[styles.syncDot, { backgroundColor: online ? "#34D399" : "#F87171" }]} />
+                  <Text style={styles.syncText}>
+                    {online ? `Datos oficiales · Actualizado ${lastSync}` : "Sin conexión con fuentes oficiales"}
+                  </Text>
+                </View>
+              )}
+            </View>
+
+            {data?.sesionEnVivo && (
+              <TouchableOpacity
+                style={[styles.liveBar, { backgroundColor: "rgba(255,255,255,0.18)" }]}
+                onPress={() => router.push(`/session/${data.sesionEnVivo!.id}`)}
+                activeOpacity={0.8}
+              >
+                <Badge label="EN VIVO" variant="live" size="sm" />
+                <Text style={styles.liveText} numberOfLines={1}>
+                  {data.sesionEnVivo.tipo} — {data.sesionEnVivo.horaInicio}
+                </Text>
+                <Ionicons name="chevron-forward" size={16} color="#FFFFFF" />
+              </TouchableOpacity>
+            )}
+          </LinearGradient>
+        </ImageBackground>
+      </View>
 
       {/* Stats */}
       {isLoading ? (
@@ -232,20 +233,19 @@ const styles = StyleSheet.create({
   content: { paddingHorizontal: 16, gap: 4 },
   hero: {
     borderRadius: 20,
-    padding: 20,
     marginBottom: 20,
-    gap: 14,
+    overflow: "hidden" as const,
   },
-  heroContent: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" },
-  heroEyebrow: { color: "rgba(255,255,255,0.7)", fontSize: 10, fontWeight: "700" as const, letterSpacing: 1.5, fontFamily: "Inter_700Bold" },
-  heroTitle: { color: "#FFFFFF", fontSize: 28, fontWeight: "700" as const, fontFamily: "Inter_700Bold", lineHeight: 34, marginTop: 4 },
-  heroSub: { color: "rgba(255,255,255,0.8)", fontSize: 13, marginTop: 4, fontFamily: "Inter_400Regular" },
-  syncRow: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 10 },
+  heroBg: { width: "100%", minHeight: 250, justifyContent: "flex-end" },
+  heroBgImage: { borderRadius: 20 },
+  heroScrim: { flex: 1, minHeight: 250, justifyContent: "flex-end", padding: 20, gap: 14 },
+  heroTextWrap: {},
+  heroEyebrow: { color: "rgba(255,255,255,0.85)", fontSize: 10, fontWeight: "700" as const, letterSpacing: 1.5, fontFamily: "Inter_700Bold", textShadowColor: "rgba(0,0,0,0.4)", textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 4 },
+  heroTitle: { color: "#FFFFFF", fontSize: 30, fontWeight: "700" as const, fontFamily: "Inter_700Bold", lineHeight: 35, marginTop: 4, textShadowColor: "rgba(0,0,0,0.45)", textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 6 },
+  heroSub: { color: "rgba(255,255,255,0.92)", fontSize: 13, marginTop: 4, fontFamily: "Inter_400Regular", textShadowColor: "rgba(0,0,0,0.4)", textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 4 },
+  syncRow: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 12 },
   syncDot: { width: 7, height: 7, borderRadius: 4 },
-  syncText: { color: "rgba(255,255,255,0.85)", fontSize: 11, fontFamily: "Inter_500Medium", fontWeight: "500" as const },
-  heroShield: { width: 64, height: 64, borderRadius: 20, alignItems: "center", justifyContent: "center" },
-  heroLogoWrap: { width: 72, height: 72, borderRadius: 36, overflow: "hidden" as const },
-  heroLogo: { width: 168, height: 168, marginLeft: -48, marginTop: -3 },
+  syncText: { color: "rgba(255,255,255,0.9)", fontSize: 11, fontFamily: "Inter_500Medium", fontWeight: "500" as const },
   liveBar: { flexDirection: "row", alignItems: "center", gap: 10, padding: 12, borderRadius: 12 },
   liveText: { flex: 1, color: "#FFFFFF", fontSize: 13, fontFamily: "Inter_500Medium", fontWeight: "500" as const },
   section: { marginBottom: 20 },
