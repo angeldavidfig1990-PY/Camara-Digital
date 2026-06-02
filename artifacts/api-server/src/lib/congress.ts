@@ -28,6 +28,7 @@ export const TTL = {
   periodo: 24 * 60 * 60 * 1000,
   sistema: 60 * 1000,
   noticias: 30 * 60 * 1000,
+  autoridades: 24 * 60 * 60 * 1000,
 } as const;
 
 type Recurso = keyof typeof TTL;
@@ -885,6 +886,86 @@ export async function getNoticias(limit = 8): Promise<Noticia[]> {
     return parsed;
   });
   return all.slice(0, limit);
+}
+
+// ── Mesa Directiva (chamber authorities) ────────────────────────────────────────
+// The Open Data API does not expose the chamber's board, so we scrape the
+// official institutional page. Structure per role: a cargo label (PRESIDENTE,
+// VICEPRESIDENTE PRIMERO/SEGUNDO) followed by "Diputado/a Nacional: NAME (PARTY)".
+
+const MESA_DIRECTIVA_URL = "https://www.diputados.gov.py/institucional/mesa-directiva";
+
+export interface Autoridad {
+  cargo: string;
+  nombre: string;
+  partido: string | null;
+}
+
+export interface MesaDirectiva {
+  periodo: string | null;
+  autoridades: Autoridad[];
+}
+
+function parseNombrePartido(raw: string): { nombre: string; partido: string | null } {
+  const text = clean(decodeEntities(raw));
+  const m = text.match(/^(.*?)\s*\(([^)]+)\)\s*$/);
+  if (m) {
+    return { nombre: toTitleCase(m[1].trim()), partido: m[2].replace(/\./g, "").trim().toUpperCase() };
+  }
+  return { nombre: toTitleCase(text), partido: null };
+}
+
+function parseMesaDirectiva(html: string): MesaDirectiva {
+  const text = clean(decodeEntities(stripTags(html)));
+  const start = text.search(/PERIODO\s+LEGISLATIVO/i);
+  const end = text.search(/AUTORIDADES\s+INSTITUCIONALES/i);
+  const block = start >= 0 ? text.slice(start, end >= 0 ? end : undefined) : text;
+
+  const periodoM = block.match(/PERIODO\s+LEGISLATIVO\s+(\d{4}\s*-\s*\d{4})/i);
+  const periodo = periodoM ? periodoM[1].replace(/\s+/g, " ").trim() : null;
+
+  const autoridades: Autoridad[] = [];
+  const grab = (label: RegExp, cargo: string): void => {
+    const m = block.match(label);
+    if (m && m[1]) {
+      const { nombre, partido } = parseNombrePartido(m[1]);
+      if (nombre) autoridades.push({ cargo, nombre, partido });
+    }
+  };
+
+  // Each role: cargo label, then "Diputado/a Nacional:", then name until the
+  // next cargo label or the secretariat header.
+  const tail = "(?:Diputad[oa]\\s+Nacional:?\\s*)(.*?)(?=VICEPRESIDENTE|SECRETAR|$)";
+  grab(new RegExp(`PRESIDENTE\\s+${tail}`, "i"), "Presidente");
+  grab(new RegExp(`VICEPRESIDENTE\\s+PRIMERO\\s+${tail}`, "i"), "Vicepresidente Primero");
+  grab(new RegExp(`VICEPRESIDENTE\\s+SEGUNDO\\s+${tail}`, "i"), "Vicepresidente Segundo");
+
+  // Secretaría Parlamentaria: a run of "Diputado/a Nacional: NAME (PARTY)".
+  const secStart = block.search(/SECRETAR[IÍ]A\s+PARLAMENTARIA/i);
+  if (secStart >= 0) {
+    const secBlock = block.slice(secStart);
+    const re = /Diputad[oa]\s+Nacional:?\s*([^]*?)(?=Diputad[oa]\s+Nacional|$)/gi;
+    let mm: RegExpExecArray | null;
+    while ((mm = re.exec(secBlock)) !== null) {
+      const { nombre, partido } = parseNombrePartido(mm[1]);
+      if (nombre) autoridades.push({ cargo: "Secretario/a Parlamentario/a", nombre, partido });
+    }
+  }
+
+  return { periodo, autoridades };
+}
+
+export async function getAutoridades(): Promise<MesaDirectiva> {
+  return cached("autoridades", "autoridades:mesa", async () => {
+    const html = await rawFetchHtml(MESA_DIRECTIVA_URL);
+    const parsed = parseMesaDirectiva(html);
+    // Guard against silent breakage: a 200 with unparseable markup must not
+    // poison the cache with an empty board.
+    if (parsed.autoridades.length === 0) {
+      throw new Error("La página de Mesa Directiva respondió sin autoridades reconocibles.");
+    }
+    return parsed;
+  });
 }
 
 export interface DashboardData {

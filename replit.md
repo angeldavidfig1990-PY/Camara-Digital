@@ -24,7 +24,7 @@ App móvil institucional de la Honorable Cámara de Diputados de la República d
 - `lib/api-client-react/src/generated/api.ts` — generated React Query hooks
 - `lib/api-zod/src/generated/api.ts` — generated Zod schemas
 - `artifacts/api-server/src/routes/legislative.ts` — Congress API proxy + mock data (25 deputies, 12 commissions, sessions, projects, laws)
-- `artifacts/api-server/src/routes/ai.ts` — AI legislative assistant (smart keyword/intent matching)
+- `artifacts/api-server/src/routes/ai.ts` — AI legislative assistant (smart keyword/intent matching; incl. `autoridades`/Mesa Directiva intent)
 - `artifacts/mobile/app/(tabs)/` — 5 tab screens (index, deputies, sessions, projects, more)
 - `artifacts/mobile/app/` — detail screens (deputy, project, session, comision, ai-assistant, votaciones)
 - `artifacts/mobile/components/` — UI components (Badge, Skeleton, EmptyState, SearchBar, SectionHeader, DeputyCard, ProjectCard, SessionCard, StatsRow)

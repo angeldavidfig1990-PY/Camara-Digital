@@ -18,6 +18,7 @@ interface Message {
 }
 
 const SUGGESTIONS = [
+  "¿Quién es el presidente de la Cámara de Diputados?",
   "¿Quién integra la Comisión de Salud?",
   "¿Qué proyectos están en tratamiento?",
   "¿Qué leyes fueron aprobadas en 2025?",
@@ -69,7 +70,7 @@ export default function AIAssistantScreen() {
     {
       id: "welcome",
       role: "assistant",
-      content: "Hola, soy el Asistente Legislativo de la Cámara de Diputados del Paraguay.\n\nPuedo responder consultas sobre diputados, comisiones, proyectos de ley, sesiones y leyes utilizando datos oficiales del Congreso Nacional.\n\n¿En qué puedo ayudarte?",
+      content: "Hola, soy el Asistente Legislativo de la Cámara de Diputados del Paraguay.\n\nPuedo responder consultas sobre las autoridades (Mesa Directiva), diputados, comisiones, proyectos de ley, sesiones y leyes utilizando datos oficiales del Congreso Nacional.\n\n¿En qué puedo ayudarte?",
       timestamp: new Date(),
     }
   ]);

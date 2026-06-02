@@ -10,6 +10,7 @@ import {
   getLeyes,
   getVotaciones,
   getDashboard,
+  getAutoridades,
   type Legislador,
   type Comision,
   type Proyecto,
@@ -17,6 +18,7 @@ import {
   type Ley,
   type Votacion,
   type DashboardData,
+  type MesaDirectiva,
 } from "../lib/congress";
 
 const router: IRouter = Router();
@@ -78,9 +80,23 @@ type Intent =
   | "leyes"
   | "votaciones"
   | "analytics_partido"
+  | "autoridades"
   | "unknown";
 
 function classifyIntent(q: string): { intent: Intent; params: Record<string, string> } {
+  // Mesa Directiva: must be checked before the "diputado" branch, because
+  // "presidente de la cámara de diputados" contains "diputados". A commission
+  // mention takes precedence ("presidente de la comisión de salud" → comision),
+  // so authorities only applies to chamber-level questions.
+  if (
+    !has(q, "comision", "comisión") &&
+    (has(q, "autoridad", "autoridades", "mesa directiva") ||
+      // role word + chamber context (e.g. "presidente de la cámara de diputados")
+      (has(q, "presidente", "presidenta", "vicepresidente", "vicepresidenta", "secretario", "secretaria", "preside") &&
+        has(q, "camara", "diputados", "honorable", "directiva", "preside")))
+  )
+    return { intent: "autoridades", params: {} };
+
   if (has(q, "dashboard", "resumen", "estadística", "total", "sistema legislativo", "panorama general"))
     return { intent: "dashboard", params: {} };
 
@@ -275,6 +291,17 @@ function fmtVotaciones(data: Votacion[]): string {
   return r;
 }
 
+function fmtAutoridades(m: MesaDirectiva): string {
+  if (!m || m.autoridades.length === 0) return NO_DATA;
+  let r = `**Mesa Directiva — Cámara de Diputados**`;
+  if (m.periodo) r += `\nPeríodo legislativo ${m.periodo}`;
+  r += `\n\n`;
+  m.autoridades.forEach((a) => {
+    r += `• **${a.cargo}:** ${a.nombre}${a.partido ? ` (${a.partido})` : ""}\n`;
+  });
+  return r;
+}
+
 function fmtAnalyticsPartido(data: Legislador[]): string {
   if (data.length === 0) return NO_DATA;
   const partidos: Record<string, number> = {};
@@ -452,10 +479,19 @@ router.post("/ai/consult", async (req, res): Promise<void> => {
         break;
       }
 
+      case "autoridades": {
+        const m = await getAutoridades();
+        respuesta = fmtAutoridades(m);
+        datos = m;
+        fuentes = ["diputados.gov.py/institucional/mesa-directiva"];
+        break;
+      }
+
       default: {
         respuesta =
           `Soy el Asistente Legislativo de la Cámara de Diputados del Paraguay.\n\n` +
           `Puedo consultarte información directamente desde las fuentes oficiales sincronizadas:\n\n` +
+          `• **Autoridades** — Mesa Directiva (presidente, vicepresidentes, secretarios)\n` +
           `• **Diputados** — lista, búsqueda por nombre, partido o departamento\n` +
           `• **Comisiones** — composición y miembros\n` +
           `• **Proyectos de ley** — estado, etapa, historial\n` +

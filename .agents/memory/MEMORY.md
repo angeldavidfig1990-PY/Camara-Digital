@@ -3,3 +3,4 @@
 - [Codegen stale after merge](codegen-after-merge.md) — generated client/zod can lag the OpenAPI spec after a task merge; rerun codegen.
 - [Expo SDK 54 icon fonts = tofu](expo-sdk54-icon-fonts.md) — icon FONTS render as boxes on Android (New Arch); use the lucide SVG wrapper in Icon.tsx.
 - [Official news has no API](noticias-scraping.md) — diputados.gov.py news is scraped HTML only; guard against silent empty-parse breakage.
+- [Mesa Directiva scraping](mesa-directiva-scraping.md) — chamber authorities not in API; scraped from diputados.gov.py; AI `autoridades` intent must beat the `diputado` branch.
