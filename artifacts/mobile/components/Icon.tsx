@@ -5,6 +5,7 @@ import {
 } from "@expo/vector-icons";
 import type { StyleProp, ViewStyle } from "react-native";
 import {
+  ArrowRight,
   Award,
   Briefcase,
   Building2,
@@ -97,6 +98,7 @@ const IONICON_MAP: Record<string, IconComponent> = {
   "close-circle": CircleX,
   "chevron-back": ChevronLeft,
   "chevron-forward": ChevronRight,
+  "arrow-forward": ArrowRight,
   "alert-circle": CircleAlert,
   "alert-circle-outline": CircleAlert,
   "filter-outline": Funnel,

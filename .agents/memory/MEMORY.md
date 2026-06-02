@@ -1,1 +1,5 @@
 - [Congress API data quirks](congress-api-data-quirks.md) — API returns full party names + odd department labels ("Capital" not "Asunción"); derive filters from data, never hardcode.
+- [Paraguay Congress API quirks](congress-api-quirks.md) — non-obvious behaviors of datosv2.congreso.gov.py used by the Diputados backend.
+- [Codegen stale after merge](codegen-after-merge.md) — generated client/zod can lag the OpenAPI spec after a task merge; rerun codegen.
+- [Expo SDK 54 icon fonts = tofu](expo-sdk54-icon-fonts.md) — icon FONTS render as boxes on Android (New Arch); use the lucide SVG wrapper in Icon.tsx.
+- [Official news has no API](noticias-scraping.md) — diputados.gov.py news is scraped HTML only; guard against silent empty-parse breakage.

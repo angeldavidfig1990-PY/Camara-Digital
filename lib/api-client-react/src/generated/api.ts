@@ -35,6 +35,7 @@ import type {
   Legislador,
   LegisladoresResponse,
   LeyesResponse,
+  NoticiasResponse,
   Proyecto,
   ProyectosResponse,
   Sesion,
@@ -361,6 +362,83 @@ export function useGetLegisladorById<TData = Awaited<ReturnType<typeof getLegisl
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getGetLegisladorByIdQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getGetNoticiasUrl = () => {
+
+
+
+
+  return `/api/legislative/noticias`
+}
+
+/**
+ * @summary Get official Chamber of Deputies news
+ */
+export const getNoticias = async ( options?: RequestInit): Promise<NoticiasResponse> => {
+
+  return customFetch<NoticiasResponse>(getGetNoticiasUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetNoticiasQueryKey = () => {
+    return [
+    `/api/legislative/noticias`
+    ] as const;
+    }
+
+
+export const getGetNoticiasQueryOptions = <TData = Awaited<ReturnType<typeof getNoticias>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getNoticias>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetNoticiasQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getNoticias>>> = ({ signal }) => getNoticias({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getNoticias>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetNoticiasQueryResult = NonNullable<Awaited<ReturnType<typeof getNoticias>>>
+export type GetNoticiasQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get official Chamber of Deputies news
+ */
+
+export function useGetNoticias<TData = Awaited<ReturnType<typeof getNoticias>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getNoticias>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetNoticiasQueryOptions(options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

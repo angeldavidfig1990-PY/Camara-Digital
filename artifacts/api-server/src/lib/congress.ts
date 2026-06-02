@@ -27,6 +27,7 @@ export const TTL = {
   leyes: 60 * 60 * 1000,
   periodo: 24 * 60 * 60 * 1000,
   sistema: 60 * 1000,
+  noticias: 30 * 60 * 1000,
 } as const;
 
 type Recurso = keyof typeof TTL;
@@ -188,6 +189,22 @@ async function rawFetch(path: string, timeoutMs = 12000): Promise<unknown[]> {
   }
 }
 
+/** Fetch raw HTML (the official news portal is server-rendered, no JSON API). */
+async function rawFetchHtml(url: string, timeoutMs = 12000): Promise<string> {
+  const controller = new AbortController();
+  const tid = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetch(url, {
+      signal: controller.signal,
+      headers: { Accept: "text/html", "User-Agent": "Mozilla/5.0 (DiputadosApp)" },
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status} en ${url}`);
+    return await res.text();
+  } finally {
+    clearTimeout(tid);
+  }
+}
+
 // ── Date / text helpers ─────────────────────────────────────────────────────────
 
 /** Convert "DD/MM/YYYY" → ISO "YYYY-MM-DD". Returns "" for malformed/implausible dates. */
@@ -208,6 +225,23 @@ function clean(str: string | undefined | null): string {
 
 function stripQuotes(str: string): string {
   return str.replace(/^[“"'\s]+|[”"'\s]+$/g, "").trim();
+}
+
+function stripTags(str: string): string {
+  return str.replace(/<[^>]+>/g, " ");
+}
+
+/** Decode the handful of HTML entities the news portal emits. */
+function decodeEntities(str: string): string {
+  return str
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&nbsp;/g, " ")
+    .replace(/&#0?39;|&apos;|&#x27;/gi, "'")
+    .replace(/&#x([0-9a-f]+);/gi, (_, h) => String.fromCodePoint(parseInt(h, 16)))
+    .replace(/&#(\d+);/g, (_, n) => String.fromCodePoint(Number(n)));
 }
 
 function toTitleCase(str: string | undefined | null): string {
@@ -785,6 +819,60 @@ export async function getProyectosTotal(): Promise<number> {
     const raw = (await rawFetch("/proyecto/total")) as number[];
     return typeof raw[0] === "number" ? raw[0] : 0;
   });
+}
+
+// ── Noticias (official news portal, scraped HTML) ───────────────────────────────
+
+const NOTICIAS_URL = "https://www.diputados.gov.py/noticias/noticias";
+
+export interface Noticia {
+  id: string;
+  titulo: string;
+  fecha: string;
+  resumen: string;
+  imagen: string | null;
+  url: string;
+}
+
+function parseNoticias(html: string): Noticia[] {
+  const out: Noticia[] = [];
+  const articles = html.match(/<article class="item[\s\S]*?<\/article>/g) ?? [];
+  for (const a of articles) {
+    const linkM = a.match(/noticias\/noticias\/(\d+)/);
+    if (!linkM) continue;
+    const id = linkM[1];
+    const imgM =
+      a.match(/<img[^>]+src="([^"]+storage\/noticias\/[^"]+)"/i) ??
+      a.match(/srcset="([^"]+storage\/noticias\/[^"]+)"/i);
+    const titM = a.match(/<div class="item-title">[\s\S]*?<h2>([\s\S]*?)<\/h2>/i);
+    const dateM = a.match(/<div class="item-date">[\s\S]*?<p>([\s\S]*?)<\/p>/i);
+    const sumM = a.match(/<div class="item-summary">([\s\S]*?)<\/div>/i);
+    const titulo = titM ? clean(decodeEntities(stripTags(titM[1]))) : "";
+    if (!titulo) continue;
+    out.push({
+      id,
+      titulo,
+      fecha: dateM ? clean(stripTags(dateM[1])) : "",
+      resumen: sumM ? clean(decodeEntities(stripTags(sumM[1]))) : "",
+      imagen: imgM ? imgM[1] : null,
+      url: `${NOTICIAS_URL}/${id}`,
+    });
+  }
+  return out;
+}
+
+export async function getNoticias(limit = 8): Promise<Noticia[]> {
+  const all = await cached("noticias", "noticias:list", async () => {
+    const html = await rawFetchHtml(NOTICIAS_URL);
+    const parsed = parseNoticias(html);
+    // Guard against silent breakage: a 200 response with unparseable markup
+    // (CMS change, anti-bot interstitial) must not poison the cache with [].
+    if (parsed.length === 0) {
+      throw new Error("El portal de noticias respondió sin artículos reconocibles.");
+    }
+    return parsed;
+  });
+  return all.slice(0, limit);
 }
 
 export interface DashboardData {

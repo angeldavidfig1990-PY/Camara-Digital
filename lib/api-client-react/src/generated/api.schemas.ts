@@ -51,6 +51,20 @@ export interface ComisionesResponse {
   total: number;
 }
 
+export interface Noticia {
+  id: string;
+  titulo: string;
+  fecha: string;
+  resumen: string;
+  imagen: string | null;
+  url: string;
+}
+
+export interface NoticiasResponse {
+  data: Noticia[];
+  total: number;
+}
+
 export interface Sesion {
   id: string;
   fecha: string;

@@ -23,6 +23,8 @@ export * from './legislador';
 export * from './legisladoresResponse';
 export * from './ley';
 export * from './leyesResponse';
+export * from './noticia';
+export * from './noticiasResponse';
 export * from './proyecto';
 export * from './proyectoHistorialItem';
 export * from './proyectosResponse';

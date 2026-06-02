@@ -18,6 +18,7 @@ import {
   getVotaciones,
   getVotacionById,
   getDashboard,
+  getNoticias,
 } from "../lib/congress";
 
 const router: IRouter = Router();
@@ -34,6 +35,18 @@ router.get("/legislative/dashboard", async (req, res): Promise<void> => {
   } catch (err) {
     req.log.error({ err }, "dashboard failed");
     res.status(502).json({ error: "No se pudo obtener datos de las fuentes oficiales." });
+  }
+});
+
+// ── Noticias ─────────────────────────────────────────────────────────────────
+
+router.get("/legislative/noticias", async (req, res): Promise<void> => {
+  try {
+    const data = await getNoticias();
+    res.json({ data, total: data.length });
+  } catch (err) {
+    req.log.error({ err }, "noticias failed");
+    res.status(502).json({ error: "No se pudieron obtener las noticias oficiales." });
   }
 });
 

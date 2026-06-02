@@ -7,13 +7,13 @@ import { useRouter } from "expo-router";
 import { Ionicons } from "@/components/Icon";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
-import { useGetDashboard, useGetSystemStatus } from "@workspace/api-client-react";
+import { useGetDashboard, useGetSystemStatus, useGetNoticias } from "@workspace/api-client-react";
 import { useColors } from "@/hooks/useColors";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { SkeletonList } from "@/components/ui/SkeletonCard";
 import { SessionCard } from "@/components/session/SessionCard";
 import { ProjectCard } from "@/components/project/ProjectCard";
-import { StatsRow } from "@/components/dashboard/StatsRow";
+import { NewsCarousel } from "@/components/dashboard/NewsCarousel";
 import { Badge } from "@/components/ui/Badge";
 
 function formatRelative(iso?: string | null): string | null {
@@ -42,12 +42,15 @@ export default function DashboardScreen() {
   const { data: status, refetch: refetchStatus } = useGetSystemStatus({
     query: { queryKey: ["system-status"] },
   });
+  const { data: noticias, refetch: refetchNoticias } = useGetNoticias({
+    query: { queryKey: ["noticias"] },
+  });
 
   const onRefresh = React.useCallback(async () => {
     setRefreshing(true);
-    await Promise.all([refetch(), refetchStatus()]);
+    await Promise.all([refetch(), refetchStatus(), refetchNoticias()]);
     setRefreshing(false);
-  }, [refetch, refetchStatus]);
+  }, [refetch, refetchStatus, refetchNoticias]);
 
   const lastSync = formatRelative(status?.lastSync);
   const online = status ? status.status !== "offline" : true;
@@ -106,19 +109,11 @@ export default function DashboardScreen() {
         </ImageBackground>
       </View>
 
-      {/* Stats */}
-      {isLoading ? (
+      {/* Noticias oficiales */}
+      {noticias && noticias.data.length > 0 && (
         <View style={styles.section}>
-          <SkeletonList count={1} />
-        </View>
-      ) : data && (
-        <View style={styles.section}>
-          <StatsRow stats={[
-            { icon: "people", value: data.totalLegisladores, label: "Diputados", color: colors.primary },
-            { icon: "briefcase", value: data.totalComisiones, label: "Comisiones", color: "#7C3AED" },
-            { icon: "document-text", value: data.proyectosHistoricos.toLocaleString("es-PY"), label: "Proyectos históricos", color: colors.warning },
-            { icon: "ribbon", value: data.leyesAprobadas, label: "Leyes 2025", color: colors.success },
-          ]} />
+          <SectionHeader title="Noticias" subtitle="Cámara de Diputados" />
+          <NewsCarousel noticias={noticias.data} />
         </View>
       )}
 

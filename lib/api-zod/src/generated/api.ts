@@ -138,6 +138,22 @@ export const GetLegisladorByIdResponse = zod.object({
 
 
 /**
+ * @summary Get official Chamber of Deputies news
+ */
+export const GetNoticiasResponse = zod.object({
+  "data": zod.array(zod.object({
+  "id": zod.string(),
+  "titulo": zod.string(),
+  "fecha": zod.string(),
+  "resumen": zod.string(),
+  "imagen": zod.string().nullable(),
+  "url": zod.string()
+})),
+  "total": zod.number()
+})
+
+
+/**
  * @summary Get list of commissions
  */
 export const GetComisionesResponse = zod.object({
