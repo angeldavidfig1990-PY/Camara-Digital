@@ -166,7 +166,7 @@ export default function MoreScreen() {
       <View style={styles.appInfo}>
         <View style={[styles.appInfoBox, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <Ionicons name="business-outline" size={24} color={colors.primary} />
-          <Text style={[styles.appInfoTitle, { color: colors.foreground }]}>Diputados Paraguay</Text>
+          <Text style={[styles.appInfoTitle, { color: colors.foreground }]}>Aplicación Legislativa</Text>
           <Text style={[styles.appInfoSub, { color: colors.mutedForeground }]}>
             Información oficial de la{"\n"}Honorable Cámara de Diputados{"\n"}República del Paraguay
           </Text>
