@@ -35,3 +35,6 @@ A `__DEV__` console.warn fires for any unmapped name (renders CircleAlert fallba
   AlertCircle→CircleAlert, CheckCircle2→CircleCheck, Filter→Funnel, BarChart3→ChartColumn,
   MinusCircle→CircleMinus, DownloadCloud→CloudDownload. Verify export names before using.
 - lucide style prop expects ViewStyle (not TextStyle); glyphMap values are `string|number`.
+- lucide-react-native 1.17 has NO brand glyphs (Facebook/Instagram/Twitter/Youtube don't
+  export). For social/brand icons, draw the official SVG path directly via react-native-svg
+  (`makeBrandIcon()` helper in Icon.tsx) and map logo-* names to those components.

@@ -170,7 +170,7 @@ export default function DashboardScreen() {
           <Text style={[styles.errorText, { color: colors.mutedForeground }]}>
             No se pudo cargar la información
           </Text>
-        ) : data?.ultimosProyectos.map(p => (
+        ) : data?.ultimosProyectos.slice(0, 5).map(p => (
           <ProjectCard key={p.id} project={p} onPress={() => router.push(`/project/${p.id}`)} />
         ))}
       </View>
@@ -195,9 +195,9 @@ export default function DashboardScreen() {
         </View>
       )}
 
-      {/* External Links */}
+      {/* Cámara de Diputados: web oficial e información */}
       <View style={styles.section}>
-        <SectionHeader title="Portales Oficiales" />
+        <SectionHeader title="La Cámara" subtitle="Sitio oficial e información" />
         <View style={[styles.linksBox, { backgroundColor: colors.card, borderColor: colors.border }]}>
           {[
             { label: "Sitio Oficial", url: "https://www.diputados.gov.py", icon: "globe-outline" },
@@ -216,6 +216,31 @@ export default function DashboardScreen() {
                 <Ionicons name="open-outline" size={14} color={colors.mutedForeground} />
               </TouchableOpacity>
             </View>
+          ))}
+        </View>
+      </View>
+
+      {/* Redes Sociales */}
+      <View style={styles.section}>
+        <SectionHeader title="Redes Sociales" subtitle="Seguí la actividad de la Cámara" />
+        <View style={styles.socialGrid}>
+          {[
+            { label: "Facebook", url: "https://www.facebook.com/diputadospy", icon: "logo-facebook", color: "#1877F2" },
+            { label: "Instagram", url: "https://www.instagram.com/diputadospy", icon: "logo-instagram", color: "#E4405F" },
+            { label: "X (Twitter)", url: "https://twitter.com/DiputadosPy", icon: "logo-twitter", color: "#0F1419" },
+            { label: "YouTube", url: "https://www.youtube.com/@tvcamarahcd", icon: "logo-youtube", color: "#FF0000" },
+          ].map((red) => (
+            <TouchableOpacity
+              key={red.label}
+              style={[styles.socialItem, { backgroundColor: colors.card, borderColor: colors.border }]}
+              onPress={() => Linking.openURL(red.url)}
+              activeOpacity={0.7}
+            >
+              <View style={[styles.socialIcon, { backgroundColor: red.color + "18" }]}>
+                <Ionicons name={red.icon as any} size={22} color={red.color} />
+              </View>
+              <Text style={[styles.socialLabel, { color: colors.foreground }]}>{red.label}</Text>
+            </TouchableOpacity>
           ))}
         </View>
       </View>
@@ -266,4 +291,17 @@ const styles = StyleSheet.create({
   linksBox: { borderRadius: 14, borderWidth: 1, overflow: "hidden" },
   linkRow: { flexDirection: "row", alignItems: "center", gap: 12, padding: 16 },
   linkText: { flex: 1, fontSize: 14, fontFamily: "Inter_500Medium", fontWeight: "500" as const },
+  socialGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
+  socialItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    width: "47%",
+    flexGrow: 1,
+    padding: 12,
+    borderRadius: 14,
+    borderWidth: 1,
+  },
+  socialIcon: { width: 38, height: 38, borderRadius: 11, alignItems: "center", justifyContent: "center" },
+  socialLabel: { fontSize: 13, fontFamily: "Inter_500Medium", fontWeight: "500" as const },
 });
