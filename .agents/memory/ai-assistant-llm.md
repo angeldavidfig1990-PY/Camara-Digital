@@ -1,23 +1,23 @@
 ---
-name: AI assistant LLM design
-description: How the legislative AI assistant uses a real LLM grounded on official data, and the own-key model-name gotcha.
+name: AI assistant design (deterministic, zero-cost)
+description: Why the legislative AI assistant is a deterministic fuzzy engine over official data, not an LLM, and the false-positive guardrail.
 ---
 
-# AI assistant: real LLM, grounded + scoped
+# AI assistant: deterministic fuzzy engine, no LLM
 
-The `/api/ai/consult` assistant uses a real LLM (OpenAI function-calling) on top of the existing `congress.ts` data functions, replacing the old brittle keyword engine (which still exists as a fallback).
+The `/api/ai/consult` assistant is a **deterministic, zero-cost** engine (no LLM, no external API, no API keys). It detects an intent, then resolves the entity with fuzzy matching over **live official data**.
 
-## Grounding + scope invariants (why the design looks the way it does)
+**Why no LLM:** the user explicitly required zero cost — no OpenAI billing AND no Replit credits. An LLM path (OpenAI own-key, or the Replit AI integration) was built and then removed for this reason. (An OpenAI own-key with no billing also just 429s.) Don't reintroduce an LLM unless the user funds one.
 
-- **Never answer ungrounded.** `llmConsult()` forces a tool call on turn 0 (`tool_choice: "required"`) and only returns a free-text answer once a *data* tool succeeded (`dataToolUsed`). Otherwise it returns null and the route falls back to the keyword engine. This is what prevents fabricated answers.
-- **Scope = Cámara de Diputados only.** Enforced by two layers: (1) a `fuera_de_alcance` tool the model calls for off-topic questions → server returns a fixed refusal string, and (2) the grounding guarantee itself — substantive output can only echo chamber-only tool data, so the model has no off-topic facts to relay.
-- **Why NOT a keyword pre-gate for scope:** a rule-based off-topic classifier reintroduces exactly the brittleness the LLM upgrade removes and would falsely reject legitimate questions. An automated code-review will keep asking for a deterministic pre-gate; this tradeoff was a deliberate decision, not an oversight.
+## Key decisions
 
-**Why:** the user explicitly required "only Cámara de Diputados" + "never invent, only official data".
-**How to apply:** if adding tools or changing the loop, keep turn-0 `required`, the `dataToolUsed` gate, and the refusal-tool path intact.
+- **Fuzzy matching beats keyword `includes`.** The original engine failed on partial/typo/reordered names (e.g. "comisión de industrial y comercio" → real name "Industria, Comercio, Turismo y Cooperativismo"). Fix = accent-insensitive normalization + grammar/domain stopword stripping + token similarity (Levenshtein + prefix/substring shortcut), averaged over query tokens.
+- **Derive filters from data, never hardcode.** Departments and parties for deputy queries come from the dataset itself (matches the existing congress-api-data-quirks lesson).
+- **`strict` mode guards the no-trigger-word fallback.** When a query has no domain trigger word, an `unknown`-intent fallback fuzzy-matches commissions then deputies. There it disables the loose substring/prefix shortcut, otherwise a bare off-topic token false-matches (the canonical bug: "clima" → "climático" commission). Explicit "comisión …" queries keep the loose shortcut for better recall.
 
-## Own-key model-name gotcha
+**Why the strict guardrail matters:** without it, single off-topic tokens that are prefixes of a commission word get scored 0.9 and return a bogus commission instead of the scope/help message.
+**How to apply:** any new no-trigger fuzzy entry point must pass `strict = true`; explicit-intent paths can stay loose.
 
-The assistant uses the user's own `OPENAI_API_KEY` (default OpenAI base URL), NOT the Replit AI Integrations proxy. So model names must be **real OpenAI models** (e.g. `gpt-4o-mini`) — the `gpt-5.4`/`gpt-5-mini` names in the ai-integrations skill are Replit-proxy aliases and will 404 against api.openai.com.
+## Scope / no-fabrication
 
-**Setup history:** Replit OpenAI integration setup hit `awaiting_phone_verification`; the user opted to provide their own key instead. A key with no billing returns 429 `insufficient_quota` — the assistant then silently falls back to the keyword engine (look for "llm consult failed, falling back" in logs).
+The engine only ever emits official data; anything it can't ground returns the `NO_DATA` phrase or the scope-clarifying help message, so it cannot invent. Scope is Cámara de Diputados only — enforced structurally (it can only echo chamber data), not by a brittle off-topic keyword pre-gate.
