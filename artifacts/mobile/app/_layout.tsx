@@ -68,6 +68,10 @@ function RootLayoutNav() {
         options={{ headerShown: false, presentation: "card" }}
       />
       <Stack.Screen
+        name="votacion/[id]"
+        options={{ headerShown: false, presentation: "card" }}
+      />
+      <Stack.Screen
         name="configuracion"
         options={{ headerShown: false, presentation: "card" }}
       />

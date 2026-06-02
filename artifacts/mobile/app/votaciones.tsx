@@ -8,7 +8,7 @@ import type { Votacion } from "@workspace/api-client-react";
 import { useColors } from "@/hooks/useColors";
 import { EmptyState } from "@/components/ui/EmptyState";
 
-function VotacionCard({ v }: { v: Votacion }) {
+function VotacionCard({ v, onPress }: { v: Votacion; onPress: () => void }) {
   const colors = useColors();
   const total = v.favor + v.contra + v.abstenciones + v.ausentes;
   const pctFavor = total > 0 ? Math.round((v.favor / total) * 100) : 0;
@@ -16,7 +16,11 @@ function VotacionCard({ v }: { v: Votacion }) {
   const isApproved = v.resultado === "Aprobado";
 
   return (
-    <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+    <TouchableOpacity
+      style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}
+      onPress={onPress}
+      activeOpacity={0.7}
+    >
       <View style={styles.cardHeader}>
         <View style={{ flex: 1 }}>
           <Text style={[styles.cardTitle, { color: colors.foreground }]} numberOfLines={3}>{v.titulo}</Text>
@@ -50,7 +54,7 @@ function VotacionCard({ v }: { v: Votacion }) {
           </View>
         ))}
       </View>
-    </View>
+    </TouchableOpacity>
   );
 }
 
@@ -111,7 +115,9 @@ export default function VotacionesScreen() {
               </View>
             </View>
 
-            {votaciones.map((v) => <VotacionCard key={v.id} v={v} />)}
+            {votaciones.map((v) => (
+              <VotacionCard key={v.id} v={v} onPress={() => router.push(`/votacion/${v.id}`)} />
+            ))}
           </>
         )}
       </ScrollView>
