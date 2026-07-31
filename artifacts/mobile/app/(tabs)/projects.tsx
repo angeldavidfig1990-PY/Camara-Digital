@@ -5,43 +5,68 @@ import {
 import { useRouter } from "expo-router";
 import { Ionicons } from "@/components/Icon";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useGetProyectos } from "@workspace/api-client-react";
 import { useColors } from "@/hooks/useColors";
 import { SearchBar } from "@/components/ui/SearchBar";
 import { ProjectCard } from "@/components/project/ProjectCard";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { SkeletonList } from "@/components/ui/SkeletonCard";
+import { useTranslation } from "react-i18next";
 
 export default function ProjectsScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const { t } = useTranslation();
   const [search, setSearch] = useState("");
   const [selectedTipo, setSelectedTipo] = useState("Todos");
   const [showFilters, setShowFilters] = useState(false);
   const topPad = Platform.OS === "web" ? 67 : insets.top;
 
-  const { data, isLoading, error, refetch } = useGetProyectos(
-    { limit: 50 },
-    { query: { queryKey: ["proyectos"] } }
-  );
+  // Estados locales para el fetch nativo
+  const [data, setData] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(false);
+
+  const cargarProyectos = React.useCallback(async () => {
+    const baseUrl = process.env.EXPO_PUBLIC_API_URL || "http://192.168.31.146:3000";
+    try {
+      setIsLoading(true);
+      setError(false);
+      const res = await fetch(`${baseUrl}/api/legislative/proyectos`);
+      if (res.ok) {
+        const json = await res.json();
+        setData(json);
+      } else {
+        setError(true);
+      }
+    } catch (err) {
+      console.error("Error cargando proyectos:", err);
+      setError(true);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    cargarProyectos();
+  }, [cargarProyectos]);
 
   const tipos = useMemo(() => {
-    const set = new Set((data?.data ?? []).map(p => p.tipo).filter(Boolean));
-    return ["Todos", ...Array.from(set).sort((a, b) => a.localeCompare(b, "es"))];
+    const set = new Set((data?.data ?? []).map((p: any) => p.tipo).filter(Boolean));
+    return ["Todos", ...Array.from(set).sort((a: any, b: any) => a.localeCompare(b, "es"))];
   }, [data]);
 
   const filtered = useMemo(() => {
     let list = data?.data ?? [];
     if (search) {
       const q = search.toLowerCase();
-      list = list.filter(p =>
+      list = list.filter((p: any) =>
         p.titulo.toLowerCase().includes(q) ||
         p.numero.includes(q) ||
         p.descripcion?.toLowerCase().includes(q)
       );
     }
-    if (selectedTipo !== "Todos") list = list.filter(p => p.tipo === selectedTipo);
+    if (selectedTipo !== "Todos") list = list.filter((p: any) => p.tipo === selectedTipo);
     return list;
   }, [data, search, selectedTipo]);
 
@@ -49,7 +74,7 @@ export default function ProjectsScreen() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={[styles.header, { paddingTop: topPad + 12, backgroundColor: colors.background, borderBottomColor: colors.border }]}>
         <View style={styles.headerRow}>
-          <Text style={[styles.headerTitle, { color: colors.foreground }]}>Proyectos</Text>
+          <Text style={[styles.headerTitle, { color: colors.foreground }]}>{t("projects.title")}</Text>
           <TouchableOpacity
             style={[styles.filterBtn, { backgroundColor: showFilters ? colors.primary : colors.card, borderColor: colors.border }]}
             onPress={() => setShowFilters(v => !v)}
@@ -58,11 +83,11 @@ export default function ProjectsScreen() {
             <Ionicons name="filter-outline" size={18} color={showFilters ? "#FFF" : colors.foreground} />
           </TouchableOpacity>
         </View>
-        <SearchBar value={search} onChangeText={setSearch} placeholder="Buscar proyecto, número..." />
+        <SearchBar value={search} onChangeText={setSearch} placeholder={t("projects.searchPlaceholder")} />
 
         {showFilters && (
           <View style={styles.filtersBlock}>
-            <Text style={[styles.filterLabel, { color: colors.mutedForeground }]}>Tipo de proyecto</Text>
+            <Text style={[styles.filterLabel, { color: colors.mutedForeground }]}>{t("projects.filterType")}</Text>
             <FlatList
               data={tipos}
               horizontal
@@ -87,7 +112,7 @@ export default function ProjectsScreen() {
 
         {data && (
           <Text style={[styles.count, { color: colors.mutedForeground }]}>
-            {filtered.length} proyecto{filtered.length !== 1 ? "s" : ""}
+            {filtered.length} {t("projects.projectCount")}
           </Text>
         )}
       </View>
@@ -97,7 +122,7 @@ export default function ProjectsScreen() {
           <SkeletonList count={5} />
         </View>
       ) : error ? (
-        <EmptyState icon="alert-circle-outline" title="Error" subtitle="No se pudieron cargar los proyectos." actionLabel="Reintentar" onAction={refetch} />
+        <EmptyState icon="alert-circle-outline" title={t("common.error")} subtitle={t("projects.notFound")} actionLabel={t("common.retry")} onAction={cargarProyectos} />
       ) : (
         <FlatList
           data={filtered}
@@ -108,10 +133,10 @@ export default function ProjectsScreen() {
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
           scrollEnabled={!!filtered.length}
-          onRefresh={refetch}
+          onRefresh={cargarProyectos}
           refreshing={false}
           ListEmptyComponent={
-            <EmptyState icon="document-text-outline" title="Sin resultados" subtitle="No se encontraron proyectos con esos criterios." actionLabel="Limpiar filtros" onAction={() => { setSearch(""); setSelectedTipo("Todos"); }} />
+            <EmptyState icon="document-text-outline" title={t("common.noResults")} subtitle="No se encontraron proyectos con esos criterios." actionLabel={t("common.search")} onAction={() => { setSearch(""); setSelectedTipo("Todos"); }} />
           }
         />
       )}

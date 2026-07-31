@@ -1,12 +1,10 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   Linking, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@/components/Icon";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useGetVotacionById } from "@workspace/api-client-react";
-import type { VotacionVotosItem } from "@workspace/api-client-react";
 import { useColors } from "@/hooks/useColors";
 import { Badge } from "@/components/ui/Badge";
 import { SkeletonList } from "@/components/ui/SkeletonCard";
@@ -49,9 +47,35 @@ export default function VotacionDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const [filter, setFilter] = React.useState<Sentido | "todos">("todos");
 
-  const { data, isLoading, error } = useGetVotacionById(id ?? "", {
-    query: { queryKey: ["votacion", id], enabled: !!id },
-  });
+  // Estados locales para el fetch nativo
+  const [data, setData] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(false);
+
+  const cargarVotacion = React.useCallback(async () => {
+    const baseUrl = process.env.EXPO_PUBLIC_API_URL || "http://192.168.31.146:3000";
+    if (!id) return;
+    try {
+      setIsLoading(true);
+      setError(false);
+      const res = await fetch(`${baseUrl}/api/legislative/votaciones/${id}`);
+      if (res.ok) {
+        const json = await res.json();
+        setData(json);
+      } else {
+        setError(true);
+      }
+    } catch (err) {
+      console.error("Error cargando votacion:", err);
+      setError(true);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [id]);
+
+  React.useEffect(() => {
+    cargarVotacion();
+  }, [cargarVotacion]);
 
   const topPad = Platform.OS === "web" ? 67 : insets.top;
 
@@ -223,7 +247,7 @@ function FilterChip({ label, active, color, onPress, colors }: {
 }
 
 function VoteRow({ voto, color, icon, last, colors }: {
-  voto: VotacionVotosItem; sentido: Sentido; color: string; icon: string; last: boolean; colors: ReturnType<typeof useColors>;
+  voto: any; sentido: Sentido; color: string; icon: string; last: boolean; colors: ReturnType<typeof useColors>;
 }) {
   return (
     <View style={[styles.voteRow, !last && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border }]}>

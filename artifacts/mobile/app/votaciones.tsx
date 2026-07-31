@@ -1,14 +1,12 @@
-import React from "react";
+import React, { useState } from "react";
 import { ActivityIndicator, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@/components/Icon";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useGetVotaciones } from "@workspace/api-client-react";
-import type { Votacion } from "@workspace/api-client-react";
 import { useColors } from "@/hooks/useColors";
 import { EmptyState } from "@/components/ui/EmptyState";
 
-function VotacionCard({ v, onPress }: { v: Votacion; onPress: () => void }) {
+function VotacionCard({ v, onPress }: { v: any; onPress: () => void }) {
   const colors = useColors();
   const total = v.favor + v.contra + v.abstenciones + v.ausentes;
   const pctFavor = total > 0 ? Math.round((v.favor / total) * 100) : 0;
@@ -64,9 +62,34 @@ export default function VotacionesScreen() {
   const router = useRouter();
   const topPad = Platform.OS === "web" ? 67 : insets.top;
 
-  const { data, isLoading, error } = useGetVotaciones(undefined, {
-    query: { queryKey: ["votaciones"] },
-  });
+  // Estados locales para el fetch nativo
+  const [data, setData] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(false);
+
+  const cargarVotaciones = React.useCallback(async () => {
+    const baseUrl = process.env.EXPO_PUBLIC_API_URL || "http://192.168.31.146:3000";
+    try {
+      setIsLoading(true);
+      setError(false);
+      const res = await fetch(`${baseUrl}/api/legislative/votaciones`);
+      if (res.ok) {
+        const json = await res.json();
+        setData(json);
+      } else {
+        setError(true);
+      }
+    } catch (err) {
+      console.error("Error cargando votaciones:", err);
+      setError(true);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    cargarVotaciones();
+  }, [cargarVotaciones]);
 
   const votaciones = data?.data ?? [];
   const aprobadas = votaciones.filter((v) => v.resultado === "Aprobado").length;

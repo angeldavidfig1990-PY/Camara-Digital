@@ -56,6 +56,9 @@
     "zod-validation-error": "^3.4.0"
   },
   "dependencies": {
-    "lucide-react-native": "^1.17.0"
+    "expo-localization": "~17.0.8",
+    "i18next": "^24.0.0",
+    "lucide-react-native": "^1.17.0",
+    "react-i18next": "^15.0.0"
   }
 }

@@ -1,9 +1,8 @@
-import React from "react";
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View, Platform, Linking } from "react-native";
+import React, { useState } from "react";
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View, Platform, Linking, ActivityIndicator } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@/components/Icon";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useGetSesionById } from "@workspace/api-client-react";
 import { useColors } from "@/hooks/useColors";
 import { Badge } from "@/components/ui/Badge";
 import { SkeletonList } from "@/components/ui/SkeletonCard";
@@ -22,9 +21,60 @@ export default function SessionDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
 
-  const { data, isLoading, error } = useGetSesionById(id ?? "", {
-    query: { queryKey: ["sesion", id], enabled: !!id },
-  });
+  // Estados locales para el fetch nativo
+  const [data, setData] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(false);
+  const [votaciones, setVotaciones] = useState<any>(null);
+  const [isLoadingVotaciones, setIsLoadingVotaciones] = useState(false);
+
+  const cargarSesion = React.useCallback(async () => {
+    const baseUrl = process.env.EXPO_PUBLIC_API_URL || "http://192.168.31.146:3000";
+    if (!id) return;
+    try {
+      setIsLoading(true);
+      setError(false);
+      const res = await fetch(`${baseUrl}/api/legislative/sesiones/${id}`);
+      if (res.ok) {
+        const json = await res.json();
+        setData(json);
+      } else {
+        setError(true);
+      }
+    } catch (err) {
+      console.error("Error cargando sesion:", err);
+      setError(true);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [id]);
+
+  const cargarVotaciones = React.useCallback(async () => {
+    const baseUrl = process.env.EXPO_PUBLIC_API_URL || "http://192.168.31.146:3000";
+    if (!id) return;
+    try {
+      setIsLoadingVotaciones(true);
+      const res = await fetch(`${baseUrl}/api/legislative/sesiones/${id}/votaciones`);
+      if (res.ok) {
+        const json = await res.json();
+        setVotaciones(json);
+      }
+    } catch (err) {
+      console.error("Error cargando votaciones:", err);
+    } finally {
+      setIsLoadingVotaciones(false);
+    }
+  }, [id]);
+
+  React.useEffect(() => {
+    cargarSesion();
+  }, [cargarSesion]);
+
+  React.useEffect(() => {
+    if (data && !isLoading) {
+      cargarVotaciones();
+    }
+  }, [data, isLoading, cargarVotaciones]);
 
   const topPad = Platform.OS === "web" ? 67 : insets.top;
   const isLive = data?.estado === "en vivo";
@@ -147,6 +197,52 @@ export default function SessionDetailScreen() {
             </View>
           )}
 
+          {/* Votaciones */}
+          {votaciones && votaciones.data && votaciones.data.length > 0 && (
+            <View style={[styles.section, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <View style={styles.sectionHeader}>
+                <Ionicons name="stats-chart-outline" size={18} color={colors.primary} />
+                <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Votaciones</Text>
+                <Text style={[styles.sectionCount, { color: colors.mutedForeground }]}>{votaciones.data.length}</Text>
+              </View>
+              {isLoadingVotaciones ? (
+                <View style={styles.centered}>
+                  <ActivityIndicator size="small" color={colors.primary} />
+                </View>
+              ) : (
+                votaciones.data.map((v: any) => (
+                  <TouchableOpacity
+                    key={v.id}
+                    style={[styles.votacionItem, { borderTopColor: colors.border }]}
+                    onPress={() => router.push(`/votacion/${v.id}`)}
+                    activeOpacity={0.7}
+                  >
+                    <View style={styles.votacionHeader}>
+                      <Text style={[styles.votacionTitle, { color: colors.foreground }]} numberOfLines={2}>{v.titulo}</Text>
+                      <View style={[styles.votacionBadge, { backgroundColor: v.resultado === "Aprobado" ? colors.success + "18" : colors.destructive + "18" }]}>
+                        <Text style={[styles.votacionBadgeText, { color: v.resultado === "Aprobado" ? colors.success : colors.destructive }]}>{v.resultado}</Text>
+                      </View>
+                    </View>
+                    <View style={styles.votacionStats}>
+                      <View style={styles.votacionStat}>
+                        <Text style={[styles.votacionStatValue, { color: colors.success }]}>{v.favor}</Text>
+                        <Text style={[styles.votacionStatLabel, { color: colors.mutedForeground }]}>A favor</Text>
+                      </View>
+                      <View style={styles.votacionStat}>
+                        <Text style={[styles.votacionStatValue, { color: colors.destructive }]}>{v.contra}</Text>
+                        <Text style={[styles.votacionStatLabel, { color: colors.mutedForeground }]}>En contra</Text>
+                      </View>
+                      <View style={styles.votacionStat}>
+                        <Text style={[styles.votacionStatValue, { color: colors.warning }]}>{v.abstenciones}</Text>
+                        <Text style={[styles.votacionStatLabel, { color: colors.mutedForeground }]}>Abst.</Text>
+                      </View>
+                    </View>
+                  </TouchableOpacity>
+                ))
+              )}
+            </View>
+          )}
+
           {/* Enlace oficial de la sesión (appURL) o Diario de Sesiones */}
           <TouchableOpacity
             style={[styles.diarioBtn, { backgroundColor: colors.secondary, borderColor: colors.border }]}
@@ -187,6 +283,7 @@ const styles = StyleSheet.create({
   section: { borderRadius: 16, borderWidth: 1, padding: 16, gap: 12 },
   sectionHeader: { flexDirection: "row", alignItems: "center", gap: 8 },
   sectionTitle: { fontSize: 16, fontWeight: "700" as const, fontFamily: "Inter_700Bold" },
+  sectionCount: { fontSize: 13, fontFamily: "Inter_400Regular", marginLeft: "auto" },
   streamBtns: { flexDirection: "row", gap: 10 },
   streamBtn: {
     flex: 1, flexDirection: "row", alignItems: "center",
@@ -214,4 +311,14 @@ const styles = StyleSheet.create({
     gap: 10, padding: 16, borderRadius: 14, borderWidth: 1,
   },
   diarioBtnText: { fontSize: 14, fontWeight: "600" as const, fontFamily: "Inter_600SemiBold" },
+  centered: { paddingVertical: 20, alignItems: "center" },
+  votacionItem: { paddingTop: 12, borderTopWidth: 1 },
+  votacionHeader: { flexDirection: "row", alignItems: "flex-start", gap: 10, marginBottom: 8 },
+  votacionTitle: { flex: 1, fontSize: 14, fontWeight: "600" as const, fontFamily: "Inter_600SemiBold", lineHeight: 20 },
+  votacionBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 },
+  votacionBadgeText: { fontSize: 11, fontWeight: "600" as const, fontFamily: "Inter_600SemiBold" },
+  votacionStats: { flexDirection: "row", gap: 16 },
+  votacionStat: { alignItems: "center" },
+  votacionStatValue: { fontSize: 16, fontWeight: "700" as const, fontFamily: "Inter_700Bold" },
+  votacionStatLabel: { fontSize: 11, fontFamily: "Inter_400Regular" },
 });

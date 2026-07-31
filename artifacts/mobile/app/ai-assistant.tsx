@@ -6,7 +6,6 @@ import {
 import { useRouter } from "expo-router";
 import { Ionicons } from "@/components/Icon";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useAiConsult } from "@workspace/api-client-react";
 import { useColors } from "@/hooks/useColors";
 import * as Haptics from "expo-haptics";
 
@@ -80,8 +79,6 @@ export default function AIAssistantScreen() {
   const topPad = Platform.OS === "web" ? 67 : insets.top;
   const botPad = Platform.OS === "web" ? 34 : insets.bottom;
 
-  const { mutateAsync: consult } = useAiConsult();
-
   const sendMessage = async (text: string) => {
     const question = text.trim();
     if (!question || isLoading) return;
@@ -99,14 +96,25 @@ export default function AIAssistantScreen() {
     setIsLoading(true);
 
     try {
-      const res = await consult({ data: { pregunta: question } });
-      const aiMsg: Message = {
-        id: (Date.now() + 1).toString(),
-        role: "assistant",
-        content: res.respuesta,
-        timestamp: new Date(),
-      };
-      setMessages(prev => [...prev, aiMsg]);
+      const baseUrl = process.env.EXPO_PUBLIC_API_URL || "http://192.168.31.146:3000";
+      const res = await fetch(`${baseUrl}/api/ai`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pregunta: question }),
+      });
+      
+      if (res.ok) {
+        const data = await res.json();
+        const aiMsg: Message = {
+          id: (Date.now() + 1).toString(),
+          role: "assistant",
+          content: data.respuesta,
+          timestamp: new Date(),
+        };
+        setMessages(prev => [...prev, aiMsg]);
+      } else {
+        throw new Error("API error");
+      }
     } catch {
       const errMsg: Message = {
         id: (Date.now() + 1).toString(),

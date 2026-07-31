@@ -12,11 +12,14 @@ import {
   getComisionById,
   getProyectos,
   getProyectoById,
+  getProyectosByComision,
   getLeyes,
   getSesiones,
   getSesionById,
+  getSesionesByComision,
   getVotaciones,
   getVotacionById,
+  getVotacionesBySesion,
   getDashboard,
   getNoticias,
 } from "../lib/congress";
@@ -112,6 +115,30 @@ router.get("/legislative/comisiones/:id", async (req, res): Promise<void> => {
   }
 });
 
+router.get("/legislative/comisiones/:id/proyectos", async (req, res): Promise<void> => {
+  const id = pickId(req.params.id);
+  const limit = typeof req.query["limit"] === "string" ? parseInt(req.query["limit"], 10) : undefined;
+  try {
+    const data = await getProyectosByComision(id, { limit });
+    res.json({ data, total: data.length });
+  } catch (err) {
+    req.log.error({ err }, "comision proyectos failed");
+    res.status(502).json({ error: "No se pudo obtener datos de las fuentes oficiales." });
+  }
+});
+
+router.get("/legislative/comisiones/:id/sesiones", async (req, res): Promise<void> => {
+  const id = pickId(req.params.id);
+  const limit = typeof req.query["limit"] === "string" ? parseInt(req.query["limit"], 10) : undefined;
+  try {
+    const data = await getSesionesByComision(id, { limit });
+    res.json({ data, total: data.length });
+  } catch (err) {
+    req.log.error({ err }, "comision sesiones failed");
+    res.status(502).json({ error: "No se pudo obtener datos de las fuentes oficiales." });
+  }
+});
+
 // ── Sesiones ─────────────────────────────────────────────────────────────────
 
 router.get("/legislative/sesiones", async (req, res): Promise<void> => {
@@ -139,6 +166,17 @@ router.get("/legislative/sesiones/:id", async (req, res): Promise<void> => {
     res.json(sesion);
   } catch (err) {
     req.log.error({ err }, "sesion detail failed");
+    res.status(502).json({ error: "No se pudo obtener datos de las fuentes oficiales." });
+  }
+});
+
+router.get("/legislative/sesiones/:id/votaciones", async (req, res): Promise<void> => {
+  const id = pickId(req.params.id);
+  try {
+    const data = await getVotacionesBySesion(id);
+    res.json({ data, total: data.length });
+  } catch (err) {
+    req.log.error({ err }, "sesion votaciones failed");
     res.status(502).json({ error: "No se pudo obtener datos de las fuentes oficiales." });
   }
 });

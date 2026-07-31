@@ -1,11 +1,10 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   ScrollView, StyleSheet, Text, TouchableOpacity, View, Platform,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@/components/Icon";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useGetProyectoById } from "@workspace/api-client-react";
 import { useColors } from "@/hooks/useColors";
 import { Badge } from "@/components/ui/Badge";
 import { SkeletonList } from "@/components/ui/SkeletonCard";
@@ -33,9 +32,35 @@ export default function ProjectDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
 
-  const { data, isLoading, error } = useGetProyectoById(id ?? "", {
-    query: { queryKey: ["proyecto", id], enabled: !!id },
-  });
+  // Estados locales para el fetch nativo
+  const [data, setData] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(false);
+
+  const cargarProyecto = React.useCallback(async () => {
+    const baseUrl = process.env.EXPO_PUBLIC_API_URL || "http://192.168.31.146:3000";
+    if (!id) return;
+    try {
+      setIsLoading(true);
+      setError(false);
+      const res = await fetch(`${baseUrl}/api/legislative/proyectos/${id}`);
+      if (res.ok) {
+        const json = await res.json();
+        setData(json);
+      } else {
+        setError(true);
+      }
+    } catch (err) {
+      console.error("Error cargando proyecto:", err);
+      setError(true);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [id]);
+
+  React.useEffect(() => {
+    cargarProyecto();
+  }, [cargarProyecto]);
 
   const topPad = Platform.OS === "web" ? 67 : insets.top;
 

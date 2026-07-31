@@ -5,12 +5,12 @@ import {
 import { useRouter } from "expo-router";
 import { Ionicons } from "@/components/Icon";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useGetSesiones } from "@workspace/api-client-react";
 import { useColors } from "@/hooks/useColors";
 import { SessionCard } from "@/components/session/SessionCard";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { SkeletonList } from "@/components/ui/SkeletonCard";
 import { Badge } from "@/components/ui/Badge";
+import { useTranslation } from "react-i18next";
 
 const FILTERS = ["Todas", "Programadas", "Completadas"];
 
@@ -18,13 +18,38 @@ export default function SessionsScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const { t } = useTranslation();
   const [activeFilter, setActiveFilter] = useState("Todas");
   const topPad = Platform.OS === "web" ? 67 : insets.top;
 
-  const { data, isLoading, error, refetch } = useGetSesiones(
-    {},
-    { query: { queryKey: ["sesiones"] } }
-  );
+  // Estados locales para el fetch nativo
+  const [data, setData] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(false);
+
+  const cargarSesiones = React.useCallback(async () => {
+    const baseUrl = process.env.EXPO_PUBLIC_API_URL || "http://192.168.31.146:3000";
+    try {
+      setIsLoading(true);
+      setError(false);
+      const res = await fetch(`${baseUrl}/api/legislative/sesiones`);
+      if (res.ok) {
+        const json = await res.json();
+        setData(json);
+      } else {
+        setError(true);
+      }
+    } catch (err) {
+      console.error("Error cargando sesiones:", err);
+      setError(true);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    cargarSesiones();
+  }, [cargarSesiones]);
 
   const filtered = React.useMemo(() => {
     const list = data?.data ?? [];
@@ -39,7 +64,7 @@ export default function SessionsScreen() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Header */}
       <View style={[styles.header, { paddingTop: topPad + 12, backgroundColor: colors.background, borderBottomColor: colors.border }]}>
-        <Text style={[styles.headerTitle, { color: colors.foreground }]}>Sesiones</Text>
+        <Text style={[styles.headerTitle, { color: colors.foreground }]}>{t("sessions.title")}</Text>
 
         {/* Live Session Banner */}
         {sesionEnVivo && (
@@ -59,7 +84,7 @@ export default function SessionsScreen() {
 
         {/* Streaming Access */}
         <View style={[styles.streamBox, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <Text style={[styles.streamTitle, { color: colors.foreground }]}>Seguimiento en Vivo</Text>
+          <Text style={[styles.streamTitle, { color: colors.foreground }]}>{t("sessions.liveStreaming")}</Text>
           <View style={styles.streamBtns}>
             <TouchableOpacity
               style={[styles.streamBtn, { backgroundColor: colors.primary + "15" }]}
@@ -67,7 +92,7 @@ export default function SessionsScreen() {
               activeOpacity={0.8}
             >
               <Ionicons name="videocam" size={16} color={colors.primary} />
-              <Text style={[styles.streamBtnText, { color: colors.primary }]}>Sesión Digital</Text>
+              <Text style={[styles.streamBtnText, { color: colors.primary }]}>{t("sessions.digitalSession")}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.streamBtn, { backgroundColor: colors.accent + "15" }]}
@@ -103,7 +128,7 @@ export default function SessionsScreen() {
           <SkeletonList count={4} />
         </View>
       ) : error ? (
-        <EmptyState icon="alert-circle-outline" title="Error" subtitle="No se pudieron cargar las sesiones." actionLabel="Reintentar" onAction={refetch} />
+        <EmptyState icon="alert-circle-outline" title={t("common.error")} subtitle={t("sessions.noSessions")} actionLabel={t("common.retry")} onAction={cargarSesiones} />
       ) : (
         <FlatList
           data={filtered}
@@ -114,10 +139,10 @@ export default function SessionsScreen() {
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
           scrollEnabled={!!filtered.length}
-          onRefresh={refetch}
+          onRefresh={cargarSesiones}
           refreshing={false}
           ListEmptyComponent={
-            <EmptyState icon="calendar-outline" title="Sin sesiones" subtitle="No hay sesiones con el filtro seleccionado." />
+            <EmptyState icon="calendar-outline" title={t("common.noResults")} subtitle="No hay sesiones con el filtro seleccionado." />
           }
         />
       )}

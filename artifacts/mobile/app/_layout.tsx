@@ -17,6 +17,9 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { SettingsProvider } from "@/contexts/SettingsContext";
 import { setBaseUrl } from "@workspace/api-client-react";
 
+// Initialize i18n immediately
+import "@/i18n";
+
 // Point the generated API client to our backend proxy
 const REPL_DOMAIN =
   typeof process !== "undefined" ? process.env.EXPO_PUBLIC_DOMAIN : undefined;

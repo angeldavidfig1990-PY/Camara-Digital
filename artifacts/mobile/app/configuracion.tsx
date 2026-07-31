@@ -12,12 +12,20 @@ import { useRouter } from "expo-router";
 import { Ionicons } from "@/components/Icon";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useColors } from "@/hooks/useColors";
-import { useSettings, type FontSizeOption } from "@/contexts/SettingsContext";
+import { useSettings, type FontSizeOption, type LanguageOption } from "@/contexts/SettingsContext";
+import { useTranslation } from "react-i18next";
 
 const FONT_SIZE_LABELS: Record<FontSizeOption, string> = {
   small: "Pequeño",
   medium: "Mediano",
   large: "Grande",
+};
+
+// Mapeo de nombres legibles para los idiomas disponibles
+const LANGUAGE_LABELS: Record<LanguageOption, { name: string; flag: string; code: string }> = {
+  es: { name: "Español", flag: "🇵🇾", code: "ES" },
+  en: { name: "English", flag: "🇬🇧", code: "EN" },
+  gn: { name: "Guaraní", flag: "🇵🇾", code: "GN" },
 };
 
 const OFFICIAL_LINKS = [
@@ -69,7 +77,8 @@ export default function ConfiguracionScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { fontSize, setFontSize, fontScale } = useSettings();
+  const { fontSize, setFontSize, fontScale, language, setLanguage } = useSettings();
+  const { t } = useTranslation();
 
   const topPad = Platform.OS === "web" ? 0 : insets.top;
 
@@ -89,7 +98,7 @@ export default function ConfiguracionScreen() {
         <TouchableOpacity style={styles.backBtn} onPress={() => router.back()} activeOpacity={0.7}>
           <Ionicons name="chevron-back" size={24} color={colors.primary} />
         </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: colors.foreground }]}>Configuración</Text>
+        <Text style={[styles.headerTitle, { color: colors.foreground }]}>{t('settings', 'Configuración')}</Text>
         <View style={{ width: 40 }} />
       </View>
 
@@ -98,7 +107,7 @@ export default function ConfiguracionScreen() {
         showsVerticalScrollIndicator={false}
       >
         {/* Accessibility */}
-        <Text style={[styles.sectionLabel, { color: colors.mutedForeground }]}>ACCESIBILIDAD</Text>
+        <Text style={[styles.sectionLabel, { color: colors.mutedForeground }]}>{t('accessibility', 'ACCESIBILIDAD')}</Text>
         <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <View style={styles.cardRow}>
             <View style={[styles.iconBox, { backgroundColor: colors.primary + "15" }]}>
@@ -106,7 +115,7 @@ export default function ConfiguracionScreen() {
             </View>
             <View style={styles.cardText}>
               <Text style={[styles.cardLabel, { color: colors.foreground, fontSize: 15 * fontScale }]}>
-                Tamaño de texto
+                {t('text_size', 'Tamaño de texto')}
               </Text>
               <Text style={[styles.cardSub, { color: colors.mutedForeground, fontSize: 13 * fontScale }]}>
                 {FONT_SIZE_LABELS[fontSize]}
@@ -158,23 +167,58 @@ export default function ConfiguracionScreen() {
           </View>
         </View>
 
-        {/* Language */}
-        <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border, marginTop: 8 }]}>
+        {/* Language Section Corregida con Botones Activos */}
+        <Text style={[styles.sectionLabel, { color: colors.mutedForeground, marginTop: 20 }]}>
+          {t('language', 'IDIOMA')}
+        </Text>
+        <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <View style={styles.cardRow}>
             <View style={[styles.iconBox, { backgroundColor: "#0891B215" }]}>
               <Ionicons name="language-outline" size={20} color="#0891B2" />
             </View>
             <View style={styles.cardText}>
               <Text style={[styles.cardLabel, { color: colors.foreground, fontSize: 15 * fontScale }]}>
-                Idioma
+                {t('select_language', 'Idioma de la aplicación')}
               </Text>
               <Text style={[styles.cardSub, { color: colors.mutedForeground, fontSize: 13 * fontScale }]}>
-                Español (Paraguay)
+                {LANGUAGE_LABELS[language].name}
               </Text>
             </View>
             <View style={[styles.langBadge, { backgroundColor: colors.primary + "15" }]}>
-              <Text style={[styles.langBadgeText, { color: colors.primary }]}>ES</Text>
+              <Text style={[styles.langBadgeText, { color: colors.primary }]}>
+                {LANGUAGE_LABELS[language].code}
+              </Text>
             </View>
+          </View>
+          
+          <View style={[styles.divider, { backgroundColor: colors.border }]} />
+          
+          {/* Fila de botones selectores de idioma */}
+          <View style={styles.languageRow}>
+            {(["es", "en", "gn"] as LanguageOption[]).map((lang) => (
+              <TouchableOpacity
+                key={lang}
+                style={[
+                  styles.languageBtn,
+                  {
+                    backgroundColor: language === lang ? colors.primary : colors.background,
+                    borderColor: language === lang ? colors.primary : colors.border,
+                  },
+                ]}
+                onPress={() => setLanguage(lang)}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.languageFlag}>{LANGUAGE_LABELS[lang].flag}</Text>
+                <Text
+                  style={[
+                    styles.languageBtnLabel,
+                    { color: language === lang ? "#FFF" : colors.foreground },
+                  ]}
+                >
+                  {LANGUAGE_LABELS[lang].name}
+                </Text>
+              </TouchableOpacity>
+            ))}
           </View>
         </View>
 
@@ -229,7 +273,7 @@ export default function ConfiguracionScreen() {
               </Text>
               <View style={[styles.dot, { backgroundColor: colors.border }]} />
               <Text style={[styles.versionText, { color: colors.mutedForeground, fontSize: 12 * fontScale }]}>
-                2025
+                2026
               </Text>
             </View>
           </View>
@@ -281,6 +325,18 @@ const styles = StyleSheet.create({
   fontSizeBtnSub: { fontSize: 11, fontFamily: "Inter_400Regular" },
   langBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
   langBadgeText: { fontSize: 12, fontWeight: "700" as const, fontFamily: "Inter_700Bold" },
+  languageRow: { flexDirection: "row", gap: 8, padding: 16, paddingTop: 12 },
+  languageBtn: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 10,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    gap: 4,
+  },
+  languageFlag: { fontSize: 18 },
+  languageBtnLabel: { fontSize: 12, fontWeight: "600" as const, fontFamily: "Inter_600SemiBold" },
   aboutBox: { alignItems: "center", gap: 10, padding: 24 },
   aboutIcon: { width: 60, height: 60, borderRadius: 18, alignItems: "center", justifyContent: "center" },
   aboutTitle: { fontWeight: "700" as const, fontFamily: "Inter_700Bold" },

@@ -1,9 +1,8 @@
-import React from "react";
+import React, { useState } from "react";
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View, Platform, Linking } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@/components/Icon";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useGetComisionById } from "@workspace/api-client-react";
 import { useColors } from "@/hooks/useColors";
 import { SkeletonList } from "@/components/ui/SkeletonCard";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -15,9 +14,35 @@ export default function ComisionDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const topPad = Platform.OS === "web" ? 67 : insets.top;
 
-  const { data, isLoading, error } = useGetComisionById(id ?? "", {
-    query: { queryKey: ["comision", id], enabled: !!id },
-  });
+  // Estados locales para el fetch nativo
+  const [data, setData] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(false);
+
+  const cargarComision = React.useCallback(async () => {
+    const baseUrl = process.env.EXPO_PUBLIC_API_URL || "http://192.168.31.146:3000";
+    if (!id) return;
+    try {
+      setIsLoading(true);
+      setError(false);
+      const res = await fetch(`${baseUrl}/api/legislative/comisiones/${id}`);
+      if (res.ok) {
+        const json = await res.json();
+        setData(json);
+      } else {
+        setError(true);
+      }
+    } catch (err) {
+      console.error("Error cargando comision:", err);
+      setError(true);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [id]);
+
+  React.useEffect(() => {
+    cargarComision();
+  }, [cargarComision]);
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -78,7 +103,7 @@ export default function ComisionDetailScreen() {
                 Miembros ({data.miembros.length})
               </Text>
             </View>
-            {data.miembros.map((member, i) => (
+            {data.miembros.map((member: string, i: number) => (
               <View key={i} style={[styles.memberRow, { borderTopColor: i > 0 ? colors.border : "transparent" }]}>
                 <View style={[styles.memberAvatar, { backgroundColor: "#7C3AED18" }]}>
                   <Text style={[styles.memberInitial, { color: "#7C3AED" }]}>{member.charAt(0)}</Text>
@@ -127,7 +152,7 @@ const styles = StyleSheet.create({
     alignItems: "center", justifyContent: "center", borderWidth: 1,
   },
   content: { padding: 16, gap: 12 },
-  headerCard: { borderRadius: 20, borderWidth: 1, padding: 20, alignItems: "center", gap: 10 },
+  headerCard: { borderRadius: 20, borderWidth: 1, padding: 20, alignItems: "center", gap: 10, margin: 16 },
   headerIcon: { width: 64, height: 64, borderRadius: 20, alignItems: "center", justifyContent: "center" },
   comisionName: { fontSize: 20, fontWeight: "700" as const, fontFamily: "Inter_700Bold", textAlign: "center" },
   comisionType: { fontSize: 14, fontFamily: "Inter_400Regular" },

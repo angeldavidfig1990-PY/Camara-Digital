@@ -5,22 +5,48 @@ import {
 import { useRouter } from "expo-router";
 import { Ionicons } from "@/components/Icon";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useGetComisiones } from "@workspace/api-client-react";
 import { useColors } from "@/hooks/useColors";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { SkeletonList } from "@/components/ui/SkeletonCard";
 import { SearchBar } from "@/components/ui/SearchBar";
+import { useTranslation } from "react-i18next";
 
 export default function ComisionesScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const { t } = useTranslation();
   const [search, setSearch] = useState("");
   const topPad = Platform.OS === "web" ? 67 : insets.top;
 
-  const { data, isLoading, error, refetch } = useGetComisiones({
-    query: { queryKey: ["comisiones"] },
-  });
+  // Estados locales para el fetch nativo
+  const [data, setData] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(false);
+
+  const cargarComisiones = React.useCallback(async () => {
+    const baseUrl = process.env.EXPO_PUBLIC_API_URL || "http://192.168.31.146:3000";
+    try {
+      setIsLoading(true);
+      setError(false);
+      const res = await fetch(`${baseUrl}/api/legislative/comisiones`);
+      if (res.ok) {
+        const json = await res.json();
+        setData(json);
+      } else {
+        setError(true);
+      }
+    } catch (err) {
+      console.error("Error cargando comisiones:", err);
+      setError(true);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    cargarComisiones();
+  }, [cargarComisiones]);
 
   const filtered = React.useMemo(() => {
     if (!search) return data?.data ?? [];
@@ -39,13 +65,13 @@ export default function ComisionesScreen() {
           <TouchableOpacity onPress={() => router.back()} activeOpacity={0.7}>
             <Ionicons name="chevron-back" size={24} color={colors.foreground} />
           </TouchableOpacity>
-          <Text style={[styles.headerTitle, { color: colors.foreground }]}>Comisiones</Text>
+          <Text style={[styles.headerTitle, { color: colors.foreground }]}>{t("commissions.title")}</Text>
           <View style={{ width: 24 }} />
         </View>
-        <SearchBar value={search} onChangeText={setSearch} placeholder="Buscar comisión..." />
+        <SearchBar value={search} onChangeText={setSearch} placeholder={t("commissions.searchPlaceholder")} />
         {data && (
           <Text style={[styles.count, { color: colors.mutedForeground }]}>
-            {filtered.length} comisión{filtered.length !== 1 ? "es" : ""} permanente{filtered.length !== 1 ? "s" : ""}
+            {filtered.length} {t("commissions.commissionCount")}
           </Text>
         )}
       </View>
@@ -53,7 +79,7 @@ export default function ComisionesScreen() {
       {isLoading ? (
         <View style={styles.listContent}><SkeletonList count={6} /></View>
       ) : error ? (
-        <EmptyState icon="briefcase-outline" title="Error al cargar" subtitle="No se pudieron obtener las comisiones." actionLabel="Reintentar" onAction={refetch} />
+        <EmptyState icon="briefcase-outline" title={t("common.error")} subtitle={t("commissions.notFound")} actionLabel={t("common.retry")} onAction={cargarComisiones} />
       ) : (
         <FlatList
           data={filtered}
@@ -88,10 +114,10 @@ export default function ComisionesScreen() {
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
           scrollEnabled={!!filtered.length}
-          onRefresh={refetch}
+          onRefresh={cargarComisiones}
           refreshing={false}
           ListEmptyComponent={
-            <EmptyState icon="briefcase-outline" title="Sin resultados" subtitle="No se encontraron comisiones con esa búsqueda." />
+            <EmptyState icon="briefcase-outline" title={t("common.noResults")} subtitle="No se encontraron comisiones con esa búsqueda." />
           }
         />
       )}

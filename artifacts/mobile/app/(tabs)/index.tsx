@@ -7,7 +7,6 @@ import { useRouter } from "expo-router";
 import { Ionicons } from "@/components/Icon";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
-import { useGetDashboard, useGetSystemStatus, useGetNoticias } from "@workspace/api-client-react";
 import { useColors } from "@/hooks/useColors";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { SkeletonList } from "@/components/ui/SkeletonCard";
@@ -15,6 +14,7 @@ import { SessionCard } from "@/components/session/SessionCard";
 import { ProjectCard } from "@/components/project/ProjectCard";
 import { NewsCarousel } from "@/components/dashboard/NewsCarousel";
 import { Badge } from "@/components/ui/Badge";
+import { useTranslation } from "react-i18next";
 
 function formatRelative(iso?: string | null): string | null {
   if (!iso) return null;
@@ -34,33 +34,60 @@ export default function DashboardScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const { t } = useTranslation();
   const [refreshing, setRefreshing] = React.useState(false);
+  const [isLoading, setIsLoading] = React.useState(true);
+  const [error, setError] = React.useState<boolean>(false);
 
-  const { data, isLoading, error, refetch } = useGetDashboard({
-    query: { queryKey: ["dashboard"] },
-  });
-  const { data: status, refetch: refetchStatus } = useGetSystemStatus({
-    query: { queryKey: ["system-status"] },
-  });
-  const { data: noticias, refetch: refetchNoticias } = useGetNoticias({
-    query: { queryKey: ["noticias"] },
-  });
+  // Estados locales para los datos de la API
+  const [data, setData] = React.useState<any>(null);
+  const [status, setStatus] = React.useState<any>(null);
+  const [noticias, setNoticias] = React.useState<any>(null);
+
+  // Función sincronizada con las rutas reales encontradas en legislative.ts y app.ts
+  const cargarDatosDeAPI = React.useCallback(async () => {
+    const baseUrl = process.env.EXPO_PUBLIC_API_URL || "http://192.168.31.146:3000";
+    
+    try {
+      setError(false);
+      
+      // Consultamos en paralelo a las rutas reales del backend
+      const [resDashboard, resStatus, resNoticias] = await Promise.all([
+        fetch(`${baseUrl}/api/legislative/dashboard`).then(r => r.ok ? r.json() : null),
+        fetch(`${baseUrl}/api/system/status`).then(r => r.ok ? r.json() : null).catch(() => null), // se asume /api/system/status o similar por router.use(systemRouter)
+        fetch(`${baseUrl}/api/legislative/noticias`).then(r => r.ok ? r.json() : null).catch(() => null)
+      ]);
+
+      if (resDashboard) setData(resDashboard);
+      if (resStatus) setStatus(resStatus);
+      if (resNoticias) setNoticias(resNoticias);
+      
+    } catch (err) {
+      console.error("Error estirando datos:", err);
+      setError(true);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    cargarDatosDeAPI();
+  }, [cargarDatosDeAPI]);
 
   const onRefresh = React.useCallback(async () => {
     setRefreshing(true);
-    await Promise.all([refetch(), refetchStatus(), refetchNoticias()]);
+    await cargarDatosDeAPI();
     setRefreshing(false);
-  }, [refetch, refetchStatus, refetchNoticias]);
+  }, [cargarDatosDeAPI]);
 
   const lastSync = formatRelative(status?.lastSync);
   const online = status ? status.status !== "offline" : true;
-
   const topPad = Platform.OS === "web" ? 67 : insets.top;
 
   return (
     <ScrollView
       style={[styles.container, { backgroundColor: colors.background }]}
-      contentContainerStyle={[styles.content, { paddingTop: topPad + 16, paddingBottom: Platform.OS === "web" ? 100 : 100 }]}
+      contentContainerStyle={[styles.content, { paddingTop: topPad + 16, paddingBottom: 100 }]}
       showsVerticalScrollIndicator={false}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
     >
@@ -79,14 +106,14 @@ export default function DashboardScreen() {
             style={styles.heroScrim}
           >
             <View style={styles.heroTextWrap}>
-              <Text style={styles.heroEyebrow}>REPÚBLICA DEL PARAGUAY</Text>
-              <Text style={styles.heroTitle}>Cámara de{"\n"}Diputados</Text>
-              <Text style={styles.heroSub}>Honorable Congreso Nacional</Text>
+              <Text style={styles.heroEyebrow}>{t("dashboard.eyebrow")}</Text>
+              <Text style={styles.heroTitle}>{t("dashboard.title")}</Text>
+              <Text style={styles.heroSub}>{t("dashboard.subtitle")}</Text>
               {lastSync && (
                 <View style={styles.syncRow}>
                   <View style={[styles.syncDot, { backgroundColor: online ? "#34D399" : "#F87171" }]} />
                   <Text style={styles.syncText}>
-                    {online ? `Datos oficiales · Actualizado ${lastSync}` : "Sin conexión con fuentes oficiales"}
+                    {online ? `${t("dashboard.updated").replace("{time}", lastSync || "")}` : t("dashboard.offline")}
                   </Text>
                 </View>
               )}
@@ -110,24 +137,24 @@ export default function DashboardScreen() {
       </View>
 
       {/* Noticias oficiales */}
-      {noticias && noticias.data.length > 0 && (
+      {noticias?.data && noticias.data.length > 0 && (
         <View style={styles.section}>
-          <SectionHeader title="Noticias" subtitle="Cámara de Diputados" />
+          <SectionHeader title={t("dashboard.news")} subtitle={t("dashboard.newsSubtitle")} />
           <NewsCarousel noticias={noticias.data} />
         </View>
       )}
 
-      {/* Quick Actions */}
+      {/* Enlaces Claves */}
       <View style={styles.section}>
-        <SectionHeader title="Enlaces Claves" />
+        <SectionHeader title={t("dashboard.quickLinks")} />
         <View style={styles.quickGrid}>
           {[
-            { icon: "people-outline", label: "Diputados", color: colors.primary, route: "/(tabs)/deputies" },
-            { icon: "tv-outline", label: "Sesiones", color: "#7C3AED", route: "/(tabs)/sessions" },
-            { icon: "document-text-outline", label: "Proyectos", color: colors.warning, route: "/(tabs)/projects" },
-            { icon: "briefcase-outline", label: "Comisiones", color: "#0D9488", route: "/comisiones" },
-            { icon: "scale-outline", label: "Leyes", color: colors.success, route: "/(tabs)/projects" },
-            { icon: "sparkles-outline", label: "Asistente IA", color: colors.accent, route: "/ai-assistant" },
+            { icon: "people-outline", label: t("tabs.deputies"), color: colors.primary, route: "/(tabs)/deputies" },
+            { icon: "tv-outline", label: t("tabs.sessions"), color: "#7C3AED", route: "/(tabs)/sessions" },
+            { icon: "document-text-outline", label: t("tabs.projects"), color: colors.warning, route: "/(tabs)/projects" },
+            { icon: "briefcase-outline", label: t("commissions.title"), color: "#0D9488", route: "/comisiones" },
+            { icon: "scale-outline", label: t("dashboard.laws"), color: colors.success, route: "/(tabs)/projects" },
+            { icon: "sparkles-outline", label: t("ai.title"), color: colors.accent, route: "/ai-assistant" },
           ].map((item, i) => (
             <TouchableOpacity
               key={i}
@@ -145,13 +172,13 @@ export default function DashboardScreen() {
       </View>
 
       {/* Próximas Sesiones */}
-      {(isLoading || (data?.proximasSesiones && data.proximasSesiones.length > 0)) && (
+      {data?.proximasSesiones && data.proximasSesiones.length > 0 && (
         <View style={styles.section}>
           <SectionHeader
-            title="Próximas Sesiones"
+            title={t("dashboard.upcomingSessions")}
             onPress={() => router.push("/(tabs)/sessions")}
           />
-          {isLoading ? <SkeletonList count={2} /> : data?.proximasSesiones.map(s => (
+          {isLoading ? <SkeletonList count={2} /> : data.proximasSesiones.map((s: any) => (
             <SessionCard key={s.id} session={s} onPress={() => router.push(`/session/${s.id}`)} />
           ))}
         </View>
@@ -160,8 +187,8 @@ export default function DashboardScreen() {
       {/* Últimos Proyectos */}
       <View style={styles.section}>
         <SectionHeader
-          title="Últimos Proyectos"
-          subtitle="Actividad legislativa reciente"
+          title={t("dashboard.recentProjects")}
+          subtitle={t("dashboard.recentProjectsSubtitle")}
           onPress={() => router.push("/(tabs)/projects")}
         />
         {isLoading ? (
@@ -170,17 +197,19 @@ export default function DashboardScreen() {
           <Text style={[styles.errorText, { color: colors.mutedForeground }]}>
             No se pudo cargar la información
           </Text>
-        ) : data?.ultimosProyectos.slice(0, 5).map(p => (
-          <ProjectCard key={p.id} project={p} onPress={() => router.push(`/project/${p.id}`)} />
-        ))}
+        ) : data?.ultimosProyectos ? (
+          data.ultimosProyectos.slice(0, 5).map((p: any) => (
+            <ProjectCard key={p.id} project={p} onPress={() => router.push(`/project/${p.id}`)} />
+          ))
+        ) : null}
       </View>
 
       {/* Leyes Recientes */}
       {data?.ultimasLeyes && data.ultimasLeyes.length > 0 && (
         <View style={styles.section}>
-          <SectionHeader title="Leyes Sancionadas" subtitle="Legislación vigente" />
+          <SectionHeader title={t("dashboard.laws")} subtitle={t("dashboard.lawsSubtitle")} />
           <View style={[styles.lawsBox, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            {data.ultimasLeyes.slice(0, 4).map((ley, i) => (
+            {data.ultimasLeyes.slice(0, 4).map((ley: any, i: number) => (
               <View key={ley.numero}>
                 {i > 0 && <View style={[styles.divider, { backgroundColor: colors.border }]} />}
                 <View style={styles.lawRow}>
@@ -195,14 +224,14 @@ export default function DashboardScreen() {
         </View>
       )}
 
-      {/* Cámara de Diputados: web oficial e información */}
+      {/* La Cámara */}
       <View style={styles.section}>
-        <SectionHeader title="La Cámara" subtitle="Sitio oficial e información" />
+        <SectionHeader title={t("dashboard.chamber")} subtitle={t("dashboard.chamberSubtitle")} />
         <View style={[styles.linksBox, { backgroundColor: colors.card, borderColor: colors.border }]}>
           {[
-            { label: "Sitio Oficial", url: "https://www.diputados.gov.py", icon: "globe-outline" },
-            { label: "Datos Abiertos", url: "https://datos.congreso.gov.py/opendata/", icon: "cloud-download-outline" },
-            { label: "Sesión Digital", url: "https://www.diputados.gov.py/sesiones/sesion-digital-comision-permanente", icon: "videocam-outline" },
+            { label: t("dashboard.officialSite"), url: "https://www.diputados.gov.py", icon: "globe-outline" },
+            { label: t("dashboard.openData"), url: "https://datos.congreso.gov.py/opendata/", icon: "cloud-download-outline" },
+            { label: t("dashboard.digitalSession"), url: "https://www.diputados.gov.py/sesiones/sesion-digital-comision-permanente", icon: "videocam-outline" },
           ].map((link, i) => (
             <View key={i}>
               {i > 0 && <View style={[styles.divider, { backgroundColor: colors.border }]} />}
@@ -222,7 +251,7 @@ export default function DashboardScreen() {
 
       {/* Redes Sociales */}
       <View style={styles.section}>
-        <SectionHeader title="Redes Sociales" subtitle="Seguí la actividad de la Cámara" />
+        <SectionHeader title={t("dashboard.socialMedia")} subtitle={t("dashboard.socialMediaSubtitle")} />
         <View style={styles.socialGrid}>
           {[
             { label: "Facebook", url: "https://www.facebook.com/diputadospy", icon: "logo-facebook", color: "#1877F2" },
@@ -251,11 +280,7 @@ export default function DashboardScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   content: { paddingHorizontal: 16, gap: 4 },
-  hero: {
-    borderRadius: 20,
-    marginBottom: 20,
-    overflow: "hidden" as const,
-  },
+  hero: { borderRadius: 20, marginBottom: 20, overflow: "hidden" as const },
   heroBg: { width: "100%", minHeight: 250, justifyContent: "flex-end" },
   heroBgImage: { borderRadius: 20 },
   heroScrim: { flex: 1, minHeight: 250, justifyContent: "flex-end", padding: 20, gap: 14 },
@@ -270,15 +295,7 @@ const styles = StyleSheet.create({
   liveText: { flex: 1, color: "#FFFFFF", fontSize: 13, fontFamily: "Inter_500Medium", fontWeight: "500" as const },
   section: { marginBottom: 20 },
   quickGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
-  quickItem: {
-    width: "30%",
-    alignItems: "center",
-    padding: 14,
-    borderRadius: 14,
-    borderWidth: 1,
-    gap: 8,
-    flexGrow: 1,
-  },
+  quickItem: { width: "30%", alignItems: "center", padding: 14, borderRadius: 14, borderWidth: 1, gap: 8, flexGrow: 1 },
   quickIcon: { width: 44, height: 44, borderRadius: 14, alignItems: "center", justifyContent: "center" },
   quickLabel: { fontSize: 12, fontFamily: "Inter_500Medium", fontWeight: "500" as const, textAlign: "center" },
   errorText: { fontSize: 14, textAlign: "center", padding: 20, fontFamily: "Inter_400Regular" },
@@ -292,16 +309,7 @@ const styles = StyleSheet.create({
   linkRow: { flexDirection: "row", alignItems: "center", gap: 12, padding: 16 },
   linkText: { flex: 1, fontSize: 14, fontFamily: "Inter_500Medium", fontWeight: "500" as const },
   socialGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
-  socialItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    width: "47%",
-    flexGrow: 1,
-    padding: 12,
-    borderRadius: 14,
-    borderWidth: 1,
-  },
+  socialItem: { flexDirection: "row", alignItems: "center", gap: 10, width: "47%", flexGrow: 1, padding: 12, borderRadius: 14, borderWidth: 1 },
   socialIcon: { width: 38, height: 38, borderRadius: 11, alignItems: "center", justifyContent: "center" },
   socialLabel: { fontSize: 13, fontFamily: "Inter_500Medium", fontWeight: "500" as const },
 });
