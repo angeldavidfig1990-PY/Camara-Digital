@@ -6,8 +6,10 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { Noticia } from './noticia';
+import type { SourceMeta } from './sourceMeta';
 
 export interface NoticiasResponse {
   data: Noticia[];
   total: number;
+  _meta: SourceMeta;
 }

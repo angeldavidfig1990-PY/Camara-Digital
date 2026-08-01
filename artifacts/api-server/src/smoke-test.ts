@@ -35,7 +35,7 @@ async function runSmokeTest(): Promise<void> {
   console.log('Test 1: Fetching Legisladores (Diputados)...');
   const start1 = Date.now();
   try {
-    const legisladores = await getLegisladores();
+    const legisladores = (await getLegisladores()).data ?? [];
     const duration1 = Date.now() - start1;
     
     if (legisladores.length > 0) {
@@ -74,7 +74,7 @@ async function runSmokeTest(): Promise<void> {
   const start2 = Date.now();
   try {
     const proyectosResult = await getProyectos({ limit: 50 });
-    const proyectos = proyectosResult.data;
+    const proyectos = proyectosResult.data ?? [];
     const duration2 = Date.now() - start2;
     
     if (proyectos.length >= 50) {
@@ -113,7 +113,7 @@ async function runSmokeTest(): Promise<void> {
   console.log('Test 3: Fetching Comisiones...');
   const start3 = Date.now();
   try {
-    const comisiones = await getComisiones();
+    const comisiones = (await getComisiones()).data ?? [];
     const duration3 = Date.now() - start3;
     
     if (comisiones.length > 0) {
@@ -152,7 +152,7 @@ async function runSmokeTest(): Promise<void> {
   const start4 = Date.now();
   try {
     const sesionesResult = await getSesiones();
-    const sesiones = sesionesResult.data;
+    const sesiones = sesionesResult.data ?? [];
     const duration4 = Date.now() - start4;
     
     if (sesiones.length > 0) {
@@ -190,7 +190,7 @@ async function runSmokeTest(): Promise<void> {
   console.log('Test 5: Fetching Votaciones...');
   const start5 = Date.now();
   try {
-    const votaciones = await getVotaciones({ limit: 20 });
+    const votaciones = (await getVotaciones({ limit: 20 })).data ?? [];
     const duration5 = Date.now() - start5;
     
     if (votaciones.length > 0) {

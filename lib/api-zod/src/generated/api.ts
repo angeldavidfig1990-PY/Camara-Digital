@@ -75,7 +75,12 @@ export const GetDashboardResponse = zod.object({
   "fechaSancion": zod.string(),
   "fechaPromulgacion": zod.string().nullish(),
   "proyecto": zod.string().nullish()
-}))
+})),
+  "_meta": zod.object({
+  "sourceUrl": zod.string().describe('Exact official URL consulted for this result.'),
+  "fetchedAt": zod.coerce.date().describe('ISO-8601 timestamp of when the result was produced.'),
+  "verified": zod.boolean().describe('Always true; the official source responded successfully.')
+}).describe('Provenance metadata attached to every verified collection response. Guarantees the client can trace exactly which official source produced the data and when. verified is always true when present.')
 })
 
 
@@ -110,7 +115,12 @@ export const GetLegisladoresResponse = zod.object({
 })),
   "total": zod.number(),
   "page": zod.number(),
-  "totalPages": zod.number()
+  "totalPages": zod.number(),
+  "_meta": zod.object({
+  "sourceUrl": zod.string().describe('Exact official URL consulted for this result.'),
+  "fetchedAt": zod.coerce.date().describe('ISO-8601 timestamp of when the result was produced.'),
+  "verified": zod.boolean().describe('Always true; the official source responded successfully.')
+}).describe('Provenance metadata attached to every verified collection response. Guarantees the client can trace exactly which official source produced the data and when. verified is always true when present.')
 })
 
 
@@ -149,7 +159,12 @@ export const GetNoticiasResponse = zod.object({
   "imagen": zod.string().nullable(),
   "url": zod.string()
 })),
-  "total": zod.number()
+  "total": zod.number(),
+  "_meta": zod.object({
+  "sourceUrl": zod.string().describe('Exact official URL consulted for this result.'),
+  "fetchedAt": zod.coerce.date().describe('ISO-8601 timestamp of when the result was produced.'),
+  "verified": zod.boolean().describe('Always true; the official source responded successfully.')
+}).describe('Provenance metadata attached to every verified collection response. Guarantees the client can trace exactly which official source produced the data and when. verified is always true when present.')
 })
 
 
@@ -167,7 +182,12 @@ export const GetComisionesResponse = zod.object({
   "email": zod.string().nullish(),
   "miembros": zod.array(zod.string())
 })),
-  "total": zod.number()
+  "total": zod.number(),
+  "_meta": zod.object({
+  "sourceUrl": zod.string().describe('Exact official URL consulted for this result.'),
+  "fetchedAt": zod.coerce.date().describe('ISO-8601 timestamp of when the result was produced.'),
+  "verified": zod.boolean().describe('Always true; the official source responded successfully.')
+}).describe('Provenance metadata attached to every verified collection response. Guarantees the client can trace exactly which official source produced the data and when. verified is always true when present.')
 })
 
 
@@ -226,7 +246,12 @@ export const GetSesionesResponse = zod.object({
   "descripcion": zod.string().nullish(),
   "orden_del_dia": zod.array(zod.string()).optional(),
   "appURL": zod.string().nullish()
-}).nullish()
+}).nullish(),
+  "_meta": zod.object({
+  "sourceUrl": zod.string().describe('Exact official URL consulted for this result.'),
+  "fetchedAt": zod.coerce.date().describe('ISO-8601 timestamp of when the result was produced.'),
+  "verified": zod.boolean().describe('Always true; the official source responded successfully.')
+}).describe('Provenance metadata attached to every verified collection response. Guarantees the client can trace exactly which official source produced the data and when. verified is always true when present.')
 })
 
 
@@ -286,7 +311,12 @@ export const GetProyectosResponse = zod.object({
 })),
   "total": zod.number(),
   "page": zod.number(),
-  "totalPages": zod.number()
+  "totalPages": zod.number(),
+  "_meta": zod.object({
+  "sourceUrl": zod.string().describe('Exact official URL consulted for this result.'),
+  "fetchedAt": zod.coerce.date().describe('ISO-8601 timestamp of when the result was produced.'),
+  "verified": zod.boolean().describe('Always true; the official source responded successfully.')
+}).describe('Provenance metadata attached to every verified collection response. Guarantees the client can trace exactly which official source produced the data and when. verified is always true when present.')
 })
 
 
@@ -338,7 +368,12 @@ export const GetLeyesResponse = zod.object({
 })),
   "total": zod.number(),
   "page": zod.number(),
-  "totalPages": zod.number()
+  "totalPages": zod.number(),
+  "_meta": zod.object({
+  "sourceUrl": zod.string().describe('Exact official URL consulted for this result.'),
+  "fetchedAt": zod.coerce.date().describe('ISO-8601 timestamp of when the result was produced.'),
+  "verified": zod.boolean().describe('Always true; the official source responded successfully.')
+}).describe('Provenance metadata attached to every verified collection response. Guarantees the client can trace exactly which official source produced the data and when. verified is always true when present.')
 })
 
 
@@ -370,7 +405,12 @@ export const GetVotacionesResponse = zod.object({
   "sentido": zod.string()
 })).optional()
 })),
-  "total": zod.number()
+  "total": zod.number(),
+  "_meta": zod.object({
+  "sourceUrl": zod.string().describe('Exact official URL consulted for this result.'),
+  "fetchedAt": zod.coerce.date().describe('ISO-8601 timestamp of when the result was produced.'),
+  "verified": zod.boolean().describe('Always true; the official source responded successfully.')
+}).describe('Provenance metadata attached to every verified collection response. Guarantees the client can trace exactly which official source produced the data and when. verified is always true when present.')
 })
 
 

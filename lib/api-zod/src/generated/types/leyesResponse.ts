@@ -6,10 +6,12 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { Ley } from './ley';
+import type { SourceMeta } from './sourceMeta';
 
 export interface LeyesResponse {
   data: Ley[];
   total: number;
   page: number;
   totalPages: number;
+  _meta: SourceMeta;
 }
