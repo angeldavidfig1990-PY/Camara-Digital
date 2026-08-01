@@ -550,6 +550,8 @@ interface RealTramitacion {
   descripcionSubEtapa: string;
   resultadoTramite: string;
   camaraTramite: string;
+  numeroSesion?: string;
+  idSesion?: { idSesion?: number };
 }
 
 interface RealProyecto {
@@ -1121,18 +1123,149 @@ export async function getSesionById(id: string): Promise<FetchResult<Sesion | nu
   });
 }
 
+// ── Votaciones: escáner por-ID (la lista upstream está congelada) ────────────
+//
+// El endpoint de LISTA `/votacion?page&size` de la fuente oficial está congelado
+// en registros de 2018 e ignora TODOS los parámetros de paginación, orden y
+// filtro (idSesion, idProyecto, sort). La única vía para obtener votaciones
+// ACTUALES es el endpoint por-ID `/votacion/{id}`, que sí está vivo (verificado
+// hasta 2026). Los IDs de votación crecen con el tiempo, así que descubrimos el
+// techo actual y escaneamos hacia abajo recolectando votos de Diputados.
+//
+// Todos los datos provienen de la fuente oficial: no se fabrica ningún registro.
+
+const VOTACION_ID_SEED = 108500; // id reciente conocido; el escáner se autoajusta hacia arriba
+const VOTACION_PROBE_STEP = 50; // ancho de ventana para descubrir el techo
+const VOTACION_PROBE_MAX_STEPS = 24; // cubre crecimiento futuro (~1200 ids sobre el seed)
+const VOTACION_SCAN_CHUNK = 50; // ids por lote al escanear hacia abajo
+const VOTACION_SCAN_MAX = 1500; // tope de seguridad de ids escaneados
+const VOTACION_CONCURRENCY = 12; // paralelismo tolerado por la fuente (sin errores)
+
+/** Ejecuta `task` sobre `items` con concurrencia acotada, preservando el orden. */
+async function mapPool<T, R>(
+  items: T[],
+  concurrency: number,
+  task: (item: T) => Promise<R>,
+): Promise<R[]> {
+  const results = new Array<R>(items.length);
+  let next = 0;
+  async function worker(): Promise<void> {
+    for (;;) {
+      const i = next++;
+      if (i >= items.length) return;
+      results[i] = await task(items[i] as T);
+    }
+  }
+  const workers = Array.from({ length: Math.min(concurrency, items.length) }, () => worker());
+  await Promise.all(workers);
+  return results;
+}
+
+/**
+ * Obtiene una votación por ID (endpoint por-ID vivo). Cachea el resultado —
+ * incluyendo `null` para IDs inexistentes (404)— con el TTL de votaciones para
+ * que el descubrimiento del techo y el escaneo compartan las lecturas.
+ */
+async function fetchVotacionRaw(id: number): Promise<RealVotacion | null> {
+  const key = `votacionraw:${id}`;
+  const now = Date.now();
+  const hit = cache.get(key);
+  if (hit && now - hit.fetchedAt < TTL.votaciones) {
+    return hit.value as RealVotacion | null;
+  }
+  const raw = (await rawFetch(`/votacion/${id}`)) as RealVotacion[];
+  const value = raw.length ? (raw[0] as RealVotacion) : null;
+  cache.set(key, { value, fetchedAt: now });
+  return value;
+}
+
+function isDiputados(v: RealVotacion): boolean {
+  return /DIPUTADOS/i.test(v.tramitacion?.camaraTramite || "");
+}
+
+/**
+ * Descubre el id de votación máximo actual sondeando hacia arriba en ventanas
+ * desde un seed conocido. Se detiene tras dos ventanas consecutivas totalmente
+ * vacías (para no cortar por un hueco puntual). Devuelve el tope de la última
+ * ventana con datos. Cachea el resultado con el TTL de votaciones.
+ */
+async function discoverMaxVotacionId(): Promise<number> {
+  const key = "votacion:maxid";
+  const now = Date.now();
+  const hit = cache.get(key);
+  if (hit && now - hit.fetchedAt < TTL.votaciones) return hit.value as number;
+
+  let ceiling = VOTACION_ID_SEED + VOTACION_PROBE_STEP - 1;
+  let emptyStreak = 0;
+  for (let step = 0; step < VOTACION_PROBE_MAX_STEPS; step++) {
+    const start = VOTACION_ID_SEED + step * VOTACION_PROBE_STEP;
+    const ids = Array.from({ length: VOTACION_PROBE_STEP }, (_, k) => start + k);
+    const found = await mapPool(ids, VOTACION_CONCURRENCY, (id) =>
+      fetchVotacionRaw(id).catch(() => null),
+    );
+    const maxHit = found.reduce<number>(
+      (acc, v) => (v ? Math.max(acc, v.idVotacion) : acc),
+      -1,
+    );
+    if (maxHit >= 0) {
+      ceiling = maxHit;
+      emptyStreak = 0;
+    } else if (++emptyStreak >= 2) {
+      break; // dos ventanas vacías seguidas: pasamos el techo real
+    }
+  }
+  cache.set(key, { value: ceiling, fetchedAt: now });
+  logger.info("Votaciones", `Techo de id de votación descubierto: ${ceiling}`);
+  return ceiling;
+}
+
+/**
+ * Escanea votaciones hacia abajo desde el techo descubierto, recolectando
+ * registros crudos hasta reunir al menos `targetDip` votos de Diputados (o
+ * agotar la ventana de seguridad). Devuelve todos los registros crudos (ambas
+ * cámaras) hallados, ordenados por id descendente.
+ */
+async function scanRecentVotaciones(targetDip: number): Promise<RealVotacion[]> {
+  const maxId = await discoverMaxVotacionId();
+  const floor = maxId - VOTACION_SCAN_MAX;
+  const out: RealVotacion[] = [];
+  let dip = 0;
+  let top = maxId;
+  while (top > floor) {
+    const start = Math.max(top - VOTACION_SCAN_CHUNK + 1, floor + 1);
+    const ids: number[] = [];
+    for (let id = top; id >= start; id--) ids.push(id);
+    const raws = await mapPool(ids, VOTACION_CONCURRENCY, (id) =>
+      fetchVotacionRaw(id).catch(() => null),
+    );
+    for (const v of raws) {
+      if (!v) continue;
+      out.push(v);
+      if (isDiputados(v)) dip++;
+    }
+    top = start - 1;
+    if (dip >= targetDip) break;
+  }
+  return out;
+}
+
 export async function getVotaciones(
   opts: { search?: string; limit?: number } = {},
 ): Promise<FetchResult<Votacion[]>> {
-  const size = Math.min(opts.limit ?? 60, 100);
-  const path = `/votacion?page=0&size=${size}`;
-  const res = await cachedFetch("votaciones", `votaciones:${size}`, apiUrl(path), async () => {
-    const raw = (await rawFetch(path)) as RealVotacion[];
-    return raw
-      .filter((v) => /DIPUTADOS/i.test(v.tramitacion?.camaraTramite || ""))
-      .map((v) => mapVotacion(v))
-      .sort((a, b) => b.fecha.localeCompare(a.fecha));
-  });
+  const limit = Math.min(opts.limit ?? 50, 100);
+  const res = await cachedFetch(
+    "votaciones",
+    `votaciones:list:${limit}`,
+    apiUrl(`/votacion/{id} (escaneo por-ID; la lista upstream está congelada en 2018)`),
+    async () => {
+      const raws = await scanRecentVotaciones(limit);
+      return raws
+        .filter(isDiputados)
+        .map((v) => mapVotacion(v))
+        .sort((a, b) => b.fecha.localeCompare(a.fecha))
+        .slice(0, limit);
+    },
+  );
 
   if (!res.verified || res.data === null) return res;
 
@@ -1145,14 +1278,20 @@ export async function getVotaciones(
 }
 
 export async function getVotacionesBySesion(idSesion: string): Promise<FetchResult<Votacion[]>> {
-  const path = `/votacion?idSesion=${idSesion}`;
-  return cachedFetch("votaciones", `votaciones:sesion:${idSesion}`, apiUrl(path), async () => {
-    const raw = (await rawFetch(path)) as RealVotacion[];
-    return raw
-      .filter((v) => /DIPUTADOS/i.test(v.tramitacion?.camaraTramite || ""))
-      .map((v) => mapVotacion(v))
-      .sort((a, b) => b.fecha.localeCompare(a.fecha));
-  });
+  const target = Number(idSesion);
+  return cachedFetch(
+    "votaciones",
+    `votaciones:sesion:${idSesion}`,
+    apiUrl(`/votacion/{id} (escaneo por-ID filtrado por sesión ${idSesion})`),
+    async () => {
+      const raws = await scanRecentVotaciones(200);
+      return raws
+        .filter(isDiputados)
+        .filter((v) => v.tramitacion?.idSesion?.idSesion === target)
+        .map((v) => mapVotacion(v))
+        .sort((a, b) => b.fecha.localeCompare(a.fecha));
+    },
+  );
 }
 
 export async function getVotacionById(id: string): Promise<FetchResult<Votacion | null>> {
@@ -1171,11 +1310,15 @@ export async function getProyectosTotal(): Promise<FetchResult<number>> {
   });
 }
 
-// ── Noticias (REMOVED: Web scraping eliminated - using API only) ─────────────
-// NOTE: The official news portal does not have a JSON API.
-// This endpoint is disabled as per migration to API-only architecture.
-// If news data is required, consider implementing a separate RSS feed integration
-// or requesting the Congress to provide a news API endpoint.
+// ── Noticias (portal oficial de la Cámara de Diputados) ──────────────────────
+//
+// El portal oficial (https://www.diputados.gov.py) es un sitio Laravel sin API
+// JSON, pero su listado de noticias sí entrega HTML limpio y estable. Extraemos
+// los datos reales (título, fecha, resumen, imagen y enlace) de cada artículo.
+// No se fabrica ninguna noticia: si la fuente falla, se propaga como error de
+// origen y el cliente muestra estado vacío.
+
+const NOTICIAS_LISTING_URL = "https://www.diputados.gov.py/noticias/noticias";
 
 export interface Noticia {
   id: string;
@@ -1186,17 +1329,69 @@ export interface Noticia {
   url: string;
 }
 
-export async function getNoticias(_limit = 8): Promise<FetchResult<Noticia[]>> {
-  // The official Congress does not expose a JSON news API. Rather than inventing
-  // data, we return an *officially empty* verified result: the list is genuinely
-  // empty at source, not a mock. Consumers render an empty state, never fake news.
-  logger.warn("Noticias", "News endpoint has no official JSON API - returning empty verified result");
-  return {
-    data: [],
-    sourceUrl: "https://www.diputados.gov.py/",
-    fetchedAt: new Date().toISOString(),
-    verified: true,
-  };
+/** Extrae las noticias del HTML del portal oficial mediante parseo por bloques. */
+function parseNoticiasHtml(html: string): Noticia[] {
+  const items: Noticia[] = [];
+  const articleRe = /<article class="item[^"]*">([\s\S]*?)<\/article>/g;
+  let m: RegExpExecArray | null;
+  while ((m = articleRe.exec(html)) !== null) {
+    const block = m[1] ?? "";
+
+    const hrefM = /<div class="item-title">[\s\S]*?<a[^>]*href="([^"]+)"/.exec(block);
+    const titleM = /<div class="item-title">[\s\S]*?<h2[^>]*>([\s\S]*?)<\/h2>/.exec(block);
+    if (!titleM) continue;
+
+    const url = hrefM?.[1]?.trim() ?? "";
+    const titulo = decodeEntities(clean(stripTags(titleM[1] ?? "")));
+    if (!titulo) continue;
+
+    const dateM = /<div class="item-date">[\s\S]*?<p[^>]*>([\s\S]*?)<\/p>/.exec(block);
+    const fecha = dateM ? clean(stripTags(dateM[1] ?? "")) : "";
+
+    const summM = /<div class="item-summary">([\s\S]*?)<\/div>/.exec(block);
+    const resumen = summM ? decodeEntities(clean(stripTags(summM[1] ?? ""))) : "";
+
+    const imgM = /<img[^>]*src="([^"]+)"/.exec(block);
+    const imagen = imgM?.[1]?.trim() || null;
+
+    // El id es el último segmento numérico del enlace del detalle.
+    const idM = /(\d+)(?:\/?)$/.exec(url);
+    const id = idM?.[1] ?? String(items.length + 1);
+
+    items.push({ id, titulo, fecha, resumen, imagen, url });
+  }
+  return items;
+}
+
+export async function getNoticias(limit = 8): Promise<FetchResult<Noticia[]>> {
+  return cachedFetch("noticias", `noticias:${limit}`, NOTICIAS_LISTING_URL, async () => {
+    const controller = new AbortController();
+    const tid = setTimeout(() => controller.abort(), 15000);
+    try {
+      const res = await fetchWithRetry(NOTICIAS_LISTING_URL, {
+        signal: controller.signal,
+        headers: {
+          // El portal Laravel responde HTML; pedimos explícitamente HTML.
+          Accept: "text/html,application/xhtml+xml",
+          "User-Agent": "Mozilla/5.0 (compatible; CamaraDigital/1.0)",
+        },
+      });
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status} al obtener noticias del portal oficial`);
+      }
+      const html = await res.text();
+      const noticias = parseNoticiasHtml(html);
+      if (noticias.length === 0) {
+        // El portal cambió de maquetado: fallamos explícitamente en vez de
+        // devolver una lista vacía que parezca "sin noticias".
+        throw new Error("No se pudieron extraer noticias del portal oficial (maquetado inesperado)");
+      }
+      logger.info("Noticias", `Extraídas ${noticias.length} noticias del portal oficial`);
+      return noticias.slice(0, limit);
+    } finally {
+      clearTimeout(tid);
+    }
+  });
 }
 
 // ── Mesa Directiva (REMOVED: Web scraping eliminated - using API only) ─────────
