@@ -1,11 +1,10 @@
 {
   "extends": "../../tsconfig.base.json",
-  "compilerOptions": {
-    "incremental": true,
-    "tsBuildInfoFile": ".tsbuildinfo",
-    "outDir": "dist",
-    "rootDir": "src",
-    "types": ["node"]
+ "compilerOptions": {
+    "noImplicitAny": false,
+    "skipLibCheck": true,
+    "noEmitOnError": false,
+    "strict": false
   },
   "include": ["src"],
   "references": [
