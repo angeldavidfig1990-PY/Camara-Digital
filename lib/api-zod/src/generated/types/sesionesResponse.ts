@@ -6,9 +6,11 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { Sesion } from './sesion';
+import type { SourceMeta } from './sourceMeta';
 
 export interface SesionesResponse {
   data: Sesion[];
   total: number;
   sesionEnVivo?: Sesion | null;
+  _meta: SourceMeta;
 }

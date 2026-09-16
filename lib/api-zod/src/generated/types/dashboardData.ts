@@ -8,6 +8,7 @@
 import type { Ley } from './ley';
 import type { Proyecto } from './proyecto';
 import type { Sesion } from './sesion';
+import type { SourceMeta } from './sourceMeta';
 
 export interface DashboardData {
   totalLegisladores: number;
@@ -19,4 +20,5 @@ export interface DashboardData {
   proximasSesiones: Sesion[];
   ultimosProyectos: Proyecto[];
   ultimasLeyes: Ley[];
+  _meta: SourceMeta;
 }

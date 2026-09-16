@@ -6,8 +6,10 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { Comision } from './comision';
+import type { SourceMeta } from './sourceMeta';
 
 export interface ComisionesResponse {
   data: Comision[];
   total: number;
+  _meta: SourceMeta;
 }

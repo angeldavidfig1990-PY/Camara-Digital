@@ -67,7 +67,15 @@ async function fetchWithRetry(
         return response;
       }
 
-      // Don't retry on client errors (except 429 rate limit)
+      // 404 is NOT an outage: the official source is telling us "no records for
+      // this resource" (a valid empty result). Return it so the caller can map
+      // it to an empty—but verified—response, instead of a false source-down
+      // error. This is essential to the strict "empty vs. unavailable" policy.
+      if (response.status === 404) {
+        return response;
+      }
+
+      // Don't retry on other client errors (except 429 rate limit)
       if (response.status >= 400 && response.status < 500 && response.status !== 429) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
@@ -162,22 +170,35 @@ export const logger = {
   clearLogs: () => { LOG_BUFFER.length = 0; },
 };
 
-// Fallback to the 2025-2026 parliamentary period if /periodo lookup fails.
-const FALLBACK_PERIODO_ID = 100257;
+// ── Verified-source response envelope ────────────────────────────────────────
+//
+// STRICT "no mock data" policy: every service that reads the official API
+// returns this envelope. `verified` is true ONLY when the upstream HTTP call
+// succeeded (2xx). On any failure we return { data: null, verified: false }
+// with the error and the exact URL consulted — never fabricated/mock data and
+// never a stale cache masqueraded as live data.
+export interface FetchResult<T> {
+  /** Payload from the official source, or null when it could not be obtained. */
+  data: T | null;
+  /** Exact official URL that was consulted for this result. */
+  sourceUrl: string;
+  /** ISO-8601 timestamp of when this result was produced. */
+  fetchedAt: string;
+  /** true only if the official source responded successfully (2xx). */
+  verified: boolean;
+  /** Present when verified === false. */
+  error?: string;
+}
 
-// Mock data for commission members when external API fails
-const MOCK_COMISION_MIEMBROS: Record<number | string, string[]> = {
-  // Sample mock data for common commissions - replace with real data as needed
-  1: ["Carlos Silva", "Maria Gonzalez", "Juan Perez", "Ana Rodriguez", "Luis Martinez"],
-  2: ["Pedro Fernandez", "Laura Lopez", "Diego Sanchez", "Carmen Ruiz", "Miguel Torres"],
-  3: ["Rosa Jimenez", "Antonio Garcia", "Isabel Morales", "Francisco Navarro", "Teresa Castro"],
-  43: ["Roberto Acosta", "Carmen Benitez", "Jose Dominguez", "Maria Estigarribia", "Pedro Fleitas"],
-  48: ["Ana Gimenez", "Luis Godoy", "Carmen Ibarra", "Ramon Jara", "Sofia Kubra"],
-  54: ["Diego Lugo", "Elena Martinez", "Fernando Nunez", "Griselda Ortiz", "Hector Paredes"],
-  55: ["Isabel Ramirez", "Jorge Sanchez", "Karina Torres", "Leonardo Vera", "Monica Zalazar"],
-  // Generic fallback for any commission ID not listed
-  default: ["Diputado/a 1", "Diputado/a 2", "Diputado/a 3", "Diputado/a 4", "Diputado/a 5"],
-};
+/** Build the full URL for a path on the primary Datos Abiertos API. */
+function apiUrl(path: string): string {
+  return `${BASE}${path}`;
+}
+
+/** Build the full URL for a path on the Open Data API. */
+function openDataUrl(path: string): string {
+  return `${OPENDATA_BASE}${path}`;
+}
 
 // ── TTL cache + freshness registry ─────────────────────────────────────────────
 
@@ -225,20 +246,33 @@ function markFreshness(
 }
 
 /**
- * Cache-aware loader. `recurso` selects the TTL and records freshness used by
- * the /system/status endpoint.
+ * Cache-aware loader returning a verified-source envelope. Fresh cache (within
+ * its TTL) is served as verified live data. On a miss it fetches live and
+ * refreshes the cache.
+ *
+ * STRICT policy: if the live fetch fails, the error is surfaced explicitly as
+ * `{ data: null, verified: false, error }`. A stale (TTL-expired) cache entry is
+ * NEVER served as if it were live data.
  */
-export async function cached<T>(
+export async function cachedFetch<T>(
   recurso: Recurso,
   key: string,
+  sourceUrl: string,
   loader: () => Promise<T>,
-): Promise<T> {
+): Promise<FetchResult<T>> {
   const ttl = TTL[recurso];
   const now = Date.now();
   const hit = cache.get(key);
 
+  // Only fresh cache (within TTL) is served — this is verified data captured
+  // recently, not stale data masquerading as live.
   if (hit && now - hit.fetchedAt < ttl) {
-    return hit.value as T;
+    return {
+      data: hit.value as T,
+      sourceUrl,
+      fetchedAt: new Date(hit.fetchedAt).toISOString(),
+      verified: true,
+    };
   }
 
   try {
@@ -246,15 +280,22 @@ export async function cached<T>(
     cache.set(key, { value, fetchedAt: now });
     const records = Array.isArray(value) ? value.length : value == null ? 0 : 1;
     markFreshness(recurso, true, now, records);
-    return value;
+    return {
+      data: value,
+      sourceUrl,
+      fetchedAt: new Date(now).toISOString(),
+      verified: true,
+    };
   } catch (err) {
-    if (hit) {
-      // Serve stale data so the app keeps functioning, but flag the resource.
-      markFreshness(recurso, false, hit.fetchedAt);
-      return hit.value as T;
-    }
-    markFreshness(recurso, false, null);
-    throw err;
+    // NEVER serve stale cache as live. Fail explicitly.
+    markFreshness(recurso, false, hit?.fetchedAt ?? null);
+    return {
+      data: null,
+      sourceUrl,
+      fetchedAt: new Date(now).toISOString(),
+      verified: false,
+      error: (err as Error).message,
+    };
   }
 }
 
@@ -509,6 +550,8 @@ interface RealTramitacion {
   descripcionSubEtapa: string;
   resultadoTramite: string;
   camaraTramite: string;
+  numeroSesion?: string;
+  idSesion?: { idSesion?: number };
 }
 
 interface RealProyecto {
@@ -665,6 +708,8 @@ export interface Votacion {
 
 function mapLegislador(p: RealLegislador): Legislador {
   const cargo = `Diputado/a ${toTitleCase(p.tipoParlamentario || "Titular")}`;
+  // Use only the period reported by the official source — never a hardcoded one.
+  const periodo = p.periodoLegislativo || "";
   return {
     id: String(p.idLegislador),
     nombre: toTitleCase(p.nombres),
@@ -673,10 +718,12 @@ function mapLegislador(p: RealLegislador): Legislador {
     bancada: p.bancada || "",
     departamento: toTitleCase(p.departamento),
     cargo,
-    periodo: p.periodoLegislativo || "2023-2028",
+    periodo,
     foto: p.fotoURL || null,
     email: p.emailParlamentario?.trim() || null,
-    bio: `${cargo} por ${toTitleCase(p.departamento)}. Período legislativo ${p.periodoLegislativo}.`,
+    bio: periodo
+      ? `${cargo} por ${toTitleCase(p.departamento)}. Período legislativo ${periodo}.`
+      : `${cargo} por ${toTitleCase(p.departamento)}.`,
     comisiones: [],
   };
 }
@@ -824,35 +871,73 @@ function mapVotacion(v: RealVotacion, withDetail = false): Votacion {
 
 // ── Period helper ───────────────────────────────────────────────────────────────
 
+/**
+ * Resolve the current parliamentary period id from the official source.
+ *
+ * STRICT policy: there is NO hardcoded fallback. If the official API is
+ * unreachable or does not report a period, this throws so the caller's
+ * FetchResult becomes `{ verified: false }` — we never invent a period id.
+ */
 async function getCurrentPeriodoId(): Promise<number> {
-  return cached("periodo", "periodo:current", async () => {
-    // Temporarily return 100257 as the current period doesn't have member data in the API
-    // TODO: Update this when the API has member data for the current period
-    return 100257;
-    
-    // Original logic - commented out until API has member data for current period
-    // try {
-    //   const arr = (await rawFetch("/periodo")) as RealPeriodo[];
-    //   const ids = arr.map((p) => p.idPeriodoParlamentario).filter((n) => Number.isFinite(n));
-    //   return ids.length ? Math.max(...ids) : FALLBACK_PERIODO_ID;
-    // } catch {
-    //   return FALLBACK_PERIODO_ID;
-    // }
-  });
+  const key = "periodo:current";
+  const now = Date.now();
+  const hit = cache.get(key);
+  if (hit && now - hit.fetchedAt < TTL.periodo) {
+    return hit.value as number;
+  }
+
+  const arr = (await rawFetch("/periodo")) as RealPeriodo[];
+  const ids = arr
+    .map((p) => p.idPeriodoParlamentario)
+    .filter((n) => Number.isFinite(n));
+  if (ids.length === 0) {
+    throw new Error("La fuente oficial no devolvió el período parlamentario vigente.");
+  }
+  const periodoId = Math.max(...ids);
+  cache.set(key, { value: periodoId, fetchedAt: now });
+  markFreshness("periodo", true, now, 1);
+  return periodoId;
+}
+
+/**
+ * Fetch a commission's member roster from the official source. Returns [] when
+ * the source reports no members (a real empty result). Never returns mock data.
+ */
+async function fetchComisionMiembros(
+  idComision: number | string,
+  periodo: number,
+): Promise<RealLegislador[]> {
+  const resp = (await rawFetch(`/comision/${idComision}/miembros/${periodo}`).catch(
+    () => [] as unknown[],
+  )) as unknown;
+
+  let datosArray: unknown[] | null = null;
+  if (Array.isArray(resp)) {
+    datosArray = resp;
+  } else if (resp && Array.isArray((resp as { datos?: unknown[] }).datos)) {
+    datosArray = (resp as { datos: unknown[] }).datos;
+  }
+
+  if (datosArray && datosArray.length > 0) {
+    const first = datosArray[0] as { miembros?: RealLegislador[] };
+    return first?.miembros ?? [];
+  }
+  return [];
 }
 
 // ── High-level services (used by routes and the AI assistant) ──────────────────
 
 export async function getLegisladores(
   opts: { partido?: string; departamento?: string; search?: string } = {},
-): Promise<Legislador[]> {
-  const all = await cached("legisladores", "legisladores:D", async () => {
-    const raw = (await rawFetch("/legislador?idCamara=D&page=0&size=1000")) as RealLegislador[];
+): Promise<FetchResult<Legislador[]>> {
+  const path = "/legislador?idCamara=D&page=0&size=1000";
+  const res = await cachedFetch("legisladores", "legisladores:D", apiUrl(path), async () => {
+    const raw = (await rawFetch(path)) as RealLegislador[];
     const enDiputados = raw.filter(
       (p) => p.activo && /DIPUTADOS/i.test(p.camaraParlamentario || ""),
     );
     // The API returns members across every legislative period; keep only the
-    // most recent one (e.g. "2023-2028") so we surface the sitting chamber.
+    // most recent one so we surface the sitting chamber.
     const periodStart = (p: RealLegislador) => parseInt((p.periodoLegislativo || "0").slice(0, 4), 10) || 0;
     const latest = enDiputados.reduce((max, p) => Math.max(max, periodStart(p)), 0);
     return enDiputados
@@ -861,7 +946,9 @@ export async function getLegisladores(
       .sort((a, b) => a.apellido.localeCompare(b.apellido, "es"));
   });
 
-  let data = all;
+  if (!res.verified || res.data === null) return res;
+
+  let data = res.data;
   if (opts.partido) {
     const q = opts.partido.toLowerCase();
     data = data.filter((l) => l.partido.toLowerCase().includes(q) || l.bancada.toLowerCase().includes(q));
@@ -880,69 +967,31 @@ export async function getLegisladores(
         l.departamento.toLowerCase().includes(q),
     );
   }
-  return data;
+  return { ...res, data };
 }
 
-export async function getLegisladorById(id: string): Promise<Legislador | null> {
-  return cached("legisladores", `legislador:${id}`, async () => {
-    const raw = (await rawFetch(`/legislador/${id}`)) as RealLegislador[];
+export async function getLegisladorById(id: string): Promise<FetchResult<Legislador | null>> {
+  const path = `/legislador/${id}`;
+  return cachedFetch("legisladores", `legislador:${id}`, apiUrl(path), async () => {
+    const raw = (await rawFetch(path)) as RealLegislador[];
     return raw.length ? mapLegislador(raw[0]) : null;
   });
 }
 
-export async function getComisiones(): Promise<Comision[]> {
-  return cached("comisiones", "comisiones:D", async () => {
-    const raw = (await rawFetch("/comision?idCamara=D&page=0&size=200")) as RealComision[];
+export async function getComisiones(): Promise<FetchResult<Comision[]>> {
+  const path = "/comision?idCamara=D&page=0&size=200";
+  return cachedFetch("comisiones", "comisiones:D", apiUrl(path), async () => {
+    const raw = (await rawFetch(path)) as RealComision[];
     const activas = raw.filter((c) => /SI/i.test(c.esComisionActiva || ""));
 
-    // The list endpoint does not include members, so the member count would
-    // always render as 0. Fetch each commission's roster in parallel (cached
-    // upstream) so the list shows the real count, matching the detail screen.
+    // The list endpoint does not include members. Resolve the current period
+    // (throws if the source can't provide it) and fetch each roster from the
+    // official source. Empty rosters stay empty — no mock fallback.
     const periodo = await getCurrentPeriodoId();
-    
+
     const withMembers = await Promise.all(
       activas.map(async (c) => {
-        const url = `/comision/${c.idComision}/miembros/${periodo}`;
-        
-        const miembrosResponse = (await rawFetch(url).catch(
-          () => ({ datos: [] }),
-        )) as any;
-        
-        console.log(`[DEBUG] Commission ${c.idComision} - Full API response:`, JSON.stringify(miembrosResponse, null, 2));
-        
-        // The API returns { datos: [{ idComision, miembros: [...] }] }
-        // But rawFetch might return just the array directly
-        let miembros = [];
-        let datosArray = null;
-        
-        if (miembrosResponse?.datos && Array.isArray(miembrosResponse.datos)) {
-          datosArray = miembrosResponse.datos;
-          console.log(`[DEBUG] Commission ${c.idComision} - datos wrapper found`);
-        } else if (Array.isArray(miembrosResponse)) {
-          datosArray = miembrosResponse;
-          console.log(`[DEBUG] Commission ${c.idComision} - direct array found`);
-        }
-        
-        if (datosArray && datosArray.length > 0) {
-          console.log(`[DEBUG] Commission ${c.idComision} - datos array length:`, datosArray.length);
-          console.log(`[DEBUG] Commission ${c.idComision} - first item:`, JSON.stringify(datosArray[0], null, 2));
-          miembros = datosArray[0]?.miembros ?? [];
-          console.log(`[DEBUG] Commission ${c.idComision} - extracted miembros count:`, miembros.length);
-        } else {
-          console.log(`[DEBUG] Commission ${c.idComision} - NO datos array found or empty`);
-        }
-        
-        // If no members from API, use mock data as fallback
-        if (!miembros || miembros.length === 0) {
-          const mockMembers = MOCK_COMISION_MIEMBROS[c.idComision] || MOCK_COMISION_MIEMBROS.default;
-          if (mockMembers) {
-            miembros = mockMembers.map(name => ({
-              nombres: name.split(' ')[0],
-              apellidos: name.split(' ').slice(1).join(' '),
-            })) as RealLegislador[];
-          }
-        }
-        
+        const miembros = await fetchComisionMiembros(c.idComision, periodo);
         return mapComision({ ...c, miembros });
       }),
     );
@@ -951,67 +1000,33 @@ export async function getComisiones(): Promise<Comision[]> {
   });
 }
 
-export async function getComisionById(id: string): Promise<Comision | null> {
-  return cached("comisiones", `comision:${id}`, async () => {
+export async function getComisionById(id: string): Promise<FetchResult<Comision | null>> {
+  const path = `/comision/${id}`;
+  return cachedFetch("comisiones", `comision:${id}`, apiUrl(path), async () => {
     const periodo = await getCurrentPeriodoId();
-    console.log(`[DEBUG] getComisionById(${id}) - Using periodo ID: ${periodo}`);
-    const [base, miembrosResponse] = await Promise.all([
-      rawFetch(`/comision/${id}`) as Promise<RealComision[]>,
-      rawFetch(`/comision/${id}/miembros/${periodo}`).catch(() => ({ datos: [] })) as Promise<any>,
+    const [base, miembros] = await Promise.all([
+      rawFetch(path) as Promise<RealComision[]>,
+      fetchComisionMiembros(id, periodo),
     ]);
     if (!base.length) return null;
-    
-    console.log(`[DEBUG] getComisionById(${id}) - Full API response:`, JSON.stringify(miembrosResponse, null, 2));
-    
-    // The API returns { datos: [{ idComision, miembros: [...] }] }
-    // But rawFetch might return just the array directly
-    let miembros = [];
-    let datosArray = null;
-    
-    if (miembrosResponse?.datos && Array.isArray(miembrosResponse.datos)) {
-      datosArray = miembrosResponse.datos;
-      console.log(`[DEBUG] getComisionById(${id}) - datos wrapper found`);
-    } else if (Array.isArray(miembrosResponse)) {
-      datosArray = miembrosResponse;
-      console.log(`[DEBUG] getComisionById(${id}) - direct array found`);
-    }
-    
-    if (datosArray && datosArray.length > 0) {
-      console.log(`[DEBUG] getComisionById(${id}) - datos array length:`, datosArray.length);
-      console.log(`[DEBUG] getComisionById(${id}) - first item:`, JSON.stringify(datosArray[0], null, 2));
-      miembros = datosArray[0]?.miembros ?? [];
-      console.log(`[DEBUG] getComisionById(${id}) - extracted miembros count:`, miembros.length);
-    } else {
-      console.log(`[DEBUG] getComisionById(${id}) - NO datos array found or empty`);
-    }
-    
-    // If no members from API, use mock data as fallback
-    if (!miembros || miembros.length === 0) {
-      const mockMembers = MOCK_COMISION_MIEMBROS[parseInt(id)] || MOCK_COMISION_MIEMBROS.default;
-      if (mockMembers) {
-        miembros = mockMembers.map(name => ({
-          nombres: name.split(' ')[0],
-          apellidos: name.split(' ').slice(1).join(' '),
-        })) as RealLegislador[];
-      }
-    }
-    
-    const merged: RealComision = { ...base[0], miembros };
-    return mapComision(merged);
+    return mapComision({ ...base[0], miembros });
   });
 }
 
 export async function getProyectos(
   opts: { estado?: string; search?: string; limit?: number; page?: number } = {},
-): Promise<{ data: Proyecto[]; total: number }> {
+): Promise<FetchResult<Proyecto[]>> {
   const page = opts.page ?? 0;
   const size = Math.min(opts.limit ?? 30, 50);
-  const list = await cached("proyectos", `proyectos:${page}:${size}`, async () => {
-    const raw = (await rawFetch(`/proyecto?page=${page}&size=${size}`)) as RealProyecto[];
+  const path = `/proyecto?page=${page}&size=${size}`;
+  const res = await cachedFetch("proyectos", `proyectos:${page}:${size}`, apiUrl(path), async () => {
+    const raw = (await rawFetch(path)) as RealProyecto[];
     return raw.map((p) => mapProyecto(p));
   });
 
-  let data = list;
+  if (!res.verified || res.data === null) return res;
+
+  let data = res.data;
   if (opts.estado) {
     const q = opts.estado.toLowerCase();
     data = data.filter((p) => p.estado.toLowerCase().includes(q));
@@ -1022,12 +1037,13 @@ export async function getProyectos(
       (p) => p.titulo.toLowerCase().includes(q) || p.numero.toLowerCase().includes(q),
     );
   }
-  return { data, total: data.length };
+  return { ...res, data };
 }
 
-export async function getProyectoById(id: string): Promise<Proyecto | null> {
-  return cached("proyectos", `proyecto:${id}`, async () => {
-    const raw = (await rawFetch(`/proyecto/${id}/tramitaciones`)) as RealProyecto[];
+export async function getProyectoById(id: string): Promise<FetchResult<Proyecto | null>> {
+  const path = `/proyecto/${id}/tramitaciones`;
+  return cachedFetch("proyectos", `proyecto:${id}`, apiUrl(path), async () => {
+    const raw = (await rawFetch(path)) as RealProyecto[];
     return raw.length ? mapProyecto(raw[0], true) : null;
   });
 }
@@ -1035,10 +1051,11 @@ export async function getProyectoById(id: string): Promise<Proyecto | null> {
 export async function getProyectosByComision(
   comisionId: string,
   opts: { limit?: number } = {},
-): Promise<Proyecto[]> {
+): Promise<FetchResult<Proyecto[]>> {
   const limit = opts.limit ?? 50;
-  return cached("proyectos", `proyectos:comision:${comisionId}`, async () => {
-    const raw = (await rawFetchOpenData(`/proyecto?idComision=${comisionId}`)) as RealProyecto[];
+  const path = `/proyecto?idComision=${comisionId}`;
+  return cachedFetch("proyectos", `proyectos:comision:${comisionId}`, openDataUrl(path), async () => {
+    const raw = (await rawFetchOpenData(path)) as RealProyecto[];
     return raw.slice(0, limit).map((p) => mapProyecto(p));
   });
 }
@@ -1046,16 +1063,18 @@ export async function getProyectosByComision(
 export async function getSesionesByComision(
   comisionId: string,
   opts: { limit?: number } = {},
-): Promise<Sesion[]> {
+): Promise<FetchResult<Sesion[]>> {
   const limit = opts.limit ?? 50;
-  return cached("sesiones", `sesiones:comision:${comisionId}`, async () => {
-    const raw = (await rawFetchOpenData(`/sesion?idComision=${comisionId}`)) as RealSesion[];
+  const path = `/sesion?idComision=${comisionId}`;
+  return cachedFetch("sesiones", `sesiones:comision:${comisionId}`, openDataUrl(path), async () => {
+    const raw = (await rawFetchOpenData(path)) as RealSesion[];
     return raw.slice(0, limit).map((s) => mapSesion(s));
   });
 }
 
-export async function getLeyes(opts: { search?: string } = {}): Promise<Ley[]> {
-  const list = await cached("leyes", "leyes:periodo", async () => {
+export async function getLeyes(opts: { search?: string } = {}): Promise<FetchResult<Ley[]>> {
+  // The exact URL depends on the current period, resolved live inside the loader.
+  const res = await cachedFetch("leyes", "leyes:periodo", apiUrl("/ley/periodo/{periodo}"), async () => {
     const periodo = await getCurrentPeriodoId();
     const raw = (await rawFetch(`/ley/periodo/${periodo}`)) as RealLey[];
     return raw
@@ -1063,93 +1082,243 @@ export async function getLeyes(opts: { search?: string } = {}): Promise<Ley[]> {
       .sort((a, b) => (b.fechaPromulgacion ?? "").localeCompare(a.fechaPromulgacion ?? ""));
   });
 
-  let data = list;
+  if (!res.verified || res.data === null) return res;
+
+  let data = res.data;
   if (opts.search) {
     const q = opts.search.toLowerCase();
     data = data.filter((l) => l.titulo.toLowerCase().includes(q) || l.numero.includes(q));
   }
-  return data;
+  return { ...res, data };
 }
 
 export async function getSesiones(
   opts: { estado?: string; tipo?: string } = {},
-): Promise<{ data: Sesion[]; sesionEnVivo: Sesion | null }> {
-  const all = await cached("sesiones", "sesiones:D", async () => {
-    const year = new Date().getFullYear();
+): Promise<FetchResult<Sesion[]>> {
+  const year = new Date().getFullYear();
+  const path = `/sesion?idCamara=D&anho=${year}&page=0&size=100`;
+  const res = await cachedFetch("sesiones", "sesiones:D", apiUrl(path), async () => {
     const [curr, prev] = await Promise.all([
-      rawFetch(`/sesion?idCamara=D&anho=${year}&page=0&size=100`).catch(() => []) as Promise<RealSesion[]>,
-      rawFetch(`/sesion?idCamara=D&anho=${year - 1}&page=0&size=100`).catch(() => []) as Promise<RealSesion[]>,
+      rawFetch(`/sesion?idCamara=D&anho=${year}&page=0&size=100`) as Promise<RealSesion[]>,
+      rawFetch(`/sesion?idCamara=D&anho=${year - 1}&page=0&size=100`) as Promise<RealSesion[]>,
     ]);
     return [...curr, ...prev]
       .map((s) => mapSesion(s))
       .sort((a, b) => b.fecha.localeCompare(a.fecha));
   });
 
-  const sesionEnVivo = all.find((s) => s.estado === "en vivo") ?? null;
+  if (!res.verified || res.data === null) return res;
 
-  let data = all;
+  let data = res.data;
   if (opts.estado) data = data.filter((s) => s.estado === opts.estado);
   if (opts.tipo) data = data.filter((s) => s.tipo.toLowerCase().includes(opts.tipo!.toLowerCase()));
-  return { data, sesionEnVivo };
+  return { ...res, data };
 }
 
-export async function getSesionById(id: string): Promise<Sesion | null> {
-  return cached("sesiones", `sesion:${id}`, async () => {
-    const raw = (await rawFetch(`/sesion/${id}/proyectos`)) as RealSesion[];
+export async function getSesionById(id: string): Promise<FetchResult<Sesion | null>> {
+  const path = `/sesion/${id}/proyectos`;
+  return cachedFetch("sesiones", `sesion:${id}`, apiUrl(path), async () => {
+    const raw = (await rawFetch(path)) as RealSesion[];
     return raw.length ? mapSesion(raw[0], true) : null;
   });
 }
 
+// ── Votaciones: escáner por-ID (la lista upstream está congelada) ────────────
+//
+// El endpoint de LISTA `/votacion?page&size` de la fuente oficial está congelado
+// en registros de 2018 e ignora TODOS los parámetros de paginación, orden y
+// filtro (idSesion, idProyecto, sort). La única vía para obtener votaciones
+// ACTUALES es el endpoint por-ID `/votacion/{id}`, que sí está vivo (verificado
+// hasta 2026). Los IDs de votación crecen con el tiempo, así que descubrimos el
+// techo actual y escaneamos hacia abajo recolectando votos de Diputados.
+//
+// Todos los datos provienen de la fuente oficial: no se fabrica ningún registro.
+
+const VOTACION_ID_SEED = 108500; // id reciente conocido; el escáner se autoajusta hacia arriba
+const VOTACION_PROBE_STEP = 50; // ancho de ventana para descubrir el techo
+const VOTACION_PROBE_MAX_STEPS = 24; // cubre crecimiento futuro (~1200 ids sobre el seed)
+const VOTACION_SCAN_CHUNK = 50; // ids por lote al escanear hacia abajo
+const VOTACION_SCAN_MAX = 1500; // tope de seguridad de ids escaneados
+const VOTACION_CONCURRENCY = 12; // paralelismo tolerado por la fuente (sin errores)
+
+/** Ejecuta `task` sobre `items` con concurrencia acotada, preservando el orden. */
+async function mapPool<T, R>(
+  items: T[],
+  concurrency: number,
+  task: (item: T) => Promise<R>,
+): Promise<R[]> {
+  const results = new Array<R>(items.length);
+  let next = 0;
+  async function worker(): Promise<void> {
+    for (;;) {
+      const i = next++;
+      if (i >= items.length) return;
+      results[i] = await task(items[i] as T);
+    }
+  }
+  const workers = Array.from({ length: Math.min(concurrency, items.length) }, () => worker());
+  await Promise.all(workers);
+  return results;
+}
+
+/**
+ * Obtiene una votación por ID (endpoint por-ID vivo). Cachea el resultado —
+ * incluyendo `null` para IDs inexistentes (404)— con el TTL de votaciones para
+ * que el descubrimiento del techo y el escaneo compartan las lecturas.
+ */
+async function fetchVotacionRaw(id: number): Promise<RealVotacion | null> {
+  const key = `votacionraw:${id}`;
+  const now = Date.now();
+  const hit = cache.get(key);
+  if (hit && now - hit.fetchedAt < TTL.votaciones) {
+    return hit.value as RealVotacion | null;
+  }
+  const raw = (await rawFetch(`/votacion/${id}`)) as RealVotacion[];
+  const value = raw.length ? (raw[0] as RealVotacion) : null;
+  cache.set(key, { value, fetchedAt: now });
+  return value;
+}
+
+function isDiputados(v: RealVotacion): boolean {
+  return /DIPUTADOS/i.test(v.tramitacion?.camaraTramite || "");
+}
+
+/**
+ * Descubre el id de votación máximo actual sondeando hacia arriba en ventanas
+ * desde un seed conocido. Se detiene tras dos ventanas consecutivas totalmente
+ * vacías (para no cortar por un hueco puntual). Devuelve el tope de la última
+ * ventana con datos. Cachea el resultado con el TTL de votaciones.
+ */
+async function discoverMaxVotacionId(): Promise<number> {
+  const key = "votacion:maxid";
+  const now = Date.now();
+  const hit = cache.get(key);
+  if (hit && now - hit.fetchedAt < TTL.votaciones) return hit.value as number;
+
+  let ceiling = VOTACION_ID_SEED + VOTACION_PROBE_STEP - 1;
+  let emptyStreak = 0;
+  for (let step = 0; step < VOTACION_PROBE_MAX_STEPS; step++) {
+    const start = VOTACION_ID_SEED + step * VOTACION_PROBE_STEP;
+    const ids = Array.from({ length: VOTACION_PROBE_STEP }, (_, k) => start + k);
+    const found = await mapPool(ids, VOTACION_CONCURRENCY, (id) =>
+      fetchVotacionRaw(id).catch(() => null),
+    );
+    const maxHit = found.reduce<number>(
+      (acc, v) => (v ? Math.max(acc, v.idVotacion) : acc),
+      -1,
+    );
+    if (maxHit >= 0) {
+      ceiling = maxHit;
+      emptyStreak = 0;
+    } else if (++emptyStreak >= 2) {
+      break; // dos ventanas vacías seguidas: pasamos el techo real
+    }
+  }
+  cache.set(key, { value: ceiling, fetchedAt: now });
+  logger.info("Votaciones", `Techo de id de votación descubierto: ${ceiling}`);
+  return ceiling;
+}
+
+/**
+ * Escanea votaciones hacia abajo desde el techo descubierto, recolectando
+ * registros crudos hasta reunir al menos `targetDip` votos de Diputados (o
+ * agotar la ventana de seguridad). Devuelve todos los registros crudos (ambas
+ * cámaras) hallados, ordenados por id descendente.
+ */
+async function scanRecentVotaciones(targetDip: number): Promise<RealVotacion[]> {
+  const maxId = await discoverMaxVotacionId();
+  const floor = maxId - VOTACION_SCAN_MAX;
+  const out: RealVotacion[] = [];
+  let dip = 0;
+  let top = maxId;
+  while (top > floor) {
+    const start = Math.max(top - VOTACION_SCAN_CHUNK + 1, floor + 1);
+    const ids: number[] = [];
+    for (let id = top; id >= start; id--) ids.push(id);
+    const raws = await mapPool(ids, VOTACION_CONCURRENCY, (id) =>
+      fetchVotacionRaw(id).catch(() => null),
+    );
+    for (const v of raws) {
+      if (!v) continue;
+      out.push(v);
+      if (isDiputados(v)) dip++;
+    }
+    top = start - 1;
+    if (dip >= targetDip) break;
+  }
+  return out;
+}
+
 export async function getVotaciones(
   opts: { search?: string; limit?: number } = {},
-): Promise<Votacion[]> {
-  const size = Math.min(opts.limit ?? 60, 100);
-  const list = await cached("votaciones", `votaciones:${size}`, async () => {
-    const raw = (await rawFetch(`/votacion?page=0&size=${size}`)) as RealVotacion[];
-    return raw
-      .filter((v) => /DIPUTADOS/i.test(v.tramitacion?.camaraTramite || ""))
-      .map((v) => mapVotacion(v))
-      .sort((a, b) => b.fecha.localeCompare(a.fecha));
-  });
+): Promise<FetchResult<Votacion[]>> {
+  const limit = Math.min(opts.limit ?? 50, 100);
+  const res = await cachedFetch(
+    "votaciones",
+    `votaciones:list:${limit}`,
+    apiUrl(`/votacion/{id} (escaneo por-ID; la lista upstream está congelada en 2018)`),
+    async () => {
+      const raws = await scanRecentVotaciones(limit);
+      return raws
+        .filter(isDiputados)
+        .map((v) => mapVotacion(v))
+        .sort((a, b) => b.fecha.localeCompare(a.fecha))
+        .slice(0, limit);
+    },
+  );
 
-  let data = list;
+  if (!res.verified || res.data === null) return res;
+
+  let data = res.data;
   if (opts.search) {
     const q = opts.search.toLowerCase();
     data = data.filter((v) => v.titulo.toLowerCase().includes(q) || v.descripcion.toLowerCase().includes(q));
   }
-  return data;
+  return { ...res, data };
 }
 
-export async function getVotacionesBySesion(idSesion: string): Promise<Votacion[]> {
-  const list = await cached("votaciones", `votaciones:sesion:${idSesion}`, async () => {
-    const raw = (await rawFetch(`/votacion?idSesion=${idSesion}`)) as RealVotacion[];
-    return raw
-      .filter((v) => /DIPUTADOS/i.test(v.tramitacion?.camaraTramite || ""))
-      .map((v) => mapVotacion(v))
-      .sort((a, b) => b.fecha.localeCompare(a.fecha));
-  });
-  return list;
+export async function getVotacionesBySesion(idSesion: string): Promise<FetchResult<Votacion[]>> {
+  const target = Number(idSesion);
+  return cachedFetch(
+    "votaciones",
+    `votaciones:sesion:${idSesion}`,
+    apiUrl(`/votacion/{id} (escaneo por-ID filtrado por sesión ${idSesion})`),
+    async () => {
+      const raws = await scanRecentVotaciones(200);
+      return raws
+        .filter(isDiputados)
+        .filter((v) => v.tramitacion?.idSesion?.idSesion === target)
+        .map((v) => mapVotacion(v))
+        .sort((a, b) => b.fecha.localeCompare(a.fecha));
+    },
+  );
 }
 
-export async function getVotacionById(id: string): Promise<Votacion | null> {
-  return cached("votaciones", `votacion:${id}`, async () => {
-    const raw = (await rawFetch(`/votacion/${id}`)) as RealVotacion[];
+export async function getVotacionById(id: string): Promise<FetchResult<Votacion | null>> {
+  const path = `/votacion/${id}`;
+  return cachedFetch("votaciones", `votacion:${id}`, apiUrl(path), async () => {
+    const raw = (await rawFetch(path)) as RealVotacion[];
     return raw.length ? mapVotacion(raw[0], true) : null;
   });
 }
 
-export async function getProyectosTotal(): Promise<number> {
-  return cached("sistema", "proyecto:total", async () => {
-    const raw = (await rawFetch("/proyecto/total")) as number[];
+export async function getProyectosTotal(): Promise<FetchResult<number>> {
+  const path = "/proyecto/total";
+  return cachedFetch("sistema", "proyecto:total", apiUrl(path), async () => {
+    const raw = (await rawFetch(path)) as number[];
     return typeof raw[0] === "number" ? raw[0] : 0;
   });
 }
 
-// ── Noticias (REMOVED: Web scraping eliminated - using API only) ─────────────
-// NOTE: The official news portal does not have a JSON API.
-// This endpoint is disabled as per migration to API-only architecture.
-// If news data is required, consider implementing a separate RSS feed integration
-// or requesting the Congress to provide a news API endpoint.
+// ── Noticias (portal oficial de la Cámara de Diputados) ──────────────────────
+//
+// El portal oficial (https://www.diputados.gov.py) es un sitio Laravel sin API
+// JSON, pero su listado de noticias sí entrega HTML limpio y estable. Extraemos
+// los datos reales (título, fecha, resumen, imagen y enlace) de cada artículo.
+// No se fabrica ninguna noticia: si la fuente falla, se propaga como error de
+// origen y el cliente muestra estado vacío.
+
+const NOTICIAS_LISTING_URL = "https://www.diputados.gov.py/noticias/noticias";
 
 export interface Noticia {
   id: string;
@@ -1160,9 +1329,69 @@ export interface Noticia {
   url: string;
 }
 
-export async function getNoticias(limit = 8): Promise<Noticia[]> {
-  logger.warn('Noticias', 'News endpoint disabled - web scraping removed as per API-only migration');
-  return []; // Return empty array - web scraping removed
+/** Extrae las noticias del HTML del portal oficial mediante parseo por bloques. */
+function parseNoticiasHtml(html: string): Noticia[] {
+  const items: Noticia[] = [];
+  const articleRe = /<article class="item[^"]*">([\s\S]*?)<\/article>/g;
+  let m: RegExpExecArray | null;
+  while ((m = articleRe.exec(html)) !== null) {
+    const block = m[1] ?? "";
+
+    const hrefM = /<div class="item-title">[\s\S]*?<a[^>]*href="([^"]+)"/.exec(block);
+    const titleM = /<div class="item-title">[\s\S]*?<h2[^>]*>([\s\S]*?)<\/h2>/.exec(block);
+    if (!titleM) continue;
+
+    const url = hrefM?.[1]?.trim() ?? "";
+    const titulo = decodeEntities(clean(stripTags(titleM[1] ?? "")));
+    if (!titulo) continue;
+
+    const dateM = /<div class="item-date">[\s\S]*?<p[^>]*>([\s\S]*?)<\/p>/.exec(block);
+    const fecha = dateM ? clean(stripTags(dateM[1] ?? "")) : "";
+
+    const summM = /<div class="item-summary">([\s\S]*?)<\/div>/.exec(block);
+    const resumen = summM ? decodeEntities(clean(stripTags(summM[1] ?? ""))) : "";
+
+    const imgM = /<img[^>]*src="([^"]+)"/.exec(block);
+    const imagen = imgM?.[1]?.trim() || null;
+
+    // El id es el último segmento numérico del enlace del detalle.
+    const idM = /(\d+)(?:\/?)$/.exec(url);
+    const id = idM?.[1] ?? String(items.length + 1);
+
+    items.push({ id, titulo, fecha, resumen, imagen, url });
+  }
+  return items;
+}
+
+export async function getNoticias(limit = 8): Promise<FetchResult<Noticia[]>> {
+  return cachedFetch("noticias", `noticias:${limit}`, NOTICIAS_LISTING_URL, async () => {
+    const controller = new AbortController();
+    const tid = setTimeout(() => controller.abort(), 15000);
+    try {
+      const res = await fetchWithRetry(NOTICIAS_LISTING_URL, {
+        signal: controller.signal,
+        headers: {
+          // El portal Laravel responde HTML; pedimos explícitamente HTML.
+          Accept: "text/html,application/xhtml+xml",
+          "User-Agent": "Mozilla/5.0 (compatible; CamaraDigital/1.0)",
+        },
+      });
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status} al obtener noticias del portal oficial`);
+      }
+      const html = await res.text();
+      const noticias = parseNoticiasHtml(html);
+      if (noticias.length === 0) {
+        // El portal cambió de maquetado: fallamos explícitamente en vez de
+        // devolver una lista vacía que parezca "sin noticias".
+        throw new Error("No se pudieron extraer noticias del portal oficial (maquetado inesperado)");
+      }
+      logger.info("Noticias", `Extraídas ${noticias.length} noticias del portal oficial`);
+      return noticias.slice(0, limit);
+    } finally {
+      clearTimeout(tid);
+    }
+  });
 }
 
 // ── Mesa Directiva (REMOVED: Web scraping eliminated - using API only) ─────────
@@ -1182,9 +1411,16 @@ export interface MesaDirectiva {
   autoridades: Autoridad[];
 }
 
-export async function getAutoridades(): Promise<MesaDirectiva> {
-  logger.warn('Autoridades', 'Authorities endpoint disabled - web scraping removed as per API-only migration');
-  return { periodo: null, autoridades: [] }; // Return empty - web scraping removed
+export async function getAutoridades(): Promise<FetchResult<MesaDirectiva>> {
+  // The Open Data API does not expose the chamber's board. We return an
+  // officially empty, verified result instead of fabricating authorities.
+  logger.warn("Autoridades", "Authorities endpoint has no official JSON API - returning empty verified result");
+  return {
+    data: { periodo: null, autoridades: [] },
+    sourceUrl: "https://www.diputados.gov.py/",
+    fetchedAt: new Date().toISOString(),
+    verified: true,
+  };
 }
 
 export interface DashboardData {
@@ -1199,7 +1435,7 @@ export interface DashboardData {
   ultimasLeyes: Ley[];
 }
 
-export async function getDashboard(): Promise<DashboardData> {
+export async function getDashboard(): Promise<FetchResult<DashboardData>> {
   const [legisladores, comisiones, sesionesRes, proyectosRes, leyes, totalProyectos] =
     await Promise.all([
       getLegisladores(),
@@ -1207,26 +1443,52 @@ export async function getDashboard(): Promise<DashboardData> {
       getSesiones(),
       getProyectos({ limit: 5 }),
       getLeyes(),
-      getProyectosTotal().catch(() => 0),
+      getProyectosTotal(),
     ]);
 
+  // Strict policy: the dashboard is only trustworthy if every core official
+  // source responded. If any failed, surface a single verified:false result so
+  // the route returns 503 instead of a partially-fabricated dashboard.
+  const core = [legisladores, comisiones, sesionesRes, proyectosRes, leyes];
+  const failed = core.find((r) => !r.verified);
+  if (failed) {
+    return {
+      data: null,
+      sourceUrl: failed.sourceUrl,
+      fetchedAt: new Date().toISOString(),
+      verified: false,
+      error: failed.error ?? "Fuente oficial no disponible",
+    };
+  }
+
+  const sesiones = sesionesRes.data ?? [];
   const thisMonth = new Date().toISOString().slice(0, 7);
-  const sesionesEsteMes = sesionesRes.data.filter((s) => s.fecha.startsWith(thisMonth)).length;
-  const proximasSesiones = sesionesRes.data
+  const sesionesEsteMes = sesiones.filter((s) => s.fecha.startsWith(thisMonth)).length;
+  const proximasSesiones = sesiones
     .filter((s) => s.estado === "programada")
     .sort((a, b) => a.fecha.localeCompare(b.fecha))
     .slice(0, 3);
+  const sesionEnVivo = sesiones.find((s) => s.estado === "en vivo") ?? null;
+
+  const data: DashboardData = {
+    totalLegisladores: (legisladores.data ?? []).length,
+    totalComisiones: (comisiones.data ?? []).length,
+    sesionesEsteMes,
+    // totalProyectos is a non-core metric: if unavailable we show 0 rather than
+    // failing the whole dashboard, but we never invent a number.
+    proyectosHistoricos: totalProyectos.verified ? (totalProyectos.data ?? 0) : 0,
+    leyesAprobadas: (leyes.data ?? []).length,
+    sesionEnVivo,
+    proximasSesiones,
+    ultimosProyectos: proyectosRes.data ?? [],
+    ultimasLeyes: (leyes.data ?? []).slice(0, 4),
+  };
 
   return {
-    totalLegisladores: legisladores.length,
-    totalComisiones: comisiones.length,
-    sesionesEsteMes,
-    proyectosHistoricos: totalProyectos,
-    leyesAprobadas: leyes.length,
-    sesionEnVivo: sesionesRes.sesionEnVivo,
-    proximasSesiones,
-    ultimosProyectos: proyectosRes.data,
-    ultimasLeyes: leyes.slice(0, 4),
+    data,
+    sourceUrl: apiUrl("/dashboard"),
+    fetchedAt: new Date().toISOString(),
+    verified: true,
   };
 }
 
@@ -1248,8 +1510,9 @@ export async function getSystemStatus(): Promise<SystemStatus> {
   let probeOk = true;
   let lastSessionDetected: string | null = null;
   try {
-    const [, sesionesRes] = await Promise.all([getProyectosTotal(), getSesiones()]);
-    const fechas = sesionesRes.data.map((s) => s.fecha).filter(Boolean);
+    const [total, sesionesRes] = await Promise.all([getProyectosTotal(), getSesiones()]);
+    probeOk = total.verified && sesionesRes.verified;
+    const fechas = (sesionesRes.data ?? []).map((s) => s.fecha).filter(Boolean);
     lastSessionDetected = fechas.length ? fechas.sort((a, b) => b.localeCompare(a))[0] : null;
   } catch {
     probeOk = false;

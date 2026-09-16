@@ -25,6 +25,7 @@ import type {
   Comision,
   ComisionesResponse,
   DashboardData,
+  DataSourceError,
   ErrorResponse,
   GetLegisladoresParams,
   GetLeyesParams,
@@ -169,7 +170,7 @@ export const getGetDashboardQueryKey = () => {
     }
 
 
-export const getGetDashboardQueryOptions = <TData = Awaited<ReturnType<typeof getDashboard>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getDashboard>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getGetDashboardQueryOptions = <TData = Awaited<ReturnType<typeof getDashboard>>, TError = ErrorType<DataSourceError>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getDashboard>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -188,14 +189,14 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type GetDashboardQueryResult = NonNullable<Awaited<ReturnType<typeof getDashboard>>>
-export type GetDashboardQueryError = ErrorType<unknown>
+export type GetDashboardQueryError = ErrorType<DataSourceError>
 
 
 /**
  * @summary Get dashboard data
  */
 
-export function useGetDashboard<TData = Awaited<ReturnType<typeof getDashboard>>, TError = ErrorType<unknown>>(
+export function useGetDashboard<TData = Awaited<ReturnType<typeof getDashboard>>, TError = ErrorType<DataSourceError>>(
   options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getDashboard>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
@@ -253,7 +254,7 @@ export const getGetLegisladoresQueryKey = (params?: GetLegisladoresParams,) => {
     }
 
 
-export const getGetLegisladoresQueryOptions = <TData = Awaited<ReturnType<typeof getLegisladores>>, TError = ErrorType<unknown>>(params?: GetLegisladoresParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getLegisladores>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getGetLegisladoresQueryOptions = <TData = Awaited<ReturnType<typeof getLegisladores>>, TError = ErrorType<DataSourceError>>(params?: GetLegisladoresParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getLegisladores>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -272,14 +273,14 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type GetLegisladoresQueryResult = NonNullable<Awaited<ReturnType<typeof getLegisladores>>>
-export type GetLegisladoresQueryError = ErrorType<unknown>
+export type GetLegisladoresQueryError = ErrorType<DataSourceError>
 
 
 /**
  * @summary Get list of legislators
  */
 
-export function useGetLegisladores<TData = Awaited<ReturnType<typeof getLegisladores>>, TError = ErrorType<unknown>>(
+export function useGetLegisladores<TData = Awaited<ReturnType<typeof getLegisladores>>, TError = ErrorType<DataSourceError>>(
  params?: GetLegisladoresParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getLegisladores>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
@@ -330,7 +331,7 @@ export const getGetLegisladorByIdQueryKey = (id: string,) => {
     }
 
 
-export const getGetLegisladorByIdQueryOptions = <TData = Awaited<ReturnType<typeof getLegisladorById>>, TError = ErrorType<ErrorResponse>>(id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getLegisladorById>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getGetLegisladorByIdQueryOptions = <TData = Awaited<ReturnType<typeof getLegisladorById>>, TError = ErrorType<ErrorResponse | DataSourceError>>(id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getLegisladorById>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -349,14 +350,14 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type GetLegisladorByIdQueryResult = NonNullable<Awaited<ReturnType<typeof getLegisladorById>>>
-export type GetLegisladorByIdQueryError = ErrorType<ErrorResponse>
+export type GetLegisladorByIdQueryError = ErrorType<ErrorResponse | DataSourceError>
 
 
 /**
  * @summary Get legislator by ID
  */
 
-export function useGetLegisladorById<TData = Awaited<ReturnType<typeof getLegisladorById>>, TError = ErrorType<ErrorResponse>>(
+export function useGetLegisladorById<TData = Awaited<ReturnType<typeof getLegisladorById>>, TError = ErrorType<ErrorResponse | DataSourceError>>(
  id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getLegisladorById>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
@@ -407,7 +408,7 @@ export const getGetNoticiasQueryKey = () => {
     }
 
 
-export const getGetNoticiasQueryOptions = <TData = Awaited<ReturnType<typeof getNoticias>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getNoticias>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getGetNoticiasQueryOptions = <TData = Awaited<ReturnType<typeof getNoticias>>, TError = ErrorType<DataSourceError>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getNoticias>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -426,14 +427,14 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type GetNoticiasQueryResult = NonNullable<Awaited<ReturnType<typeof getNoticias>>>
-export type GetNoticiasQueryError = ErrorType<unknown>
+export type GetNoticiasQueryError = ErrorType<DataSourceError>
 
 
 /**
  * @summary Get official Chamber of Deputies news
  */
 
-export function useGetNoticias<TData = Awaited<ReturnType<typeof getNoticias>>, TError = ErrorType<unknown>>(
+export function useGetNoticias<TData = Awaited<ReturnType<typeof getNoticias>>, TError = ErrorType<DataSourceError>>(
   options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getNoticias>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
@@ -484,7 +485,7 @@ export const getGetComisionesQueryKey = () => {
     }
 
 
-export const getGetComisionesQueryOptions = <TData = Awaited<ReturnType<typeof getComisiones>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getComisiones>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getGetComisionesQueryOptions = <TData = Awaited<ReturnType<typeof getComisiones>>, TError = ErrorType<DataSourceError>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getComisiones>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -503,14 +504,14 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type GetComisionesQueryResult = NonNullable<Awaited<ReturnType<typeof getComisiones>>>
-export type GetComisionesQueryError = ErrorType<unknown>
+export type GetComisionesQueryError = ErrorType<DataSourceError>
 
 
 /**
  * @summary Get list of commissions
  */
 
-export function useGetComisiones<TData = Awaited<ReturnType<typeof getComisiones>>, TError = ErrorType<unknown>>(
+export function useGetComisiones<TData = Awaited<ReturnType<typeof getComisiones>>, TError = ErrorType<DataSourceError>>(
   options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getComisiones>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
@@ -561,7 +562,7 @@ export const getGetComisionByIdQueryKey = (id: string,) => {
     }
 
 
-export const getGetComisionByIdQueryOptions = <TData = Awaited<ReturnType<typeof getComisionById>>, TError = ErrorType<ErrorResponse>>(id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getComisionById>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getGetComisionByIdQueryOptions = <TData = Awaited<ReturnType<typeof getComisionById>>, TError = ErrorType<ErrorResponse | DataSourceError>>(id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getComisionById>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -580,14 +581,14 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type GetComisionByIdQueryResult = NonNullable<Awaited<ReturnType<typeof getComisionById>>>
-export type GetComisionByIdQueryError = ErrorType<ErrorResponse>
+export type GetComisionByIdQueryError = ErrorType<ErrorResponse | DataSourceError>
 
 
 /**
  * @summary Get commission by ID
  */
 
-export function useGetComisionById<TData = Awaited<ReturnType<typeof getComisionById>>, TError = ErrorType<ErrorResponse>>(
+export function useGetComisionById<TData = Awaited<ReturnType<typeof getComisionById>>, TError = ErrorType<ErrorResponse | DataSourceError>>(
  id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getComisionById>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
@@ -645,7 +646,7 @@ export const getGetSesionesQueryKey = (params?: GetSesionesParams,) => {
     }
 
 
-export const getGetSesionesQueryOptions = <TData = Awaited<ReturnType<typeof getSesiones>>, TError = ErrorType<unknown>>(params?: GetSesionesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSesiones>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getGetSesionesQueryOptions = <TData = Awaited<ReturnType<typeof getSesiones>>, TError = ErrorType<DataSourceError>>(params?: GetSesionesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSesiones>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -664,14 +665,14 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type GetSesionesQueryResult = NonNullable<Awaited<ReturnType<typeof getSesiones>>>
-export type GetSesionesQueryError = ErrorType<unknown>
+export type GetSesionesQueryError = ErrorType<DataSourceError>
 
 
 /**
  * @summary Get list of sessions
  */
 
-export function useGetSesiones<TData = Awaited<ReturnType<typeof getSesiones>>, TError = ErrorType<unknown>>(
+export function useGetSesiones<TData = Awaited<ReturnType<typeof getSesiones>>, TError = ErrorType<DataSourceError>>(
  params?: GetSesionesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSesiones>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
@@ -722,7 +723,7 @@ export const getGetSesionByIdQueryKey = (id: string,) => {
     }
 
 
-export const getGetSesionByIdQueryOptions = <TData = Awaited<ReturnType<typeof getSesionById>>, TError = ErrorType<ErrorResponse>>(id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSesionById>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getGetSesionByIdQueryOptions = <TData = Awaited<ReturnType<typeof getSesionById>>, TError = ErrorType<ErrorResponse | DataSourceError>>(id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSesionById>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -741,14 +742,14 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type GetSesionByIdQueryResult = NonNullable<Awaited<ReturnType<typeof getSesionById>>>
-export type GetSesionByIdQueryError = ErrorType<ErrorResponse>
+export type GetSesionByIdQueryError = ErrorType<ErrorResponse | DataSourceError>
 
 
 /**
  * @summary Get session by ID
  */
 
-export function useGetSesionById<TData = Awaited<ReturnType<typeof getSesionById>>, TError = ErrorType<ErrorResponse>>(
+export function useGetSesionById<TData = Awaited<ReturnType<typeof getSesionById>>, TError = ErrorType<ErrorResponse | DataSourceError>>(
  id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSesionById>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
@@ -806,7 +807,7 @@ export const getGetProyectosQueryKey = (params?: GetProyectosParams,) => {
     }
 
 
-export const getGetProyectosQueryOptions = <TData = Awaited<ReturnType<typeof getProyectos>>, TError = ErrorType<unknown>>(params?: GetProyectosParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getProyectos>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getGetProyectosQueryOptions = <TData = Awaited<ReturnType<typeof getProyectos>>, TError = ErrorType<DataSourceError>>(params?: GetProyectosParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getProyectos>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -825,14 +826,14 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type GetProyectosQueryResult = NonNullable<Awaited<ReturnType<typeof getProyectos>>>
-export type GetProyectosQueryError = ErrorType<unknown>
+export type GetProyectosQueryError = ErrorType<DataSourceError>
 
 
 /**
  * @summary Get list of bills/projects
  */
 
-export function useGetProyectos<TData = Awaited<ReturnType<typeof getProyectos>>, TError = ErrorType<unknown>>(
+export function useGetProyectos<TData = Awaited<ReturnType<typeof getProyectos>>, TError = ErrorType<DataSourceError>>(
  params?: GetProyectosParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getProyectos>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
@@ -883,7 +884,7 @@ export const getGetProyectoByIdQueryKey = (id: string,) => {
     }
 
 
-export const getGetProyectoByIdQueryOptions = <TData = Awaited<ReturnType<typeof getProyectoById>>, TError = ErrorType<ErrorResponse>>(id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getProyectoById>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getGetProyectoByIdQueryOptions = <TData = Awaited<ReturnType<typeof getProyectoById>>, TError = ErrorType<ErrorResponse | DataSourceError>>(id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getProyectoById>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -902,14 +903,14 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type GetProyectoByIdQueryResult = NonNullable<Awaited<ReturnType<typeof getProyectoById>>>
-export type GetProyectoByIdQueryError = ErrorType<ErrorResponse>
+export type GetProyectoByIdQueryError = ErrorType<ErrorResponse | DataSourceError>
 
 
 /**
  * @summary Get project by id
  */
 
-export function useGetProyectoById<TData = Awaited<ReturnType<typeof getProyectoById>>, TError = ErrorType<ErrorResponse>>(
+export function useGetProyectoById<TData = Awaited<ReturnType<typeof getProyectoById>>, TError = ErrorType<ErrorResponse | DataSourceError>>(
  id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getProyectoById>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
@@ -967,7 +968,7 @@ export const getGetLeyesQueryKey = (params?: GetLeyesParams,) => {
     }
 
 
-export const getGetLeyesQueryOptions = <TData = Awaited<ReturnType<typeof getLeyes>>, TError = ErrorType<unknown>>(params?: GetLeyesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getLeyes>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getGetLeyesQueryOptions = <TData = Awaited<ReturnType<typeof getLeyes>>, TError = ErrorType<DataSourceError>>(params?: GetLeyesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getLeyes>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -986,14 +987,14 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type GetLeyesQueryResult = NonNullable<Awaited<ReturnType<typeof getLeyes>>>
-export type GetLeyesQueryError = ErrorType<unknown>
+export type GetLeyesQueryError = ErrorType<DataSourceError>
 
 
 /**
  * @summary Get list of approved laws
  */
 
-export function useGetLeyes<TData = Awaited<ReturnType<typeof getLeyes>>, TError = ErrorType<unknown>>(
+export function useGetLeyes<TData = Awaited<ReturnType<typeof getLeyes>>, TError = ErrorType<DataSourceError>>(
  params?: GetLeyesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getLeyes>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
@@ -1051,7 +1052,7 @@ export const getGetVotacionesQueryKey = (params?: GetVotacionesParams,) => {
     }
 
 
-export const getGetVotacionesQueryOptions = <TData = Awaited<ReturnType<typeof getVotaciones>>, TError = ErrorType<unknown>>(params?: GetVotacionesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getVotaciones>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getGetVotacionesQueryOptions = <TData = Awaited<ReturnType<typeof getVotaciones>>, TError = ErrorType<DataSourceError>>(params?: GetVotacionesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getVotaciones>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -1070,14 +1071,14 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type GetVotacionesQueryResult = NonNullable<Awaited<ReturnType<typeof getVotaciones>>>
-export type GetVotacionesQueryError = ErrorType<unknown>
+export type GetVotacionesQueryError = ErrorType<DataSourceError>
 
 
 /**
  * @summary Get list of recent votes
  */
 
-export function useGetVotaciones<TData = Awaited<ReturnType<typeof getVotaciones>>, TError = ErrorType<unknown>>(
+export function useGetVotaciones<TData = Awaited<ReturnType<typeof getVotaciones>>, TError = ErrorType<DataSourceError>>(
  params?: GetVotacionesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getVotaciones>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
@@ -1128,7 +1129,7 @@ export const getGetVotacionByIdQueryKey = (id: string,) => {
     }
 
 
-export const getGetVotacionByIdQueryOptions = <TData = Awaited<ReturnType<typeof getVotacionById>>, TError = ErrorType<ErrorResponse>>(id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getVotacionById>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getGetVotacionByIdQueryOptions = <TData = Awaited<ReturnType<typeof getVotacionById>>, TError = ErrorType<ErrorResponse | DataSourceError>>(id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getVotacionById>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -1147,14 +1148,14 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type GetVotacionByIdQueryResult = NonNullable<Awaited<ReturnType<typeof getVotacionById>>>
-export type GetVotacionByIdQueryError = ErrorType<ErrorResponse>
+export type GetVotacionByIdQueryError = ErrorType<ErrorResponse | DataSourceError>
 
 
 /**
  * @summary Get vote by ID
  */
 
-export function useGetVotacionById<TData = Awaited<ReturnType<typeof getVotacionById>>, TError = ErrorType<ErrorResponse>>(
+export function useGetVotacionById<TData = Awaited<ReturnType<typeof getVotacionById>>, TError = ErrorType<ErrorResponse | DataSourceError>>(
  id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getVotacionById>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
@@ -1206,7 +1207,7 @@ export const getGetSystemStatusQueryKey = () => {
     }
 
 
-export const getGetSystemStatusQueryOptions = <TData = Awaited<ReturnType<typeof getSystemStatus>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSystemStatus>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getGetSystemStatusQueryOptions = <TData = Awaited<ReturnType<typeof getSystemStatus>>, TError = ErrorType<DataSourceError>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSystemStatus>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -1225,14 +1226,14 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type GetSystemStatusQueryResult = NonNullable<Awaited<ReturnType<typeof getSystemStatus>>>
-export type GetSystemStatusQueryError = ErrorType<unknown>
+export type GetSystemStatusQueryError = ErrorType<DataSourceError>
 
 
 /**
  * @summary Get data freshness / sync status
  */
 
-export function useGetSystemStatus<TData = Awaited<ReturnType<typeof getSystemStatus>>, TError = ErrorType<unknown>>(
+export function useGetSystemStatus<TData = Awaited<ReturnType<typeof getSystemStatus>>, TError = ErrorType<DataSourceError>>(
   options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSystemStatus>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {

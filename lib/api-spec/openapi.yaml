@@ -44,6 +44,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/DashboardData"
+        "503":
+          description: Fuente oficial no disponible
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataSourceError"
 
   /legislative/legisladores:
     get:
@@ -80,6 +86,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/LegisladoresResponse"
+        "503":
+          description: Fuente oficial no disponible
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataSourceError"
 
   /legislative/legisladores/{id}:
     get:
@@ -99,6 +111,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Legislador"
+        "503":
+          description: Fuente oficial no disponible
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataSourceError"
         "404":
           description: Not found
           content:
@@ -118,6 +136,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/NoticiasResponse"
+        "503":
+          description: Fuente oficial no disponible
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataSourceError"
 
   /legislative/comisiones:
     get:
@@ -131,6 +155,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ComisionesResponse"
+        "503":
+          description: Fuente oficial no disponible
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataSourceError"
 
   /legislative/comisiones/{id}:
     get:
@@ -150,6 +180,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Comision"
+        "503":
+          description: Fuente oficial no disponible
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataSourceError"
         "404":
           description: Not found
           content:
@@ -183,6 +219,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/SesionesResponse"
+        "503":
+          description: Fuente oficial no disponible
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataSourceError"
 
   /legislative/sesiones/{id}:
     get:
@@ -202,6 +244,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Sesion"
+        "503":
+          description: Fuente oficial no disponible
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataSourceError"
         "404":
           description: Not found
           content:
@@ -244,6 +292,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ProyectosResponse"
+        "503":
+          description: Fuente oficial no disponible
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataSourceError"
 
   /legislative/proyectos/{id}:
     get:
@@ -263,6 +317,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Proyecto"
+        "503":
+          description: Fuente oficial no disponible
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataSourceError"
         "404":
           description: Not found
           content:
@@ -296,6 +356,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/LeyesResponse"
+        "503":
+          description: Fuente oficial no disponible
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataSourceError"
 
   /legislative/votaciones:
     get:
@@ -314,6 +380,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/VotacionesResponse"
+        "503":
+          description: Fuente oficial no disponible
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataSourceError"
 
   /legislative/votaciones/{id}:
     get:
@@ -333,6 +405,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Votacion"
+        "503":
+          description: Fuente oficial no disponible
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataSourceError"
         "404":
           description: Not found
           content:
@@ -353,6 +431,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/SystemStatus"
+        "503":
+          description: Fuente oficial no disponible
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataSourceError"
 
   /ai/consult:
     post:
@@ -390,6 +474,48 @@ components:
           type: string
       required:
         - error
+
+    SourceMeta:
+      type: object
+      description: >-
+        Provenance metadata attached to every verified collection response.
+        Guarantees the client can trace exactly which official source produced
+        the data and when. verified is always true when present.
+      properties:
+        sourceUrl:
+          type: string
+          description: Exact official URL consulted for this result.
+        fetchedAt:
+          type: string
+          format: date-time
+          description: ISO-8601 timestamp of when the result was produced.
+        verified:
+          type: boolean
+          description: Always true; the official source responded successfully.
+      required:
+        - sourceUrl
+        - fetchedAt
+        - verified
+
+    DataSourceError:
+      type: object
+      description: >-
+        Returned with HTTP 503 when the official source could not be verified.
+        No mock, stale or fabricated data is ever served in its place.
+      properties:
+        error:
+          type: string
+          description: Human-readable error message (in Spanish).
+        sourceUrl:
+          type: string
+          description: Official source that was unavailable.
+        retryAfter:
+          type: integer
+          description: Suggested seconds to wait before retrying.
+      required:
+        - error
+        - sourceUrl
+        - retryAfter
 
     Legislador:
       type: object
@@ -446,11 +572,14 @@ components:
           type: integer
         totalPages:
           type: integer
+        _meta:
+          $ref: "#/components/schemas/SourceMeta"
       required:
         - data
         - total
         - page
         - totalPages
+        - _meta
 
     Comision:
       type: object
@@ -492,9 +621,12 @@ components:
             $ref: "#/components/schemas/Comision"
         total:
           type: integer
+        _meta:
+          $ref: "#/components/schemas/SourceMeta"
       required:
         - data
         - total
+        - _meta
 
     Noticia:
       type: object
@@ -529,9 +661,12 @@ components:
             $ref: "#/components/schemas/Noticia"
         total:
           type: integer
+        _meta:
+          $ref: "#/components/schemas/SourceMeta"
       required:
         - data
         - total
+        - _meta
 
     Sesion:
       type: object
@@ -582,9 +717,12 @@ components:
           nullable: true
           allOf:
             - $ref: "#/components/schemas/Sesion"
+        _meta:
+          $ref: "#/components/schemas/SourceMeta"
       required:
         - data
         - total
+        - _meta
 
     Proyecto:
       type: object
@@ -652,11 +790,14 @@ components:
           type: integer
         totalPages:
           type: integer
+        _meta:
+          $ref: "#/components/schemas/SourceMeta"
       required:
         - data
         - total
         - page
         - totalPages
+        - _meta
 
     Ley:
       type: object
@@ -691,11 +832,14 @@ components:
           type: integer
         totalPages:
           type: integer
+        _meta:
+          $ref: "#/components/schemas/SourceMeta"
       required:
         - data
         - total
         - page
         - totalPages
+        - _meta
 
     DashboardData:
       type: object
@@ -726,6 +870,8 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/Ley"
+        _meta:
+          $ref: "#/components/schemas/SourceMeta"
       required:
         - totalLegisladores
         - totalComisiones
@@ -735,6 +881,7 @@ components:
         - proximasSesiones
         - ultimosProyectos
         - ultimasLeyes
+        - _meta
 
     Votacion:
       type: object
@@ -804,9 +951,12 @@ components:
             $ref: "#/components/schemas/Votacion"
         total:
           type: integer
+        _meta:
+          $ref: "#/components/schemas/SourceMeta"
       required:
         - data
         - total
+        - _meta
 
     SystemStatus:
       type: object

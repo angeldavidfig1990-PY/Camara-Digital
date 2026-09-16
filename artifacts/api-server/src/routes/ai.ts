@@ -19,12 +19,24 @@ import {
   type Votacion,
   type DashboardData,
   type MesaDirectiva,
+  type FetchResult,
 } from "../lib/congress";
 
 const router: IRouter = Router();
 
 // Exact phrase required when no data exists in the official synchronized sources.
 const NO_DATA = "No existen datos disponibles en las fuentes oficiales sincronizadas.";
+
+/**
+ * Unwrap a FetchResult from the congress service under the strict "no mock data"
+ * policy. If the official source could not be verified, we throw: the assistant's
+ * outer try/catch converts that into the NO_DATA response. We never fabricate or
+ * serve stale data. Returns the payload (which may legitimately be null/empty).
+ */
+function unwrap<T>(r: FetchResult<T>): T | null {
+  if (!r.verified) throw new Error(r.error ?? "Fuente oficial no disponible");
+  return r.data;
+}
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -171,7 +183,7 @@ async function resolveLegisladores(
   q: string,
   strict = false,
 ): Promise<{ data: Legislador[]; single: Legislador | null; filtered: boolean }> {
-  const all = await getLegisladores();
+  const all = unwrap(await getLegisladores()) ?? [];
 
   const departamentos = [...new Set(all.map((l) => l.departamento).filter(Boolean))];
   const partidosYBancadas = [
@@ -465,7 +477,8 @@ router.post("/ai/consult", async (req, res): Promise<void> => {
   try {
     switch (intent) {
       case "dashboard": {
-        const d = await getDashboard();
+        const d = unwrap(await getDashboard());
+        if (!d) throw new Error(NO_DATA);
         respuesta = fmtDashboard(d);
         datos = d;
         fuentes = ["/legislative/dashboard"];
@@ -475,7 +488,7 @@ router.post("/ai/consult", async (req, res): Promise<void> => {
       case "legisladores_list": {
         const { data, single, filtered } = await resolveLegisladores(params.q ?? "");
         if (single) {
-          const d = await getLegisladorById(single.id);
+          const d = unwrap(await getLegisladorById(single.id));
           respuesta = fmtLegislador(d);
           datos = d;
           fuentes = ["/legislative/legisladores", `/legislative/legisladores/${single.id}`];
@@ -489,14 +502,14 @@ router.post("/ai/consult", async (req, res): Promise<void> => {
 
       case "legislador_detail": {
         if (params.id) {
-          const d = await getLegisladorById(params.id);
+          const d = unwrap(await getLegisladorById(params.id));
           respuesta = fmtLegislador(d);
           datos = d;
           fuentes = [`/legislative/legisladores/${params.id}`];
         } else {
           const { data, single, filtered } = await resolveLegisladores(params.q ?? params.search ?? "");
           if (single) {
-            const d = await getLegisladorById(single.id);
+            const d = unwrap(await getLegisladorById(single.id));
             respuesta = fmtLegislador(d);
             datos = d;
             fuentes = ["/legislative/legisladores", `/legislative/legisladores/${single.id}`];
@@ -510,7 +523,7 @@ router.post("/ai/consult", async (req, res): Promise<void> => {
       }
 
       case "comisiones_list": {
-        const data = await getComisiones();
+        const data = unwrap(await getComisiones()) ?? [];
         respuesta = fmtComisiones(data);
         datos = data;
         fuentes = ["/legislative/comisiones"];
@@ -519,15 +532,15 @@ router.post("/ai/consult", async (req, res): Promise<void> => {
 
       case "comision_detail": {
         if (params.id) {
-          const d = await getComisionById(params.id);
+          const d = unwrap(await getComisionById(params.id));
           respuesta = fmtComision(d);
           datos = d;
           fuentes = [`/legislative/comisiones/${params.id}`];
         } else {
-          const allComisiones = await getComisiones();
+          const allComisiones = unwrap(await getComisiones()) ?? [];
           const found = bestMatch(params.q ?? pregunta, allComisiones, (c) => c.nombre, 0.5);
           if (found) {
-            const d = await getComisionById(found.id);
+            const d = unwrap(await getComisionById(found.id));
             respuesta = fmtComision(d);
             datos = d;
             fuentes = ["/legislative/comisiones", `/legislative/comisiones/${found.id}`];
@@ -541,7 +554,7 @@ router.post("/ai/consult", async (req, res): Promise<void> => {
       }
 
       case "proyectos_list": {
-        const { data } = await getProyectos(params);
+        const data = unwrap(await getProyectos(params)) ?? [];
         respuesta = fmtProyectos(data, params);
         datos = data;
         fuentes = ["/legislative/proyectos"];
@@ -550,14 +563,14 @@ router.post("/ai/consult", async (req, res): Promise<void> => {
 
       case "proyecto_detail": {
         if (params.id) {
-          const d = await getProyectoById(params.id);
+          const d = unwrap(await getProyectoById(params.id));
           respuesta = fmtProyecto(d);
           datos = d;
           fuentes = [`/legislative/proyectos/${params.id}`];
         } else if (params.search) {
-          const { data } = await getProyectos({ search: params.search });
+          const data = unwrap(await getProyectos({ search: params.search })) ?? [];
           if (data.length === 1) {
-            const d = await getProyectoById(data[0].id);
+            const d = unwrap(await getProyectoById(data[0].id));
             respuesta = fmtProyecto(d);
             datos = d;
             fuentes = ["/legislative/proyectos", `/legislative/proyectos/${data[0].id}`];
@@ -567,7 +580,7 @@ router.post("/ai/consult", async (req, res): Promise<void> => {
             fuentes = ["/legislative/proyectos"];
           }
         } else {
-          const { data } = await getProyectos();
+          const data = unwrap(await getProyectos()) ?? [];
           respuesta = fmtProyectos(data, params);
           datos = data;
           fuentes = ["/legislative/proyectos"];
@@ -576,7 +589,7 @@ router.post("/ai/consult", async (req, res): Promise<void> => {
       }
 
       case "sesiones": {
-        const { data } = await getSesiones();
+        const data = unwrap(await getSesiones()) ?? [];
         respuesta = fmtSesiones(data);
         datos = data;
         fuentes = ["/legislative/sesiones"];
@@ -584,7 +597,7 @@ router.post("/ai/consult", async (req, res): Promise<void> => {
       }
 
       case "leyes": {
-        const data = await getLeyes();
+        const data = unwrap(await getLeyes()) ?? [];
         respuesta = fmtLeyes(data);
         datos = data;
         fuentes = ["/legislative/leyes"];
@@ -592,7 +605,7 @@ router.post("/ai/consult", async (req, res): Promise<void> => {
       }
 
       case "votaciones": {
-        const data = await getVotaciones();
+        const data = unwrap(await getVotaciones()) ?? [];
         respuesta = fmtVotaciones(data);
         datos = data;
         fuentes = ["/legislative/votaciones"];
@@ -600,7 +613,7 @@ router.post("/ai/consult", async (req, res): Promise<void> => {
       }
 
       case "analytics_partido": {
-        const data = await getLegisladores();
+        const data = unwrap(await getLegisladores()) ?? [];
         respuesta = fmtAnalyticsPartido(data);
         datos = data;
         fuentes = ["/legislative/legisladores"];
@@ -608,7 +621,8 @@ router.post("/ai/consult", async (req, res): Promise<void> => {
       }
 
       case "autoridades": {
-        const m = await getAutoridades();
+        const m = unwrap(await getAutoridades());
+        if (!m) throw new Error(NO_DATA);
         respuesta = fmtAutoridades(m);
         datos = m;
         fuentes = ["diputados.gov.py/institucional/mesa-directiva"];
@@ -618,10 +632,10 @@ router.post("/ai/consult", async (req, res): Promise<void> => {
       default: {
         // Last-resort fuzzy resolution: the user may have named a commission or
         // a deputy without a trigger word, or misspelled it badly.
-        const comisiones = await getComisiones();
+        const comisiones = unwrap(await getComisiones()) ?? [];
         const comMatch = bestMatch(pregunta, comisiones, (c) => c.nombre, 0.6, true);
         if (comMatch) {
-          const d = await getComisionById(comMatch.id);
+          const d = unwrap(await getComisionById(comMatch.id));
           respuesta = fmtComision(d);
           datos = d;
           tipo = "comision_detail";
@@ -630,7 +644,7 @@ router.post("/ai/consult", async (req, res): Promise<void> => {
         }
         const { single } = await resolveLegisladores(pregunta, true);
         if (single) {
-          const d = await getLegisladorById(single.id);
+          const d = unwrap(await getLegisladorById(single.id));
           respuesta = fmtLegislador(d);
           datos = d;
           tipo = "legislador_detail";

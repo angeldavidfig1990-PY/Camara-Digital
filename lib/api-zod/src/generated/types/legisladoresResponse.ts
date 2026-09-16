@@ -6,10 +6,12 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { Legislador } from './legislador';
+import type { SourceMeta } from './sourceMeta';
 
 export interface LegisladoresResponse {
   data: Legislador[];
   total: number;
   page: number;
   totalPages: number;
+  _meta: SourceMeta;
 }

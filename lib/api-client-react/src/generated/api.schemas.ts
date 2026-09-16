@@ -13,6 +13,30 @@ export interface ErrorResponse {
   error: string;
 }
 
+/**
+ * Provenance metadata attached to every verified collection response. Guarantees the client can trace exactly which official source produced the data and when. verified is always true when present.
+ */
+export interface SourceMeta {
+  /** Exact official URL consulted for this result. */
+  sourceUrl: string;
+  /** ISO-8601 timestamp of when the result was produced. */
+  fetchedAt: string;
+  /** Always true; the official source responded successfully. */
+  verified: boolean;
+}
+
+/**
+ * Returned with HTTP 503 when the official source could not be verified. No mock, stale or fabricated data is ever served in its place.
+ */
+export interface DataSourceError {
+  /** Human-readable error message (in Spanish). */
+  error: string;
+  /** Official source that was unavailable. */
+  sourceUrl: string;
+  /** Suggested seconds to wait before retrying. */
+  retryAfter: number;
+}
+
 export interface Legislador {
   id: string;
   nombre: string;
@@ -33,6 +57,7 @@ export interface LegisladoresResponse {
   total: number;
   page: number;
   totalPages: number;
+  _meta: SourceMeta;
 }
 
 export interface Comision {
@@ -49,6 +74,7 @@ export interface Comision {
 export interface ComisionesResponse {
   data: Comision[];
   total: number;
+  _meta: SourceMeta;
 }
 
 export interface Noticia {
@@ -63,6 +89,7 @@ export interface Noticia {
 export interface NoticiasResponse {
   data: Noticia[];
   total: number;
+  _meta: SourceMeta;
 }
 
 export interface Sesion {
@@ -82,6 +109,7 @@ export interface SesionesResponse {
   data: Sesion[];
   total: number;
   sesionEnVivo?: Sesion | null;
+  _meta: SourceMeta;
 }
 
 export type ProyectoHistorialItem = {
@@ -110,6 +138,7 @@ export interface ProyectosResponse {
   total: number;
   page: number;
   totalPages: number;
+  _meta: SourceMeta;
 }
 
 export interface Ley {
@@ -125,6 +154,7 @@ export interface LeyesResponse {
   total: number;
   page: number;
   totalPages: number;
+  _meta: SourceMeta;
 }
 
 export interface DashboardData {
@@ -137,6 +167,7 @@ export interface DashboardData {
   proximasSesiones: Sesion[];
   ultimosProyectos: Proyecto[];
   ultimasLeyes: Ley[];
+  _meta: SourceMeta;
 }
 
 export type VotacionVotosItem = {
@@ -165,6 +196,7 @@ export interface Votacion {
 export interface VotacionesResponse {
   data: Votacion[];
   total: number;
+  _meta: SourceMeta;
 }
 
 export type SystemStatusRecursosItem = {

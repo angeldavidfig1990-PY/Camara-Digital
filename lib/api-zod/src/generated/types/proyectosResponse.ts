@@ -6,10 +6,12 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { Proyecto } from './proyecto';
+import type { SourceMeta } from './sourceMeta';
 
 export interface ProyectosResponse {
   data: Proyecto[];
   total: number;
   page: number;
   totalPages: number;
+  _meta: SourceMeta;
 }
