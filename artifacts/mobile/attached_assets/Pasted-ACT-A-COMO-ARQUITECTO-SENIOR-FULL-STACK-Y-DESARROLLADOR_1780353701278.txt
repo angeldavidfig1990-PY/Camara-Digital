@@ -1,0 +1,247 @@
+ACTÚA COMO ARQUITECTO SENIOR FULL STACK Y DESARROLLADOR EXPO/REACT NATIVE.
+
+Analiza completamente mi proyecto actual antes de realizar cambios.
+
+OBJETIVO GENERAL
+
+La aplicación móvil "Diputados Paraguay" ya contiene pantallas para:
+
+* Dashboard
+* Diputados
+* Sesiones
+* Proyectos
+* Leyes
+* Votaciones
+* Asistente IA
+
+Actualmente existen hooks:
+
+* useGetDashboard()
+* useGetLegisladores()
+* useGetSesiones()
+* useGetProyectos()
+* useAiConsult()
+
+Quiero que TODA la información pública mostrada en la aplicación provenga prioritariamente del Diario de Sesiones de la Honorable Cámara de Diputados y de los portales oficiales relacionados.
+
+FUENTES OFICIALES PRIORITARIAS
+
+1. Diario de Sesiones
+   https://www.diputados.gov.py/sesiones/diario-sesiones-comision-permanente
+
+2. Sesión Digital
+   https://www.diputados.gov.py/sesiones/sesion-digital-comision-permanente
+
+3. Portal Datos Abiertos
+   https://datos.congreso.gov.py/opendata/
+
+4. Portal Datos V2
+   https://datosv2.congreso.gov.py/web/
+
+5. SILpy
+   https://silpy.congreso.gov.py
+
+REQUISITOS
+
+NO utilizar datos mock.
+NO utilizar datos hardcodeados.
+NO utilizar listas manuales.
+NO requerir carga manual de usuarios.
+
+Toda la información debe obtenerse automáticamente desde fuentes oficiales.
+
+ARQUITECTURA REQUERIDA
+
+Crear una capa Sync Service.
+
+Flujo:
+
+Fuentes Oficiales
+↓
+Sync Service
+↓
+Base de datos local
+↓
+API interna
+↓
+App móvil
+
+El sistema debe:
+
+* sincronizar automáticamente
+* detectar nuevos diarios de sesiones
+* detectar nuevas sesiones ordinarias
+* detectar nuevas sesiones extraordinarias
+* detectar modificaciones
+* actualizar la base de datos
+
+SINCRONIZACIÓN
+
+Implementar sincronización automática:
+
+* sesiones: cada 15 minutos
+* proyectos: cada 30 minutos
+* leyes: cada 60 minutos
+* legisladores: cada 24 horas
+
+Guardar:
+
+* lastSync
+* source
+* recordsUpdated
+* syncStatus
+
+MODELO DE DATOS
+
+SESIONES
+
+Extraer desde Diario de Sesiones:
+
+* id
+* numeroSesion
+* fecha
+* horaInicio
+* horaFin
+* tipo
+* estado
+* periodo
+* presidente
+* vicepresidentes
+* ordenDelDia
+* asuntosEntrados
+* proyectosTratados
+* resultados
+* enlacesPDF
+* enlaceVideo
+* resumen
+
+PROYECTOS
+
+Extraer:
+
+* numero
+* titulo
+* descripcion
+* estado
+* etapa
+* fechaIngreso
+* iniciativa
+* historial
+* comision
+* leyesRelacionadas
+
+LEGISLADORES
+
+Extraer:
+
+* nombre
+* apellido
+* partido
+* bancada
+* departamento
+* cargo
+* periodo
+* email
+* foto
+* comisiones
+
+DASHBOARD
+
+El dashboard debe construirse dinámicamente utilizando:
+
+* totalLegisladores
+* totalComisiones
+* proyectosPendientes
+* leyesAprobadas
+* sesionEnVivo
+* proximasSesiones
+* ultimosProyectos
+* ultimasLeyes
+
+No usar números fijos.
+
+PANTALLA DE SESIONES
+
+Actualmente existe SessionsScreen.
+
+Modificarla para que muestre:
+
+* última sesión ordinaria
+* sesiones extraordinarias
+* próximas sesiones
+* diario de sesiones asociado
+* enlaces PDF
+* transmisión disponible
+
+Si existe una sesión más reciente que la almacenada, actualizar automáticamente.
+
+VOTACIONES
+
+Eliminar MOCK_VOTACIONES.
+
+Crear un servicio real que obtenga:
+
+* proyecto
+* fecha
+* votos a favor
+* votos en contra
+* abstenciones
+* ausentes
+* resultado
+
+desde fuentes oficiales cuando estén disponibles.
+
+ASISTENTE IA
+
+Modificar ai/consult.
+
+La IA debe utilizar exclusivamente:
+
+* sesiones
+* diarios
+* proyectos
+* leyes
+* legisladores
+
+almacenados en la base de datos sincronizada.
+
+La IA NO debe inventar datos.
+
+Si no encuentra información debe responder:
+
+"No existen datos disponibles en las fuentes oficiales sincronizadas."
+
+SISTEMA DE FRESCURA
+
+Crear endpoint:
+
+GET /system/status
+
+Respuesta:
+
+{
+"lastSync": "",
+"source": "",
+"recordsUpdated": 0,
+"lastSessionDetected": "",
+"dataFreshness": "",
+"status": "healthy"
+}
+
+Crear indicador visual en la app:
+
+"Última actualización: hace X minutos"
+
+VALIDACIONES
+
+Si Diario de Sesiones contiene información más reciente que Datos Abiertos o SILpy:
+
+priorizar Diario de Sesiones.
+
+Si existen discrepancias:
+
+mostrar advertencia en logs.
+
+OBJETIVO FINAL
+
+Convertir la aplicación en una plataforma institucional de información legislativa en tiempo real donde la fuente principal sea el Diario de Sesiones y todos los datos visibles en la app se generen automáticamente a partir de fuentes oficiales, sin intervención manual y sin datos ficticios.

@@ -17,18 +17,17 @@ export default function ProjectsScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { t } = useTranslation();
-  const [search, setSearch] = useState("");
-  const [selectedTipo, setSelectedTipo] = useState("Todos");
-  const [showFilters, setShowFilters] = useState(false);
+  const [search, setSearch] = useState<string>("");
+  const [selectedTipo, setSelectedTipo] = useState<string>("Todos");
+  const [showFilters, setShowFilters] = useState<boolean>(false);
   const topPad = Platform.OS === "web" ? 67 : insets.top;
 
-  // Estados locales para el fetch nativo
   const [data, setData] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<boolean>(false);
 
   const cargarProyectos = React.useCallback(async () => {
-    const baseUrl = process.env.EXPO_PUBLIC_API_URL || "http://192.168.31.146:3000";
+    const baseUrl = process.env.EXPO_PUBLIC_API_URL || "http://10.11.0.144:3000";
     try {
       setIsLoading(true);
       setError(false);
@@ -92,7 +91,7 @@ export default function ProjectsScreen() {
               data={tipos}
               horizontal
               showsHorizontalScrollIndicator={false}
-              keyExtractor={i => i}
+              keyExtractor={(i) => i}
               renderItem={({ item }) => (
                 <TouchableOpacity
                   style={[styles.chip, {
@@ -110,11 +109,7 @@ export default function ProjectsScreen() {
           </View>
         )}
 
-        {data && (
-          <Text style={[styles.count, { color: colors.mutedForeground }]}>
-            {filtered.length} {t("projects.projectCount")}
-          </Text>
-        )}
+
       </View>
 
       {isLoading ? (
@@ -126,7 +121,7 @@ export default function ProjectsScreen() {
       ) : (
         <FlatList
           data={filtered}
-          keyExtractor={item => item.numero}
+          keyExtractor={(item) => item.numero}
           renderItem={({ item }) => (
             <ProjectCard project={item} onPress={() => router.push(`/project/${item.id}`)} />
           )}
@@ -148,12 +143,12 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   header: { paddingHorizontal: 16, paddingBottom: 12, borderBottomWidth: 1, gap: 10 },
   headerRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  headerTitle: { fontSize: 28, fontWeight: "700" as const, fontFamily: "Inter_700Bold" },
+  headerTitle: { fontSize: 28, fontWeight: "700", fontFamily: "Inter_700Bold" },
   filterBtn: { width: 40, height: 40, borderRadius: 12, alignItems: "center", justifyContent: "center", borderWidth: 1 },
   filtersBlock: { gap: 4 },
-  filterLabel: { fontSize: 12, fontFamily: "Inter_500Medium", fontWeight: "500" as const },
+  filterLabel: { fontSize: 12, fontFamily: "Inter_500Medium", fontWeight: "500" },
   chip: { paddingHorizontal: 14, paddingVertical: 7, borderRadius: 100, borderWidth: 1 },
-  chipText: { fontSize: 13, fontFamily: "Inter_500Medium", fontWeight: "500" as const },
+  chipText: { fontSize: 13, fontFamily: "Inter_500Medium", fontWeight: "500" },
   count: { fontSize: 13, fontFamily: "Inter_400Regular" },
   listContent: { padding: 16, paddingBottom: 100 },
 });

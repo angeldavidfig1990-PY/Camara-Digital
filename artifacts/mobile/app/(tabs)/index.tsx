@@ -1,7 +1,7 @@
 import React from "react";
 import {
   ScrollView, StyleSheet, Text, TouchableOpacity, View,
-  Platform, RefreshControl, Linking, ImageBackground,
+  Platform, RefreshControl, Linking, ImageBackground, Image, Dimensions,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@/components/Icon";
@@ -15,6 +15,8 @@ import { ProjectCard } from "@/components/project/ProjectCard";
 import { NewsCarousel } from "@/components/dashboard/NewsCarousel";
 import { Badge } from "@/components/ui/Badge";
 import { useTranslation } from "react-i18next";
+
+const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
 function formatRelative(iso?: string | null): string | null {
   if (!iso) return null;
@@ -39,22 +41,18 @@ export default function DashboardScreen() {
   const [isLoading, setIsLoading] = React.useState(true);
   const [error, setError] = React.useState<boolean>(false);
 
-  // Estados locales para los datos de la API
   const [data, setData] = React.useState<any>(null);
   const [status, setStatus] = React.useState<any>(null);
   const [noticias, setNoticias] = React.useState<any>(null);
 
-  // Función sincronizada con las rutas reales encontradas en legislative.ts y app.ts
   const cargarDatosDeAPI = React.useCallback(async () => {
-    const baseUrl = process.env.EXPO_PUBLIC_API_URL || "http://192.168.31.146:3000";
+    const baseUrl = process.env.EXPO_PUBLIC_API_URL || "http://10.11.0.144:3000";
     
     try {
       setError(false);
-      
-      // Consultamos en paralelo a las rutas reales del backend
       const [resDashboard, resStatus, resNoticias] = await Promise.all([
         fetch(`${baseUrl}/api/legislative/dashboard`).then(r => r.ok ? r.json() : null),
-        fetch(`${baseUrl}/api/system/status`).then(r => r.ok ? r.json() : null).catch(() => null), // se asume /api/system/status o similar por router.use(systemRouter)
+        fetch(`${baseUrl}/api/system/status`).then(r => r.ok ? r.json() : null).catch(() => null),
         fetch(`${baseUrl}/api/legislative/noticias`).then(r => r.ok ? r.json() : null).catch(() => null)
       ]);
 
@@ -82,43 +80,49 @@ export default function DashboardScreen() {
 
   const lastSync = formatRelative(status?.lastSync);
   const online = status ? status.status !== "offline" : true;
-  const topPad = Platform.OS === "web" ? 67 : insets.top;
+  const headerTopPadding = Platform.OS === "web" ? 20 : insets.top;
 
   return (
     <ScrollView
       style={[styles.container, { backgroundColor: colors.background }]}
-      contentContainerStyle={[styles.content, { paddingTop: topPad + 16, paddingBottom: 100 }]}
+      contentContainerStyle={[styles.content]}
       showsVerticalScrollIndicator={false}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
     >
-      {/* Hero Header */}
-      <View style={styles.hero}>
+      {/* Hero Header Institucional de lado a lado completo (sin esquinas redondeadas abajo) */}
+      <View style={[styles.hero, { paddingTop: headerTopPadding }]}>
         <ImageBackground
-          source={require("../../assets/images/header-building.png")}
+          source={require("../../attached_assets/images/congreso_nacional_1.jpg")}
           style={styles.heroBg}
           imageStyle={styles.heroBgImage}
           resizeMode="cover"
         >
           <LinearGradient
-            colors={["rgba(0,14,42,0.10)", "rgba(0,14,42,0.55)", "rgba(0,14,42,0.94)"]}
+            colors={["rgba(5, 20, 45, 0.12)", "rgba(5, 20, 45, 0.58)", "rgba(5, 20, 45, 0.90)"]}
             start={{ x: 0, y: 0 }}
             end={{ x: 0, y: 1 }}
             style={styles.heroScrim}
           >
-            <View style={styles.heroTextWrap}>
-              <Text style={styles.heroEyebrow}>{t("dashboard.eyebrow")}</Text>
-              <Text style={styles.heroTitle}>{t("dashboard.title")}</Text>
-              <Text style={styles.heroSub}>{t("dashboard.subtitle")}</Text>
-              {lastSync && (
-                <View style={styles.syncRow}>
-                  <View style={[styles.syncDot, { backgroundColor: online ? "#34D399" : "#F87171" }]} />
-                  <Text style={styles.syncText}>
-                    {online ? `${t("dashboard.updated").replace("{time}", lastSync || "")}` : t("dashboard.offline")}
-                  </Text>
-                </View>
-              )}
+            {/* Logo e imagen institucional abarcando el 100% de la pantalla */}
+            <View style={styles.logoContainer}>
+              <Image
+                source={require("../../attached_assets/images/escudo-paraguay.png")}
+                style={styles.fullLogoImage}
+                resizeMode="contain"
+              />
             </View>
 
+            {/* Sincronización o estado */}
+            {lastSync && (
+              <View style={styles.syncRow}>
+                <View style={[styles.syncDot, { backgroundColor: online ? "#34D399" : "#F87171" }]} />
+                <Text style={styles.syncText}>
+                  {online ? `${t("dashboard.updated").replace("{time}", lastSync || "")}` : t("dashboard.offline")}
+                </Text>
+              </View>
+            )}
+
+            {/* Barra de sesión en vivo */}
             {data?.sesionEnVivo && (
               <TouchableOpacity
                 style={[styles.liveBar, { backgroundColor: "rgba(255,255,255,0.18)" }]}
@@ -136,141 +140,144 @@ export default function DashboardScreen() {
         </ImageBackground>
       </View>
 
-      {/* Noticias oficiales */}
-      {noticias?.data && noticias.data.length > 0 && (
+      {/* Contenedor con márgenes para el resto de la aplicación */}
+      <View style={styles.innerBody}>
+        {/* Noticias oficiales */}
+        {noticias?.data && noticias.data.length > 0 && (
+          <View style={styles.section}>
+            <SectionHeader title={t("dashboard.news")} subtitle={t("dashboard.newsSubtitle")} />
+            <NewsCarousel noticias={noticias.data} />
+          </View>
+        )}
+
+        {/* Enlaces Claves */}
         <View style={styles.section}>
-          <SectionHeader title={t("dashboard.news")} subtitle={t("dashboard.newsSubtitle")} />
-          <NewsCarousel noticias={noticias.data} />
+          <SectionHeader title={t("dashboard.quickLinks")} />
+          <View style={styles.quickGrid}>
+            {[
+              { icon: "people-outline", label: t("tabs.deputies"), color: colors.primary, route: "/(tabs)/deputies" },
+              { icon: "tv-outline", label: t("tabs.sessions"), color: "#7C3AED", route: "/(tabs)/sessions" },
+              { icon: "document-text-outline", label: t("tabs.projects"), color: colors.warning, route: "/(tabs)/projects" },
+              { icon: "briefcase-outline", label: t("commissions.title"), color: "#0D9488", route: "/comisiones" },
+              { icon: "scale-outline", label: t("dashboard.laws"), color: colors.success, route: "/(tabs)/projects" },
+              { icon: "sparkles-outline", label: t("ai.title"), color: colors.accent, route: "/ai-assistant" },
+            ].map((item, i) => (
+              <TouchableOpacity
+                key={i}
+                style={[styles.quickItem, { backgroundColor: colors.card, borderColor: colors.border }]}
+                onPress={() => router.push(item.route as any)}
+                activeOpacity={0.75}
+              >
+                <View style={[styles.quickIcon, { backgroundColor: item.color + "18" }]}>
+                  <Ionicons name={item.icon as any} size={22} color={item.color} />
+                </View>
+                <Text style={[styles.quickLabel, { color: colors.foreground }]}>{item.label}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
         </View>
-      )}
 
-      {/* Enlaces Claves */}
-      <View style={styles.section}>
-        <SectionHeader title={t("dashboard.quickLinks")} />
-        <View style={styles.quickGrid}>
-          {[
-            { icon: "people-outline", label: t("tabs.deputies"), color: colors.primary, route: "/(tabs)/deputies" },
-            { icon: "tv-outline", label: t("tabs.sessions"), color: "#7C3AED", route: "/(tabs)/sessions" },
-            { icon: "document-text-outline", label: t("tabs.projects"), color: colors.warning, route: "/(tabs)/projects" },
-            { icon: "briefcase-outline", label: t("commissions.title"), color: "#0D9488", route: "/comisiones" },
-            { icon: "scale-outline", label: t("dashboard.laws"), color: colors.success, route: "/(tabs)/projects" },
-            { icon: "sparkles-outline", label: t("ai.title"), color: colors.accent, route: "/ai-assistant" },
-          ].map((item, i) => (
-            <TouchableOpacity
-              key={i}
-              style={[styles.quickItem, { backgroundColor: colors.card, borderColor: colors.border }]}
-              onPress={() => router.push(item.route as any)}
-              activeOpacity={0.75}
-            >
-              <View style={[styles.quickIcon, { backgroundColor: item.color + "18" }]}>
-                <Ionicons name={item.icon as any} size={22} color={item.color} />
-              </View>
-              <Text style={[styles.quickLabel, { color: colors.foreground }]}>{item.label}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      </View>
+        {/* Próximas Sesiones */}
+        {data?.proximasSesiones && data.proximasSesiones.length > 0 && (
+          <View style={styles.section}>
+            <SectionHeader
+              title={t("dashboard.upcomingSessions")}
+              onPress={() => router.push("/(tabs)/sessions")}
+            />
+            {isLoading ? <SkeletonList count={2} /> : data.proximasSesiones.map((s: any) => (
+              <SessionCard key={s.id} session={s} onPress={() => router.push(`/session/${s.id}`)} />
+            ))}
+          </View>
+        )}
 
-      {/* Próximas Sesiones */}
-      {data?.proximasSesiones && data.proximasSesiones.length > 0 && (
+        {/* Últimos Proyectos */}
         <View style={styles.section}>
           <SectionHeader
-            title={t("dashboard.upcomingSessions")}
-            onPress={() => router.push("/(tabs)/sessions")}
+            title={t("dashboard.recentProjects")}
+            subtitle={t("dashboard.recentProjectsSubtitle")}
+            onPress={() => router.push("/(tabs)/projects")}
           />
-          {isLoading ? <SkeletonList count={2} /> : data.proximasSesiones.map((s: any) => (
-            <SessionCard key={s.id} session={s} onPress={() => router.push(`/session/${s.id}`)} />
-          ))}
+          {isLoading ? (
+            <SkeletonList count={3} />
+          ) : error ? (
+            <Text style={[styles.errorText, { color: colors.mutedForeground }]}>
+              No se pudo cargar la información
+            </Text>
+          ) : data?.ultimosProyectos ? (
+            data.ultimosProyectos.slice(0, 5).map((p: any) => (
+              <ProjectCard key={p.id} project={p} onPress={() => router.push(`/project/${p.id}`)} />
+            ))
+          ) : null}
         </View>
-      )}
 
-      {/* Últimos Proyectos */}
-      <View style={styles.section}>
-        <SectionHeader
-          title={t("dashboard.recentProjects")}
-          subtitle={t("dashboard.recentProjectsSubtitle")}
-          onPress={() => router.push("/(tabs)/projects")}
-        />
-        {isLoading ? (
-          <SkeletonList count={3} />
-        ) : error ? (
-          <Text style={[styles.errorText, { color: colors.mutedForeground }]}>
-            No se pudo cargar la información
-          </Text>
-        ) : data?.ultimosProyectos ? (
-          data.ultimosProyectos.slice(0, 5).map((p: any) => (
-            <ProjectCard key={p.id} project={p} onPress={() => router.push(`/project/${p.id}`)} />
-          ))
-        ) : null}
-      </View>
-
-      {/* Leyes Recientes */}
-      {data?.ultimasLeyes && data.ultimasLeyes.length > 0 && (
-        <View style={styles.section}>
-          <SectionHeader title={t("dashboard.laws")} subtitle={t("dashboard.lawsSubtitle")} />
-          <View style={[styles.lawsBox, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            {data.ultimasLeyes.slice(0, 4).map((ley: any, i: number) => (
-              <View key={ley.numero}>
-                {i > 0 && <View style={[styles.divider, { backgroundColor: colors.border }]} />}
-                <View style={styles.lawRow}>
-                  <View style={[styles.lawNum, { backgroundColor: colors.success + "18" }]}>
-                    <Text style={[styles.lawNumText, { color: colors.success }]}>N° {ley.numero}</Text>
+        {/* Leyes Recientes */}
+        {data?.ultimasLeyes && data.ultimasLeyes.length > 0 && (
+          <View style={styles.section}>
+            <SectionHeader title={t("dashboard.laws")} subtitle={t("dashboard.lawsSubtitle")} />
+            <View style={[styles.lawsBox, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              {data.ultimasLeyes.slice(0, 4).map((ley: any, i: number) => (
+                <View key={ley.numero}>
+                  {i > 0 && <View style={[styles.divider, { backgroundColor: colors.border }]} />}
+                  <View style={styles.lawRow}>
+                    <View style={[styles.lawNum, { backgroundColor: colors.success + "18" }]}>
+                      <Text style={[styles.lawNumText, { color: colors.success }]}>N° {ley.numero}</Text>
+                    </View>
+                    <Text style={[styles.lawTitle, { color: colors.foreground }]} numberOfLines={2}>{ley.titulo}</Text>
                   </View>
-                  <Text style={[styles.lawTitle, { color: colors.foreground }]} numberOfLines={2}>{ley.titulo}</Text>
                 </View>
+              ))}
+            </View>
+          </View>
+        )}
+
+        {/* La Cámara */}
+        <View style={styles.section}>
+          <SectionHeader title={t("dashboard.chamber")} subtitle={t("dashboard.chamberSubtitle")} />
+          <View style={[styles.linksBox, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            {[
+              { label: t("dashboard.officialSite"), url: "https://www.diputados.gov.py", icon: "globe-outline" },
+              { label: t("dashboard.openData"), url: "https://datos.congreso.gov.py/opendata/", icon: "cloud-download-outline" },
+              { label: t("dashboard.digitalSession"), url: "https://www.diputados.gov.py/sesiones/sesion-digital-comision-permanente", icon: "videocam-outline" },
+            ].map((link, i) => (
+              <View key={i}>
+                {i > 0 && <View style={[styles.divider, { backgroundColor: colors.border }]} />}
+                <TouchableOpacity
+                  style={styles.linkRow}
+                  onPress={() => Linking.openURL(link.url)}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name={link.icon as any} size={18} color={colors.primary} />
+                  <Text style={[styles.linkText, { color: colors.foreground }]}>{link.label}</Text>
+                  <Ionicons name="open-outline" size={14} color={colors.mutedForeground} />
+                </TouchableOpacity>
               </View>
             ))}
           </View>
         </View>
-      )}
 
-      {/* La Cámara */}
-      <View style={styles.section}>
-        <SectionHeader title={t("dashboard.chamber")} subtitle={t("dashboard.chamberSubtitle")} />
-        <View style={[styles.linksBox, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          {[
-            { label: t("dashboard.officialSite"), url: "https://www.diputados.gov.py", icon: "globe-outline" },
-            { label: t("dashboard.openData"), url: "https://datos.congreso.gov.py/opendata/", icon: "cloud-download-outline" },
-            { label: t("dashboard.digitalSession"), url: "https://www.diputados.gov.py/sesiones/sesion-digital-comision-permanente", icon: "videocam-outline" },
-          ].map((link, i) => (
-            <View key={i}>
-              {i > 0 && <View style={[styles.divider, { backgroundColor: colors.border }]} />}
+        {/* Redes Sociales */}
+        <View style={styles.section}>
+          <SectionHeader title={t("dashboard.socialMedia")} subtitle={t("dashboard.socialMediaSubtitle")} />
+          <View style={styles.socialGrid}>
+            {[
+              { label: "Facebook", url: "https://www.facebook.com/diputadospy", icon: "logo-facebook", color: "#1877F2" },
+              { label: "Instagram", url: "https://www.instagram.com/diputadospy", icon: "logo-instagram", color: "#E4405F" },
+              { label: "X (Twitter)", url: "https://twitter.com/DiputadosPy", icon: "logo-twitter", color: "#0F1419" },
+              { label: "YouTube", url: "https://www.youtube.com/@tvcamarahcd", icon: "logo-youtube", color: "#FF0000" },
+            ].map((red) => (
               <TouchableOpacity
-                style={styles.linkRow}
-                onPress={() => Linking.openURL(link.url)}
+                key={red.label}
+                style={[styles.socialItem, { backgroundColor: colors.card, borderColor: colors.border }]}
+                onPress={() => Linking.openURL(red.url)}
                 activeOpacity={0.7}
               >
-                <Ionicons name={link.icon as any} size={18} color={colors.primary} />
-                <Text style={[styles.linkText, { color: colors.foreground }]}>{link.label}</Text>
-                <Ionicons name="open-outline" size={14} color={colors.mutedForeground} />
+                <View style={[styles.socialIcon, { backgroundColor: red.color + "18" }]}>
+                  <Ionicons name={red.icon as any} size={22} color={red.color} />
+                </View>
+                <Text style={[styles.socialLabel, { color: colors.foreground }]}>{red.label}</Text>
               </TouchableOpacity>
-            </View>
-          ))}
-        </View>
-      </View>
-
-      {/* Redes Sociales */}
-      <View style={styles.section}>
-        <SectionHeader title={t("dashboard.socialMedia")} subtitle={t("dashboard.socialMediaSubtitle")} />
-        <View style={styles.socialGrid}>
-          {[
-            { label: "Facebook", url: "https://www.facebook.com/diputadospy", icon: "logo-facebook", color: "#1877F2" },
-            { label: "Instagram", url: "https://www.instagram.com/diputadospy", icon: "logo-instagram", color: "#E4405F" },
-            { label: "X (Twitter)", url: "https://twitter.com/DiputadosPy", icon: "logo-twitter", color: "#0F1419" },
-            { label: "YouTube", url: "https://www.youtube.com/@tvcamarahcd", icon: "logo-youtube", color: "#FF0000" },
-          ].map((red) => (
-            <TouchableOpacity
-              key={red.label}
-              style={[styles.socialItem, { backgroundColor: colors.card, borderColor: colors.border }]}
-              onPress={() => Linking.openURL(red.url)}
-              activeOpacity={0.7}
-            >
-              <View style={[styles.socialIcon, { backgroundColor: red.color + "18" }]}>
-                <Ionicons name={red.icon as any} size={22} color={red.color} />
-              </View>
-              <Text style={[styles.socialLabel, { color: colors.foreground }]}>{red.label}</Text>
-            </TouchableOpacity>
-          ))}
+            ))}
+          </View>
         </View>
       </View>
     </ScrollView>
@@ -279,20 +286,49 @@ export default function DashboardScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  content: { paddingHorizontal: 16, gap: 4 },
-  hero: { borderRadius: 20, marginBottom: 20, overflow: "hidden" as const },
-  heroBg: { width: "100%", minHeight: 250, justifyContent: "flex-end" },
-  heroBgImage: { borderRadius: 20 },
-  heroScrim: { flex: 1, minHeight: 250, justifyContent: "flex-end", padding: 20, gap: 14 },
-  heroTextWrap: {},
-  heroEyebrow: { color: "rgba(255,255,255,0.85)", fontSize: 10, fontWeight: "700" as const, letterSpacing: 1.5, fontFamily: "Inter_700Bold", textShadowColor: "rgba(0,0,0,0.4)", textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 4 },
-  heroTitle: { color: "#FFFFFF", fontSize: 30, fontWeight: "700" as const, fontFamily: "Inter_700Bold", lineHeight: 35, marginTop: 4, textShadowColor: "rgba(0,0,0,0.45)", textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 6 },
-  heroSub: { color: "rgba(255,255,255,0.92)", fontSize: 13, marginTop: 4, fontFamily: "Inter_400Regular", textShadowColor: "rgba(0,0,0,0.4)", textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 4 },
-  syncRow: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 12 },
+  content: { paddingBottom: 100 },
+  
+  hero: { 
+    width: SCREEN_WIDTH,
+    marginBottom: 20, 
+    overflow: "hidden" as const,
+    // Sin bordes redondeados inferiores para que agarre todo el ancho plano
+  },
+  heroBg: { 
+    width: "100%", 
+    minHeight: 340, 
+    justifyContent: "flex-end",
+  },
+  heroBgImage: { 
+    // Sin radios redondeados
+  },
+  heroScrim: { 
+    flex: 1, 
+    minHeight: 340, 
+    justifyContent: "flex-end", 
+    paddingHorizontal: 16,
+    paddingBottom: 24,
+    gap: 14, 
+  },
+  
+  logoContainer: {
+    width: "100%",
+    alignItems: "center",
+    marginBottom: 4,
+  },
+  fullLogoImage: {
+    width: SCREEN_WIDTH, // Ocupa el 100% exacto de todo el ancho de la pantalla
+    height: 140,         // Altura ampliada para destacar el título y el escudo de forma completa
+  },
+
+  syncRow: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6 },
   syncDot: { width: 7, height: 7, borderRadius: 4 },
   syncText: { color: "rgba(255,255,255,0.9)", fontSize: 11, fontFamily: "Inter_500Medium", fontWeight: "500" as const },
   liveBar: { flexDirection: "row", alignItems: "center", gap: 10, padding: 12, borderRadius: 12 },
   liveText: { flex: 1, color: "#FFFFFF", fontSize: 13, fontFamily: "Inter_500Medium", fontWeight: "500" as const },
+
+  innerBody: { paddingHorizontal: 16, gap: 4 },
+
   section: { marginBottom: 20 },
   quickGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
   quickItem: { width: "30%", alignItems: "center", padding: 14, borderRadius: 14, borderWidth: 1, gap: 8, flexGrow: 1 },

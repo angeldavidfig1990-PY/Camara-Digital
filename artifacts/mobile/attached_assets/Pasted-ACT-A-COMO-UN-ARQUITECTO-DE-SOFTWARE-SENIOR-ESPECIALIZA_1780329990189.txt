@@ -1,0 +1,191 @@
+ACTÚA COMO UN ARQUITECTO DE SOFTWARE SENIOR ESPECIALIZADO EN FLUTTER, SUPABASE Y APLICACIONES GUBERNAMENTALES.
+
+OBJETIVO
+
+Crear una aplicación móvil profesional para la Cámara de Diputados de la República del Paraguay.
+
+IMPORTANTE
+
+NO generes todas las funcionalidades de una sola vez.
+
+Primero crea una versión MVP estable, funcional y libre de errores.
+
+Prioriza:
+
+* Estabilidad
+* Código limpio
+* Arquitectura escalable
+* Buen diseño UI/UX
+* Compatibilidad Android e iOS
+
+REGLAS OBLIGATORIAS
+
+* NO utilizar FontFaceObserver.
+* NO utilizar librerías externas para carga de fuentes.
+* NO depender de Google Fonts.
+* Utilizar únicamente fuentes nativas del sistema.
+
+Usar:
+
+font-family:
+-apple-system,
+BlinkMacSystemFont,
+"Segoe UI",
+sans-serif;
+
+* Verificar todas las dependencias antes de generar código.
+* No generar código experimental.
+* No generar componentes incompletos.
+* No generar APIs ficticias.
+* No inventar endpoints.
+
+TECNOLOGÍA
+
+Frontend:
+Flutter
+
+Backend:
+Supabase
+
+Base de datos:
+PostgreSQL
+
+Arquitectura:
+Clean Architecture
+
+Gestión de estado:
+Riverpod
+
+Navegación:
+GoRouter
+
+FASE 1 - MVP
+
+Generar únicamente:
+
+1. Pantalla Splash
+
+Mostrar:
+
+* Logo institucional
+* Nombre de la aplicación
+
+2. Pantalla Inicio
+
+Mostrar:
+
+* Bienvenida
+* Noticias destacadas (datos simulados)
+* Accesos rápidos
+
+3. Módulo Diputados
+
+Mostrar lista de diputados con datos simulados:
+
+* Foto
+* Nombre
+* Partido
+* Departamento
+
+Crear pantalla de detalle:
+
+* Biografía
+* Contacto
+* Partido
+* Comisiones
+
+4. Módulo Comisiones
+
+Mostrar:
+
+* Nombre comisión
+* Presidente
+* Cantidad de miembros
+
+Pantalla detalle:
+
+* Integrantes
+* Descripción
+
+5. Menú de navegación inferior
+
+Secciones:
+
+* Inicio
+* Diputados
+* Comisiones
+* Configuración
+
+6. Configuración
+
+* Modo claro
+* Modo oscuro
+
+DISEÑO
+
+Crear diseño institucional inspirado en:
+
+* aplicaciones gubernamentales modernas
+* transparencia pública
+* accesibilidad
+
+Utilizar colores inspirados en Paraguay:
+
+* rojo institucional
+* azul institucional
+* blanco
+
+Diseño minimalista.
+
+REQUISITOS TÉCNICOS
+
+Generar:
+
+* estructura completa del proyecto
+* carpetas
+* modelos
+* repositorios
+* servicios
+* pantallas
+* navegación
+
+La aplicación debe compilar correctamente sin errores.
+
+NO IMPLEMENTAR TODAVÍA
+
+* IA
+* Streaming
+* Login
+* Notificaciones
+* APIs reales
+* Datos abiertos
+* Votaciones
+* Proyectos de ley
+
+Al finalizar, verificar que el proyecto compile correctamente.
+
+Una vez finalizada la Fase 1, preparar la arquitectura para futuras integraciones.
+
+FASE 2 (SOLO DEJAR PREPARADA)
+
+La aplicación deberá poder integrar posteriormente:
+
+Sitio Oficial:
+https://www.diputados.gov.py
+
+Portal de Datos Abiertos:
+https://datos.congreso.gov.py/opendata/
+
+Portal de Datos Legislativos:
+https://datosv2.congreso.gov.py/web/
+
+Datasets:
+https://datosv2.congreso.gov.py/web/pages/datos.xhtml
+
+NO IMPLEMENTAR TODAVÍA ESTAS INTEGRACIONES.
+
+ÚNICAMENTE PREPARAR LA ARQUITECTURA.
+
+OBJETIVO FINAL
+
+Obtener una aplicación móvil estable, profesional, escalable y libre de errores que sirva como base para una futura plataforma legislativa completa.

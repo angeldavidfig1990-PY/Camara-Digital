@@ -98,7 +98,7 @@ export default function ConfiguracionScreen() {
         <TouchableOpacity style={styles.backBtn} onPress={() => router.back()} activeOpacity={0.7}>
           <Ionicons name="chevron-back" size={24} color={colors.primary} />
         </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: colors.foreground }]}>{t('settings', 'Configuración')}</Text>
+        <Text style={[styles.headerTitle, { color: colors.foreground }]}>{t('settings.title', 'Configuración')}</Text>
         <View style={{ width: 40 }} />
       </View>
 
