@@ -1,7 +1,7 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import {
   ScrollView, StyleSheet, Text, TouchableOpacity, View,
-  Platform, RefreshControl, Linking, ImageBackground, Image, Dimensions,
+  Platform, RefreshControl, Linking, ImageBackground, Image, Dimensions, Animated,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@/components/Icon";
@@ -45,6 +45,27 @@ export default function DashboardScreen() {
   const [status, setStatus] = React.useState<any>(null);
   const [noticias, setNoticias] = React.useState<any>(null);
 
+  // Animación de pulso y rotación interactiva
+  const pulseAnim = useRef(new Animated.Value(1)).current;
+  const spinAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, {
+          toValue: 1.4,
+          duration: 900,
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulseAnim, {
+          toValue: 1,
+          duration: 900,
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
+  }, [pulseAnim]);
+
   const cargarDatosDeAPI = React.useCallback(async () => {
     const baseUrl = process.env.EXPO_PUBLIC_API_URL || "http://192.168.3.4:3000";
     
@@ -74,9 +95,19 @@ export default function DashboardScreen() {
 
   const onRefresh = React.useCallback(async () => {
     setRefreshing(true);
+    Animated.sequence([
+      Animated.timing(spinAnim, { toValue: 1, duration: 600, useNativeDriver: true }),
+      Animated.timing(spinAnim, { toValue: 0, duration: 0, useNativeDriver: true })
+    ]).start();
+
     await cargarDatosDeAPI();
     setRefreshing(false);
-  }, [cargarDatosDeAPI]);
+  }, [cargarDatosDeAPI, spinAnim]);
+
+  const spin = spinAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ["0deg", "360deg"],
+  });
 
   const lastSync = formatRelative(status?.lastSync);
   const online = status ? status.status !== "offline" : true;
@@ -89,7 +120,7 @@ export default function DashboardScreen() {
       showsVerticalScrollIndicator={false}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
     >
-      {/* Hero Header Institucional compacto */}
+      {/* Hero Header Institucional Interactivo */}
       <View style={[styles.hero, { paddingTop: headerTopPadding }]}>
         <ImageBackground
           source={require("../../attached_assets/images/congreso_nacional_1.jpg")}
@@ -98,12 +129,12 @@ export default function DashboardScreen() {
           resizeMode="cover"
         >
           <LinearGradient
-            colors={["rgba(5, 20, 45, 0.15)", "rgba(5, 20, 45, 0.65)", "rgba(5, 20, 45, 0.92)"]}
+            colors={["rgba(5, 20, 45, 0.2)", "rgba(5, 20, 45, 0.7)", "rgba(5, 20, 45, 0.95)"]}
             start={{ x: 0, y: 0 }}
             end={{ x: 0, y: 1 }}
             style={styles.heroScrim}
           >
-            {/* Logo institucional conservando su tamaño original */}
+            {/* Logo institucional */}
             <View style={styles.logoContainer}>
               <Image
                 source={require("../../attached_assets/images/escudo-paraguay.png")}
@@ -112,29 +143,56 @@ export default function DashboardScreen() {
               />
             </View>
 
-            {/* Sincronización o estado */}
+            {/* Barra de Sincronización Interactiva */}
             {lastSync && (
-              <View style={styles.syncRow}>
-                <View style={[styles.syncDot, { backgroundColor: online ? "#34D399" : "#F87171" }]} />
-                <Text style={styles.syncText}>
-                  {online ? `${t("dashboard.updated").replace("{time}", lastSync || "")}` : t("dashboard.offline")}
-                </Text>
-              </View>
+              <TouchableOpacity 
+                style={styles.syncContainerButton}
+                onPress={onRefresh}
+                activeOpacity={0.8}
+              >
+                <View style={styles.syncRow}>
+                  <Animated.View 
+                    style={[
+                      styles.syncDot, 
+                      { 
+                        backgroundColor: online ? "#34D399" : "#F87171",
+                        transform: [{ scale: online ? pulseAnim : 1 }] 
+                      }
+                    ]} 
+                  />
+                  <Text style={styles.syncText}>
+                    {online ? `${t("dashboard.updated").replace("{time}", lastSync || "")}` : t("dashboard.offline")}
+                  </Text>
+                  <Animated.View style={{ transform: [{ rotate: spin }], marginLeft: 4 }}>
+                    <Ionicons name="sync-outline" size={13} color="rgba(255,255,255,0.8)" />
+                  </Animated.View>
+                </View>
+              </TouchableOpacity>
             )}
 
-            {/* Barra de sesión en vivo */}
-            {data?.sesionEnVivo && (
+            {/* Barra de sesión en vivo interactiva */}
+            {data?.sesionEnVivo ? (
               <TouchableOpacity
-                style={[styles.liveBar, { backgroundColor: "rgba(255,255,255,0.18)" }]}
+                style={[styles.liveBar, { backgroundColor: "rgba(220, 38, 38, 0.35)", borderColor: "rgba(239, 68, 68, 0.6)" }]}
                 onPress={() => router.push(`/session/${data.sesionEnVivo!.id}`)}
-                activeOpacity={0.8}
+                activeOpacity={0.75}
               >
                 <Badge label="EN VIVO" variant="live" size="sm" />
                 <Text style={styles.liveText} numberOfLines={1}>
                   {data.sesionEnVivo.tipo} — {data.sesionEnVivo.horaInicio}
                 </Text>
-                <Ionicons name="chevron-forward" size={16} color="#FFFFFF" />
+                <View style={styles.liveActionBadge}>
+                  <Text style={styles.liveActionText}>Ver</Text>
+                  <Ionicons name="chevron-forward" size={14} color="#FFFFFF" />
+                </View>
               </TouchableOpacity>
+            ) : (
+              <View style={[styles.liveBar, { backgroundColor: "rgba(255,255,255,0.12)", borderColor: "rgba(255,255,255,0.2)" }]}>
+                <Ionicons name="calendar-outline" size={16} color="rgba(255,255,255,0.8)" />
+                <Text style={styles.liveText} numberOfLines={1}>
+                  Sin sesiones plenarias en curso ahora mismo
+                </Text>
+              </View>
             )}
           </LinearGradient>
         </ImageBackground>
@@ -150,64 +208,69 @@ export default function DashboardScreen() {
           </View>
         )}
 
-        {/* Accesos Directos - Opción C: Tarjetas de Fila Ancha (Lista Institucional) */}
+        {/* Accesos Directos - Tarjetas en Cuadrícula con Imagen de Fondo */}
         <View style={styles.section}>
-          <SectionHeader title={t("dashboard.quickLinks")} />
-          <View style={styles.listContainer}>
+          <SectionHeader title={t("dashboard.quickLinks", "Accesos rápidos")} />
+          <View style={styles.gridContainer}>
             {[
               { 
                 icon: "people-outline", 
-                label: t("tabs.deputies"), 
-                color: colors.primary, 
+                label: t("tabs.deputies", "Legisladores"), 
+                subtitle: "Nómina oficial",
                 route: "/(tabs)/deputies",
-                desc: t("dashboard.deputiesDesc", "Conoce la nómina oficial de legisladores")
+                bgImage: require("../../attached_assets/images/deputies-bg.jpg"),
               },
               { 
                 icon: "tv-outline", 
-                label: t("tabs.sessions"), 
-                color: "#7C3AED", 
+                label: t("tabs.sessions", "Sesiones"), 
+                subtitle: "En directo",
                 route: "/(tabs)/sessions",
-                desc: t("dashboard.sessionsDesc", "Plenarias en directo y transmisiones")
+                bgImage: require("../../attached_assets/images/sessions-bg.jpg"),
               },
               { 
                 icon: "document-text-outline", 
-                label: t("tabs.projects"), 
-                color: colors.warning, 
+                label: t("tabs.projects", "Proyectos"), 
+                subtitle: "Leyes y expedientes",
                 route: "/(tabs)/projects",
-                desc: t("dashboard.projectsDesc", "Seguimiento de proyectos y leyes")
+                bgImage: require("../../attached_assets/images/projects-bg.jpg"),
               },
               { 
                 icon: "sparkles-outline", 
-                label: t("ai.title"), 
-                color: colors.accent, 
+                label: t("ai.title", "Asistente IA"), 
+                subtitle: "Consulta inteligente",
                 route: "/ai-assistant",
-                desc: t("dashboard.aiDesc", "Consulta asistida por inteligencia artificial")
+                bgImage: require("../../attached_assets/images/ai-bg.jpg"),
               },
             ].map((item, i) => (
               <TouchableOpacity
                 key={i}
-                style={[
-                  styles.rowCard, 
-                  { 
-                    backgroundColor: colors.card, 
-                    borderColor: colors.border,
-                  }
-                ]}
+                style={[styles.gridCard, { borderColor: colors.border }]}
                 onPress={() => router.push(item.route as any)}
-                activeOpacity={0.75}
+                activeOpacity={0.85}
               >
-                <View style={[styles.rowIconBox, { backgroundColor: item.color + "18" }]}>
-                  <Ionicons name={item.icon as any} size={22} color={item.color} />
-                </View>
-                <View style={styles.rowTextContainer}>
-                  <Text style={[styles.rowCardTitle, { color: colors.foreground }]} numberOfLines={1}>
-                    {item.label}
-                  </Text>
-                  <Text style={[styles.rowCardDesc, { color: colors.mutedForeground }]} numberOfLines={1}>
-                    {item.desc}
-                  </Text>
-                </View>
-                <Ionicons name="chevron-forward" size={16} color={colors.mutedForeground} />
+                <ImageBackground
+                  source={item.bgImage}
+                  style={styles.gridCardBg}
+                  imageStyle={styles.gridCardImageStyle}
+                  resizeMode="cover"
+                >
+                  <LinearGradient
+                    colors={["rgba(5, 20, 45, 0.2)", "rgba(5, 20, 45, 0.85)", "rgba(5, 20, 45, 0.95)"]}
+                    style={styles.gridCardScrim}
+                  >
+                    <View style={styles.gridIconBox}>
+                      <Ionicons name={item.icon as any} size={18} color="#D4AF37" />
+                    </View>
+                    <View style={styles.gridTextContainer}>
+                      <Text style={styles.gridCardTitle} numberOfLines={1}>
+                        {item.label}
+                      </Text>
+                      <Text style={styles.gridCardSubtitle} numberOfLines={1}>
+                        {item.subtitle}
+                      </Text>
+                    </View>
+                  </LinearGradient>
+                </ImageBackground>
               </TouchableOpacity>
             ))}
           </View>
@@ -335,53 +398,109 @@ const styles = StyleSheet.create({
   },
   fullLogoImage: {
     width: SCREEN_WIDTH, 
-    height: 120,         
+    height: 120,          
   },
 
-  syncRow: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6 },
-  syncDot: { width: 7, height: 7, borderRadius: 4 },
+  syncContainerButton: {
+    alignSelf: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.3)",
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.15)",
+  },
+  syncRow: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8 },
+  syncDot: { width: 8, height: 8, borderRadius: 4 },
   syncText: { color: "rgba(255,255,255,0.9)", fontSize: 11, fontFamily: "Inter_500Medium", fontWeight: "500" as const },
-  liveBar: { flexDirection: "row", alignItems: "center", gap: 10, padding: 10, borderRadius: 12 },
+  
+  liveBar: { 
+    flexDirection: "row", 
+    alignItems: "center", 
+    gap: 10, 
+    padding: 10, 
+    paddingHorizontal: 12,
+    borderRadius: 12, 
+    borderWidth: 1,
+  },
   liveText: { flex: 1, color: "#FFFFFF", fontSize: 13, fontFamily: "Inter_500Medium", fontWeight: "500" as const },
+  liveActionBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(255, 255, 255, 0.25)",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    gap: 2,
+  },
+  liveActionText: {
+    color: "#FFFFFF",
+    fontSize: 11,
+    fontFamily: "Inter_600SemiBold",
+    fontWeight: "600" as const,
+  },
 
   innerBody: { paddingHorizontal: 16, gap: 4 },
 
   section: { marginBottom: 20 },
 
-  // --- Estilos Opción C: Lista de Tarjetas Anchas Institucionales ---
-  listContainer: {
-    gap: 10,
-  },
-  rowCard: {
+  // Estilos para la cuadrícula con imagen de fondo
+  gridContainer: {
     flexDirection: "row",
-    alignItems: "center",
-    padding: 12,
-    paddingHorizontal: 16,
-    borderRadius: 14,
-    borderWidth: 1,
-    gap: 14,
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+    gap: 12,
   },
-  rowIconBox: {
-    width: 42,
-    height: 42,
-    borderRadius: 12,
+  gridCard: {
+    width: (SCREEN_WIDTH - 32 - 12) / 2, // Ancho exacto para 2 columnas (con padding lateral de 16 y gap de 12)
+    height: 125,
+    borderRadius: 16,
+    borderWidth: 1,
+    overflow: "hidden",
+    elevation: 3,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+  },
+  gridCardBg: {
+    width: "100%",
+    height: "100%",
+    justifyContent: "flex-end",
+  },
+  gridCardImageStyle: {
+    borderRadius: 16,
+  },
+  gridCardScrim: {
+    flex: 1,
+    padding: 12,
+    justifyContent: "space-between",
+  },
+  gridIconBox: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    backgroundColor: "rgba(212, 175, 55, 0.2)",
     alignItems: "center",
     justifyContent: "center",
+    borderWidth: 0.5,
+    borderColor: "rgba(212, 175, 55, 0.4)",
   },
-  rowTextContainer: {
-    flex: 1,
-    gap: 2,
+  gridTextContainer: {
+    gap: 1,
   },
-  rowCardTitle: {
+  gridCardTitle: {
+    color: "#FFFFFF",
     fontSize: 14,
     fontFamily: "Inter_600SemiBold",
     fontWeight: "600" as const,
   },
-  rowCardDesc: {
-    fontSize: 12,
-    fontFamily: "Inter_400Regular",
+  gridCardSubtitle: {
+    color: "#D4AF37", // Acento dorado institucional
+    fontSize: 11,
+    fontFamily: "Inter_500Medium",
+    fontWeight: "500" as const,
   },
-  // -----------------------------------------------------
   
   errorText: { fontSize: 14, textAlign: "center", padding: 20, fontFamily: "Inter_400Regular" },
   
@@ -393,7 +512,6 @@ const styles = StyleSheet.create({
   
   divider: { height: 1, marginHorizontal: 14 },
 
-  // Barra horizontal compacta de Redes Sociales
   socialRowContainer: {
     flexDirection: "row",
     borderRadius: 14,
