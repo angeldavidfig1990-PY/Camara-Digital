@@ -67,7 +67,7 @@ export default function DashboardScreen() {
   }, [pulseAnim]);
 
   const cargarDatosDeAPI = React.useCallback(async () => {
-    const baseUrl = process.env.EXPO_PUBLIC_API_URL || "http://192.168.3.4:3000";
+    const baseUrl = process.env.EXPO_PUBLIC_API_URL || "http://10.11.0.144:3000";
     
     try {
       setError(false);
@@ -235,11 +235,11 @@ export default function DashboardScreen() {
                 bgImage: require("../../attached_assets/images/projects-bg.jpg"),
               },
               { 
-                icon: "sparkles-outline", 
-                label: t("ai.title", "Asistente IA"), 
-                subtitle: "Consulta inteligente",
-                route: "/ai-assistant",
-                bgImage: require("../../attached_assets/images/ai-bg.jpg"),
+                icon: "time-outline", 
+                label: "Historia", 
+                subtitle: "Evolución y Sedes",
+                route: "/history",
+                bgImage: require("../../attached_assets/images/congreso_nacional_1.jpg"),
               },
             ].map((item, i) => (
               <TouchableOpacity
@@ -452,7 +452,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   gridCard: {
-    width: (SCREEN_WIDTH - 32 - 12) / 2, // Ancho exacto para 2 columnas (con padding lateral de 16 y gap de 12)
+    width: (SCREEN_WIDTH - 32 - 12) / 2,
     height: 125,
     borderRadius: 16,
     borderWidth: 1,
@@ -496,7 +496,7 @@ const styles = StyleSheet.create({
     fontWeight: "600" as const,
   },
   gridCardSubtitle: {
-    color: "#D4AF37", // Acento dorado institucional
+    color: "#D4AF37",
     fontSize: 11,
     fontFamily: "Inter_500Medium",
     fontWeight: "500" as const,

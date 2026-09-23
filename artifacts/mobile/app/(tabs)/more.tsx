@@ -72,6 +72,13 @@ export default function MoreScreen() {
             badge: "IA",
           },
           {
+            icon: "time-outline",
+            label: "Historia",
+            subtitle: "Evolución y Sedes",
+            color: "#D4AF37", // Color institucional dorado
+            onPress: () => router.push("/history"),
+          },
+          {
             icon: "briefcase-outline",
             label: "Comisiones Permanentes",
             subtitle: "Composición y agenda",

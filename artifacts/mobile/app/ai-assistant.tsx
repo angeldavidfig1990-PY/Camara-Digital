@@ -96,7 +96,7 @@ export default function AIAssistantScreen() {
     setIsLoading(true);
 
     try {
-      const baseUrl = process.env.EXPO_PUBLIC_API_URL || "http://192.168.3.4:3000";
+      const baseUrl = process.env.EXPO_PUBLIC_API_URL || "http://10.11.0.144:3000";
       const res = await fetch(`${baseUrl}/api/ai`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },

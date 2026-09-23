@@ -27,7 +27,7 @@ export default function ProjectsScreen() {
   const [error, setError] = useState<boolean>(false);
 
   const cargarProyectos = React.useCallback(async () => {
-    const baseUrl = process.env.EXPO_PUBLIC_API_URL || "http://192.168.3.4:3000";
+    const baseUrl = process.env.EXPO_PUBLIC_API_URL || "http://10.11.0.144:3000";
     try {
       setIsLoading(true);
       setError(false);
