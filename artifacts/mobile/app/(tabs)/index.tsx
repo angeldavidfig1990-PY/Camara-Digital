@@ -46,7 +46,7 @@ export default function DashboardScreen() {
   const [noticias, setNoticias] = React.useState<any>(null);
 
   const cargarDatosDeAPI = React.useCallback(async () => {
-    const baseUrl = process.env.EXPO_PUBLIC_API_URL || "http://10.11.0.144:3000";
+    const baseUrl = process.env.EXPO_PUBLIC_API_URL || "http://192.168.3.4:3000";
     
     try {
       setError(false);
@@ -80,7 +80,7 @@ export default function DashboardScreen() {
 
   const lastSync = formatRelative(status?.lastSync);
   const online = status ? status.status !== "offline" : true;
-  const headerTopPadding = Platform.OS === "web" ? 20 : insets.top;
+  const headerTopPadding = Platform.OS === "web" ? 12 : Math.max(insets.top, 10);
 
   return (
     <ScrollView
@@ -89,7 +89,7 @@ export default function DashboardScreen() {
       showsVerticalScrollIndicator={false}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
     >
-      {/* Hero Header Institucional de lado a lado completo (sin esquinas redondeadas abajo) */}
+      {/* Hero Header Institucional compacto */}
       <View style={[styles.hero, { paddingTop: headerTopPadding }]}>
         <ImageBackground
           source={require("../../attached_assets/images/congreso_nacional_1.jpg")}
@@ -98,12 +98,12 @@ export default function DashboardScreen() {
           resizeMode="cover"
         >
           <LinearGradient
-            colors={["rgba(5, 20, 45, 0.12)", "rgba(5, 20, 45, 0.58)", "rgba(5, 20, 45, 0.90)"]}
+            colors={["rgba(5, 20, 45, 0.15)", "rgba(5, 20, 45, 0.65)", "rgba(5, 20, 45, 0.92)"]}
             start={{ x: 0, y: 0 }}
             end={{ x: 0, y: 1 }}
             style={styles.heroScrim}
           >
-            {/* Logo e imagen institucional abarcando el 100% de la pantalla */}
+            {/* Logo institucional conservando su tamaño original */}
             <View style={styles.logoContainer}>
               <Image
                 source={require("../../attached_assets/images/escudo-paraguay.png")}
@@ -150,28 +150,64 @@ export default function DashboardScreen() {
           </View>
         )}
 
-        {/* Enlaces Claves */}
+        {/* Accesos Directos - Opción C: Tarjetas de Fila Ancha (Lista Institucional) */}
         <View style={styles.section}>
           <SectionHeader title={t("dashboard.quickLinks")} />
-          <View style={styles.quickGrid}>
+          <View style={styles.listContainer}>
             {[
-              { icon: "people-outline", label: t("tabs.deputies"), color: colors.primary, route: "/(tabs)/deputies" },
-              { icon: "tv-outline", label: t("tabs.sessions"), color: "#7C3AED", route: "/(tabs)/sessions" },
-              { icon: "document-text-outline", label: t("tabs.projects"), color: colors.warning, route: "/(tabs)/projects" },
-              { icon: "briefcase-outline", label: t("commissions.title"), color: "#0D9488", route: "/comisiones" },
-              { icon: "scale-outline", label: t("dashboard.laws"), color: colors.success, route: "/(tabs)/projects" },
-              { icon: "sparkles-outline", label: t("ai.title"), color: colors.accent, route: "/ai-assistant" },
+              { 
+                icon: "people-outline", 
+                label: t("tabs.deputies"), 
+                color: colors.primary, 
+                route: "/(tabs)/deputies",
+                desc: t("dashboard.deputiesDesc", "Conoce la nómina oficial de legisladores")
+              },
+              { 
+                icon: "tv-outline", 
+                label: t("tabs.sessions"), 
+                color: "#7C3AED", 
+                route: "/(tabs)/sessions",
+                desc: t("dashboard.sessionsDesc", "Plenarias en directo y transmisiones")
+              },
+              { 
+                icon: "document-text-outline", 
+                label: t("tabs.projects"), 
+                color: colors.warning, 
+                route: "/(tabs)/projects",
+                desc: t("dashboard.projectsDesc", "Seguimiento de proyectos y leyes")
+              },
+              { 
+                icon: "sparkles-outline", 
+                label: t("ai.title"), 
+                color: colors.accent, 
+                route: "/ai-assistant",
+                desc: t("dashboard.aiDesc", "Consulta asistida por inteligencia artificial")
+              },
             ].map((item, i) => (
               <TouchableOpacity
                 key={i}
-                style={[styles.quickItem, { backgroundColor: colors.card, borderColor: colors.border }]}
+                style={[
+                  styles.rowCard, 
+                  { 
+                    backgroundColor: colors.card, 
+                    borderColor: colors.border,
+                  }
+                ]}
                 onPress={() => router.push(item.route as any)}
                 activeOpacity={0.75}
               >
-                <View style={[styles.quickIcon, { backgroundColor: item.color + "18" }]}>
+                <View style={[styles.rowIconBox, { backgroundColor: item.color + "18" }]}>
                   <Ionicons name={item.icon as any} size={22} color={item.color} />
                 </View>
-                <Text style={[styles.quickLabel, { color: colors.foreground }]}>{item.label}</Text>
+                <View style={styles.rowTextContainer}>
+                  <Text style={[styles.rowCardTitle, { color: colors.foreground }]} numberOfLines={1}>
+                    {item.label}
+                  </Text>
+                  <Text style={[styles.rowCardDesc, { color: colors.mutedForeground }]} numberOfLines={1}>
+                    {item.desc}
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={16} color={colors.mutedForeground} />
               </TouchableOpacity>
             ))}
           </View>
@@ -218,64 +254,48 @@ export default function DashboardScreen() {
               {data.ultimasLeyes.slice(0, 4).map((ley: any, i: number) => (
                 <View key={ley.numero}>
                   {i > 0 && <View style={[styles.divider, { backgroundColor: colors.border }]} />}
-                  <View style={styles.lawRow}>
+                  <TouchableOpacity 
+                    style={styles.lawRow}
+                    onPress={() => router.push("/(tabs)/projects")}
+                    activeOpacity={0.7}
+                  >
                     <View style={[styles.lawNum, { backgroundColor: colors.success + "18" }]}>
                       <Text style={[styles.lawNumText, { color: colors.success }]}>N° {ley.numero}</Text>
                     </View>
                     <Text style={[styles.lawTitle, { color: colors.foreground }]} numberOfLines={2}>{ley.titulo}</Text>
-                  </View>
+                    <Ionicons name="chevron-forward" size={16} color={colors.mutedForeground} />
+                  </TouchableOpacity>
                 </View>
               ))}
             </View>
           </View>
         )}
 
-        {/* La Cámara */}
-        <View style={styles.section}>
-          <SectionHeader title={t("dashboard.chamber")} subtitle={t("dashboard.chamberSubtitle")} />
-          <View style={[styles.linksBox, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            {[
-              { label: t("dashboard.officialSite"), url: "https://www.diputados.gov.py", icon: "globe-outline" },
-              { label: t("dashboard.openData"), url: "https://datos.congreso.gov.py/opendata/", icon: "cloud-download-outline" },
-              { label: t("dashboard.digitalSession"), url: "https://www.diputados.gov.py/sesiones/sesion-digital-comision-permanente", icon: "videocam-outline" },
-            ].map((link, i) => (
-              <View key={i}>
-                {i > 0 && <View style={[styles.divider, { backgroundColor: colors.border }]} />}
-                <TouchableOpacity
-                  style={styles.linkRow}
-                  onPress={() => Linking.openURL(link.url)}
-                  activeOpacity={0.7}
-                >
-                  <Ionicons name={link.icon as any} size={18} color={colors.primary} />
-                  <Text style={[styles.linkText, { color: colors.foreground }]}>{link.label}</Text>
-                  <Ionicons name="open-outline" size={14} color={colors.mutedForeground} />
-                </TouchableOpacity>
-              </View>
-            ))}
-          </View>
-        </View>
-
         {/* Redes Sociales */}
         <View style={styles.section}>
           <SectionHeader title={t("dashboard.socialMedia")} subtitle={t("dashboard.socialMediaSubtitle")} />
-          <View style={styles.socialGrid}>
+          <View style={[styles.socialRowContainer, { backgroundColor: colors.card, borderColor: colors.border }]}>
             {[
               { label: "Facebook", url: "https://www.facebook.com/diputadospy", icon: "logo-facebook", color: "#1877F2" },
               { label: "Instagram", url: "https://www.instagram.com/diputadospy", icon: "logo-instagram", color: "#E4405F" },
               { label: "X (Twitter)", url: "https://twitter.com/DiputadosPy", icon: "logo-twitter", color: "#0F1419" },
               { label: "YouTube", url: "https://www.youtube.com/@tvcamarahcd", icon: "logo-youtube", color: "#FF0000" },
-            ].map((red) => (
-              <TouchableOpacity
-                key={red.label}
-                style={[styles.socialItem, { backgroundColor: colors.card, borderColor: colors.border }]}
-                onPress={() => Linking.openURL(red.url)}
-                activeOpacity={0.7}
-              >
-                <View style={[styles.socialIcon, { backgroundColor: red.color + "18" }]}>
-                  <Ionicons name={red.icon as any} size={22} color={red.color} />
-                </View>
-                <Text style={[styles.socialLabel, { color: colors.foreground }]}>{red.label}</Text>
-              </TouchableOpacity>
+            ].map((red, index) => (
+              <React.Fragment key={red.label}>
+                {index > 0 && <View style={[styles.socialDivider, { backgroundColor: colors.border }]} />}
+                <TouchableOpacity
+                  style={styles.socialButtonCompact}
+                  onPress={() => Linking.openURL(red.url)}
+                  activeOpacity={0.7}
+                >
+                  <View style={[styles.socialIconCompact, { backgroundColor: red.color + "18" }]}>
+                    <Ionicons name={red.icon as any} size={20} color={red.color} />
+                  </View>
+                  <Text style={[styles.socialLabelCompact, { color: colors.foreground }]} numberOfLines={1}>
+                    {red.label}
+                  </Text>
+                </TouchableOpacity>
+              </React.Fragment>
             ))}
           </View>
         </View>
@@ -290,62 +310,120 @@ const styles = StyleSheet.create({
   
   hero: { 
     width: SCREEN_WIDTH,
-    marginBottom: 20, 
+    marginBottom: 16, 
     overflow: "hidden" as const,
-    // Sin bordes redondeados inferiores para que agarre todo el ancho plano
   },
   heroBg: { 
     width: "100%", 
-    minHeight: 340, 
+    minHeight: 220, 
     justifyContent: "flex-end",
   },
-  heroBgImage: { 
-    // Sin radios redondeados
-  },
+  heroBgImage: {},
   heroScrim: { 
     flex: 1, 
-    minHeight: 340, 
+    minHeight: 225, 
     justifyContent: "flex-end", 
     paddingHorizontal: 16,
-    paddingBottom: 24,
-    gap: 14, 
+    paddingBottom: 16, 
+    gap: 10, 
   },
   
   logoContainer: {
     width: "100%",
     alignItems: "center",
-    marginBottom: 4,
+    marginBottom: 2,
   },
   fullLogoImage: {
-    width: SCREEN_WIDTH, // Ocupa el 100% exacto de todo el ancho de la pantalla
-    height: 140,         // Altura ampliada para destacar el título y el escudo de forma completa
+    width: SCREEN_WIDTH, 
+    height: 120,         
   },
 
   syncRow: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6 },
   syncDot: { width: 7, height: 7, borderRadius: 4 },
   syncText: { color: "rgba(255,255,255,0.9)", fontSize: 11, fontFamily: "Inter_500Medium", fontWeight: "500" as const },
-  liveBar: { flexDirection: "row", alignItems: "center", gap: 10, padding: 12, borderRadius: 12 },
+  liveBar: { flexDirection: "row", alignItems: "center", gap: 10, padding: 10, borderRadius: 12 },
   liveText: { flex: 1, color: "#FFFFFF", fontSize: 13, fontFamily: "Inter_500Medium", fontWeight: "500" as const },
 
   innerBody: { paddingHorizontal: 16, gap: 4 },
 
   section: { marginBottom: 20 },
-  quickGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
-  quickItem: { width: "30%", alignItems: "center", padding: 14, borderRadius: 14, borderWidth: 1, gap: 8, flexGrow: 1 },
-  quickIcon: { width: 44, height: 44, borderRadius: 14, alignItems: "center", justifyContent: "center" },
-  quickLabel: { fontSize: 12, fontFamily: "Inter_500Medium", fontWeight: "500" as const, textAlign: "center" },
+
+  // --- Estilos Opción C: Lista de Tarjetas Anchas Institucionales ---
+  listContainer: {
+    gap: 10,
+  },
+  rowCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 12,
+    paddingHorizontal: 16,
+    borderRadius: 14,
+    borderWidth: 1,
+    gap: 14,
+  },
+  rowIconBox: {
+    width: 42,
+    height: 42,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  rowTextContainer: {
+    flex: 1,
+    gap: 2,
+  },
+  rowCardTitle: {
+    fontSize: 14,
+    fontFamily: "Inter_600SemiBold",
+    fontWeight: "600" as const,
+  },
+  rowCardDesc: {
+    fontSize: 12,
+    fontFamily: "Inter_400Regular",
+  },
+  // -----------------------------------------------------
+  
   errorText: { fontSize: 14, textAlign: "center", padding: 20, fontFamily: "Inter_400Regular" },
+  
   lawsBox: { borderRadius: 14, borderWidth: 1, overflow: "hidden" },
   lawRow: { flexDirection: "row", alignItems: "center", gap: 12, padding: 14 },
   lawNum: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 },
   lawNumText: { fontSize: 11, fontWeight: "700" as const, fontFamily: "Inter_700Bold" },
   lawTitle: { flex: 1, fontSize: 13, fontFamily: "Inter_400Regular", lineHeight: 18 },
+  
   divider: { height: 1, marginHorizontal: 14 },
-  linksBox: { borderRadius: 14, borderWidth: 1, overflow: "hidden" },
-  linkRow: { flexDirection: "row", alignItems: "center", gap: 12, padding: 16 },
-  linkText: { flex: 1, fontSize: 14, fontFamily: "Inter_500Medium", fontWeight: "500" as const },
-  socialGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
-  socialItem: { flexDirection: "row", alignItems: "center", gap: 10, width: "47%", flexGrow: 1, padding: 12, borderRadius: 14, borderWidth: 1 },
-  socialIcon: { width: 38, height: 38, borderRadius: 11, alignItems: "center", justifyContent: "center" },
-  socialLabel: { fontSize: 13, fontFamily: "Inter_500Medium", fontWeight: "500" as const },
+
+  // Barra horizontal compacta de Redes Sociales
+  socialRowContainer: {
+    flexDirection: "row",
+    borderRadius: 14,
+    borderWidth: 1,
+    overflow: "hidden",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  socialButtonCompact: {
+    flex: 1,
+    alignItems: "center",
+    paddingVertical: 12,
+    paddingHorizontal: 4,
+    gap: 4,
+  },
+  socialIconCompact: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  socialLabelCompact: {
+    fontSize: 10,
+    fontFamily: "Inter_500Medium",
+    fontWeight: "500" as const,
+    textAlign: "center",
+  },
+  socialDivider: {
+    width: 1,
+    height: "60%",
+  },
 });

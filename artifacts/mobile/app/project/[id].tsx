@@ -38,7 +38,7 @@ export default function ProjectDetailScreen() {
   const [error, setError] = useState(false);
 
   const cargarProyecto = React.useCallback(async () => {
-    const baseUrl = process.env.EXPO_PUBLIC_API_URL || "http://10.11.0.144:3000";
+    const baseUrl = process.env.EXPO_PUBLIC_API_URL || "http://192.168.3.4:3000";
     if (!id) return;
     try {
       setIsLoading(true);
